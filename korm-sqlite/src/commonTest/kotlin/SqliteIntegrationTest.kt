@@ -13,6 +13,8 @@ import io.github.knyazevs.korm.database.Database
 import io.github.knyazevs.korm.eq
 import io.github.knyazevs.korm.gtEq
 import io.github.knyazevs.korm.innerJoin
+import io.github.knyazevs.korm.query
+import io.github.knyazevs.korm.sum
 import io.github.knyazevs.korm.transaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -221,6 +223,31 @@ class SqliteIntegrationTest {
         val count = db.autocommit { Products.count(Query(Products.displayName eq tag)) }
         assertEquals(3L, count)
         db.transaction { ids.forEach { Products.deleteWhere(Query(Products.id eq it)) } }
+    }
+
+    /**
+     * Regression (#46): SUM over an Int column can exceed Int.MAX_VALUE. Column<Int>.sum()
+     * returns Selectable<Long> and reads the aggregate as a Long, so the sum must not overflow.
+     */
+    @Test
+    fun testSumOfIntColumnDoesNotOverflowInt() {
+        val tag = "sum-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            // Two rows of 2_000_000_000 sum to 4_000_000_000, which is past Int.MAX_VALUE.
+            Products.insertAll(List(2) {
+                Product().apply {
+                    this.id = Uuid.random(); this.price = BigDecimal.fromInt(0); this.qty = 2_000_000_000
+                    this.displayName = tag; this.note = null; this.rank = null
+                }
+            })
+        }
+        val total = Products.qty.sum() // Selectable<Long> via the integer-column overload
+        val sum: Long = db.autocommit {
+            Products.query().where(Products.displayName eq tag).select(total).single()[total]
+        }
+        assertEquals(4_000_000_000L, sum)
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
 
     /** An exception out of a transaction block rolls back every statement in it. */

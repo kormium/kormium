@@ -167,12 +167,13 @@ result.forEach { row ->
 
 Available aggregates:
 
-- `count()`
-- `column.count()`
-- `column.min()`
-- `column.max()`
-- `column.sum()`
-- `column.avg()`
+- `count()` → `Long`
+- `column.count()` → `Long`
+- `column.min()` / `column.max()` → the column's own type
+- `column.sum()` → `Long` for integer columns (`Int`/`Short`/`Long`), since `SUM` widens to
+  `bigint` server-side and could otherwise overflow; the column's own type otherwise (e.g.
+  `BigDecimal`, `Double`)
+- `column.avg()` → `Double`
 
 For single-table grouping, start from `Table.query()`:
 
