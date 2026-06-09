@@ -40,4 +40,20 @@ class NamedParamsTest {
         assertEquals(listOf("real"), parsed.names)
         assertEquals("SELECT ':notparam', x::text, \$1 FROM t", parsed.sql)
     }
+
+    @Test
+    fun ignoresPlaceholderAfterEscapedQuoteInLiteral() {
+        // Regression (#47): a doubled '' is an escaped quote inside the string, so ':not_param'
+        // stays part of the literal. Quote-toggling handles this correctly.
+        val parsed = parseNamedParams("SELECT 'it''s :not_param' AS v")
+        assertEquals(emptyList(), parsed.names)
+        assertEquals("SELECT 'it''s :not_param' AS v", parsed.sql)
+    }
+
+    @Test
+    fun handlesMultipleEscapedQuotesThenRealParam() {
+        val parsed = parseNamedParams("SELECT 'a''b''c :x' AS v, :real FROM t")
+        assertEquals(listOf("real"), parsed.names)
+        assertEquals("SELECT 'a''b''c :x' AS v, \$1 FROM t", parsed.sql)
+    }
 }

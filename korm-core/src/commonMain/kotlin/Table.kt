@@ -222,7 +222,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         val builder = paramBuilder(dialect, typeMapper)
         // Count the rows matching the predicate only: ORDER BY / LIMIT / OFFSET must not apply
         // to an aggregate (an OFFSET would skip the single COUNT row and read as 0).
-        val queryStr = query.toCountSql(builder)
+        val queryStr = query.toWhereSql(builder)
         val sql = "SELECT COUNT(*) FROM ${qualifiedTableName(dialect)} $queryStr"
         return sql.trimIndent() to builder.params
     }
@@ -235,7 +235,8 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         }
         val generatedUpdateFields = updateFields
             .joinToString(", ") { "${dialect.quoteIdentifier(it.first)}=${builder.bind(it.second)}" }
-        val queryStr = query.toSql(builder)
+        // WHERE only: a plain UPDATE doesn't take ORDER BY / LIMIT / OFFSET (invalid in Postgres).
+        val queryStr = query.toWhereSql(builder)
         val sql = """
             UPDATE ${qualifiedTableName(dialect)}
             SET $generatedUpdateFields
@@ -246,7 +247,8 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
 
     private fun deleteSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
-        val queryStr = query.toSql(builder)
+        // WHERE only: a plain DELETE doesn't take ORDER BY / LIMIT / OFFSET (invalid in Postgres).
+        val queryStr = query.toWhereSql(builder)
         val sql = "DELETE FROM ${qualifiedTableName(dialect)} $queryStr"
         return sql.trimIndent() to builder.params
     }

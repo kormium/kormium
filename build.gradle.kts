@@ -32,6 +32,33 @@ allprojects {
     }
 }
 
+// iOS simulator tests need an installed iOS simulator runtime (Xcode). On a machine without
+// one the task fails with "Xcode does not support simulator tests for ios_simulator_arm64",
+// breaking `check` — unlike the other unavailable native targets, which Kotlin auto-disables.
+// Gate the simulator test tasks on runtime availability so `check` stays runnable. Note that
+// `xcrun --show-sdk-path` is not a reliable signal (it succeeds even with no runtime
+// installed); the presence of an iOS entry in `simctl list runtimes` is. Override with
+// -PenableIosSimulatorTests=true|false.
+val iosSimulatorTestsEnabled: Boolean by lazy {
+    when (providers.gradleProperty("enableIosSimulatorTests").orNull) {
+        "true" -> true
+        "false" -> false
+        else -> runCatching {
+            val process = ProcessBuilder("xcrun", "simctl", "list", "runtimes")
+                .redirectErrorStream(true).start()
+            val output = process.inputStream.bufferedReader().readText()
+            process.waitFor()
+            output.lineSequence().any { it.contains("iOS") }
+        }.getOrDefault(false)
+    }
+}
+
+allprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest>().configureEach {
+        onlyIf("no iOS simulator runtime available") { iosSimulatorTestsEnabled }
+    }
+}
+
 // Publishing configuration shared by every published library module + the BOM. Credentials
 // (mavenCentralUsername/Password) and the GPG key (signingInMemoryKey/Password) are supplied
 // out-of-band — see gradle.properties for the property names.

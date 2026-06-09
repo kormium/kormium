@@ -21,11 +21,12 @@ data class Query(
     }
 
     /**
-     * Renders only the `WHERE` clause (no `ORDER BY` / `LIMIT` / `OFFSET`). Used for
-     * aggregates like `COUNT(*)` where pagination and ordering must not apply — e.g. an
-     * `OFFSET` would skip the single aggregate row and make the count read as 0.
+     * Renders only the `WHERE` clause (no `ORDER BY` / `LIMIT` / `OFFSET`). Used where
+     * pagination and ordering must not apply: aggregates like `COUNT(*)` (an `OFFSET` would
+     * skip the single aggregate row and read as 0), and `UPDATE` / `DELETE` (plain mutation
+     * statements don't take `ORDER BY` / `LIMIT` / `OFFSET` in Postgres).
      */
-    fun toCountSql(builder: ParamBuilder): String =
+    fun toWhereSql(builder: ParamBuilder): String =
         whereExpression?.let { "WHERE ${it.toSql(builder)} " } ?: ""
 
     // Debug-friendly rendering; placeholders are emitted in place of values.

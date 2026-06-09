@@ -509,6 +509,42 @@ class TableTest {
         }
     }
 
+    @Test
+    fun testUpdateIgnoresOrderLimitOffset() {
+        // Regression (#44): a plain UPDATE must not emit ORDER BY / LIMIT / OFFSET (invalid in Postgres).
+        db.transaction {
+            TestTable.update(TestEntity().apply { position = 9 }) {
+                where { TestTable.id eq Uuid.random() }
+                orderBy ASC TestTable.position
+                limit = 1
+                offset = 5
+            }
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.startsWith("""UPDATE"products"SET"position"=:p0WHERE"""), sql)
+        assertFalse(sql.contains("ORDERBY"), sql)
+        assertFalse(sql.contains("LIMIT"), sql)
+        assertFalse(sql.contains("OFFSET"), sql)
+    }
+
+    @Test
+    fun testDeleteIgnoresOrderLimitOffset() {
+        // Regression (#44): a plain DELETE must not emit ORDER BY / LIMIT / OFFSET.
+        db.transaction {
+            TestTable.deleteWhere {
+                where { TestTable.position eq 5 }
+                orderBy DESC TestTable.position
+                limit = 1
+                offset = 5
+            }
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.startsWith("""DELETEFROM"products"WHERE"""), sql)
+        assertFalse(sql.contains("ORDERBY"), sql)
+        assertFalse(sql.contains("LIMIT"), sql)
+        assertFalse(sql.contains("OFFSET"), sql)
+    }
+
     /**
      * Regression test for the bug where a [Query] with no `where` rendered the
      * literal string "null" into the SQL. An empty query must produce no WHERE.
