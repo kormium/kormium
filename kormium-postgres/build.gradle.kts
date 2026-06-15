@@ -45,6 +45,16 @@ kotlin {
                 // these in automatically from pg_config / known install paths.
                 (findProperty("libpq.include") as String?)?.let { compilerOpts("-I$it") }
             }
+            // winsock2 bridge for the Windows async reactor (WSAPoll). A direct cinterop on the
+            // system <winsock2.h> yields an empty binding package, so we cinterop a project-owned
+            // shim header (winsock_shim.h) that wraps the calls — see WINDOWS_ASYNC_NOTES.md.
+            // Only the mingw target registers it.
+            if (target.name == "mingwX64") {
+                register("winsock") {
+                    defFile(project.file("src/nativeInterop/cinterop/winsock.def"))
+                    includeDirs(project.file("src/nativeInterop/cinterop"))
+                }
+            }
         }
         // cinterop ignores linker options; libpq is supplied when test binaries link.
         // On Windows the artifact is chosen explicitly (see windowsLibpqArtifact): a bare
