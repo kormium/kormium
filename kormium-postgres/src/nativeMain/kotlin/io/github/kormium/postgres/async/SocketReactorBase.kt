@@ -108,8 +108,7 @@ internal abstract class SocketReactorBase : AutoCloseable {
 }
 
 /**
- * Builds the platform reactor, or null on platforms without one (Windows, currently — see
- * WINDOWS_ASYNC_NOTES on the feat/native-async-windows-wip branch). A null reactor makes the
- * driver fall back to the blocking offload for its suspend path.
+ * Builds the platform reactor (poll on Unix, WSAPoll on Windows), or null on platforms without
+ * one — in which case the driver falls back to the blocking offload for its suspend path.
  */
 internal expect fun createSocketReactor(): SocketReactorBase?

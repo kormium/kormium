@@ -1,0 +1,4 @@
+headers = winsock_shim.h
+package = winsock
+headerFilter = winsock_shim.h
+linkerOpts.mingw = -lws2_32

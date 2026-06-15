@@ -152,10 +152,10 @@ private class PostgresDriverImpl(
     override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R =
         connectionPool.runPinned(transactional, block)
 
-    // useConnection: when a reactor exists (Unix), run truly async — borrow by suspending on the
-    // pool Channel, drive every statement and BEGIN/COMMIT/ROLLBACK through the reactor (the
-    // coroutine thread is freed during each network wait), cleaning up under NonCancellable.
-    // When there is no reactor (Windows), fall back to the core blocking offload.
+    // useConnection: when a reactor exists (Unix poll, Windows WSAPoll), run truly async — borrow
+    // by suspending on the pool Channel, drive every statement and BEGIN/COMMIT/ROLLBACK through
+    // the reactor (the coroutine thread is freed during each network wait), cleaning up under
+    // NonCancellable. When there is no reactor, fall back to the core blocking offload.
     override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
         val activeReactor = reactor ?: return connectionPool.runConnection(transactional, block)
         val conn = acquireConnectionSuspending()
