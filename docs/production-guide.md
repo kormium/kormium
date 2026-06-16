@@ -134,6 +134,39 @@ For timing/pool metrics, which are not yet built in:
 
 See [Observability](observability.md).
 
+## Caching
+
+Kormium ships **no built-in second-level (L2) cache**, and that is deliberate. A transparent entity
+cache under the DSL would hide round-trips (Kormium optimizes for explicitness) and invite silent
+staleness — the worst kind of bug. Caching policy (what to cache, the TTL, the consistency model)
+depends on your domain, so it belongs in the application, where an in-process cache (Caffeine, a
+`Map`) or a shared store (Redis) is simpler and more correct than a one-size-fits-all L2.
+
+What Kormium gives you is the *mechanism* a correct cache needs:
+
+- the `WriteListener` commit hook (`db.writeListeners`) — fired after a commit with the tables it
+  wrote, so you can evict the affected entries;
+- cross-process invalidation via `db.connectNotifications(transport)` — so a write on one instance
+  evicts caches on the others (the part most home-grown caches get wrong).
+
+```kotlin
+val reg = db.connectNotifications(
+    postgresListenNotifyTransport(host, port, database, user, password),
+)
+db.writeListeners.add { tables ->
+    if ("products" in tables) productCache.invalidateAll()
+}
+```
+
+Guidance for a cache built this way:
+
+- always add a **TTL** — notification delivery is best-effort, so a dropped signal must not pin a
+  stale entry forever;
+- invalidation is **table-granular** (evict the table's region), not per-row;
+- for a single instance you can skip the transport (local `writeListeners` is enough); add one only
+  when you run more than one instance;
+- the `cross-instance-cache` sample shows the full pattern with a Redis transport.
+
 ## Testing Strategy
 
 Recommended test layers:

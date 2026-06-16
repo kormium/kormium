@@ -6,6 +6,20 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Cross-instance change notifications (`NotificationTransport`).** Commit notifications — the
+  seam behind `kormium-observe` and app-level caches — now cross process boundaries. A
+  `NotificationTransport` carries "these tables were written" signals between separate database
+  instances, and `SuspendDatabase.connectNotifications(transport)` wires it both ways: remote
+  signals fire the local `WriteListeners` (so `kormium-observe` queries re-fire cluster-wide with
+  no change on their side), and every local commit's dirty tables are published fire-and-forget
+  (remote-delivered signals are not re-published, so instances don't echo). Ships the Postgres
+  `LISTEN/NOTIFY` transport (JVM + Native, no external dependency) and an R2DBC transport; a
+  broker-backed transport (Redis, Kafka, …) is a few lines on the interface — see the new
+  `samples/cross-instance-cache`. Delivery is best-effort (rely on a cache TTL as the safety net).
+  The shared `encodeTablePayload`/`decodeTablePayload` wire format lets JDBC and r2dbc instances
+  interoperate on one channel.
+
 ## [0.7.0] — MySQL / MariaDB engine
 
 ### Added

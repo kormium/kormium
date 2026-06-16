@@ -38,6 +38,11 @@ fun interface Registration {
 open class WriteListeners {
     private val listeners = AtomicReference<List<WriteListener>>(emptyList())
 
+    // The cross-process publish hook, set by `connectNotifications`. Kept SEPARATE from the
+    // listener list (and fired only from the local commit path, never from `fire`) so that a
+    // remote signal delivered via `fire` is NOT re-published — that would loop instances forever.
+    private val commitPublish = AtomicReference<((Set<String>) -> Unit)?>(null)
+
     /** Registers [listener]; returns a [Registration] that removes it again. */
     open fun add(listener: WriteListener): Registration {
         listeners.swap { it + listener }
@@ -56,9 +61,25 @@ open class WriteListeners {
     /** True if at least one listener is registered (lets callers skip dirty-set bookkeeping). */
     val isActive: Boolean get() = listeners.load().isNotEmpty()
 
+    /** Installs (or clears, with `null`) the cross-process publish hook. Used by `connectNotifications`. */
+    open fun setCommitPublish(hook: ((Set<String>) -> Unit)?) {
+        commitPublish.swap { hook }
+    }
+
+    /**
+     * Publishes a LOCAL commit's [tables] to the connected transport, if any. Called only from the
+     * commit path (after [fire]); the inbound/remote path uses [fire] alone, so remote signals are
+     * never echoed back out.
+     */
+    fun publishCommit(tables: Set<String>) {
+        if (tables.isEmpty()) return
+        commitPublish.load()?.invoke(tables)
+    }
+
     /** The shared no-op registry for backends that don't support write notification. */
     object Disabled : WriteListeners() {
         override fun add(listener: WriteListener): Registration = Registration {}
+        override fun setCommitPublish(hook: ((Set<String>) -> Unit)?) {}
     }
 }
 

@@ -233,6 +233,7 @@ fun <G : Catalog, R> Database<G>.transaction(block: Scope<G>.() -> R): R {
     val dirty = mutableSetOf<String>()
     val result = usePinned(transactional = true) { Scope<G>(it, config, dirty, transactional = true).block() }
     writeListeners.fire(dirty)
+    writeListeners.publishCommit(dirty)
     return result
 }
 
@@ -244,5 +245,6 @@ fun <G : Catalog, R> Database<G>.autocommit(block: Scope<G>.() -> R): R {
     val dirty = mutableSetOf<String>()
     val result = usePinned(transactional = false) { Scope<G>(it, config, dirty, transactional = false).block() }
     writeListeners.fire(dirty)
+    writeListeners.publishCommit(dirty)
     return result
 }

@@ -211,6 +211,7 @@ suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(block: suspen
     val dirty = mutableSetOf<String>()
     val result = useConnection(transactional = true) { SuspendScope<G>(it, config, dirty, transactional = true).block() }
     writeListeners.fire(dirty)
+    writeListeners.publishCommit(dirty)
     return result
 }
 
@@ -222,5 +223,6 @@ suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendAutocommit(block: suspend
     val dirty = mutableSetOf<String>()
     val result = useConnection(transactional = false) { SuspendScope<G>(it, config, dirty, transactional = false).block() }
     writeListeners.fire(dirty)
+    writeListeners.publishCommit(dirty)
     return result
 }

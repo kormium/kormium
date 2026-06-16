@@ -163,6 +163,7 @@ Runnable samples live under `samples/`:
 | `samples:crud-sqlite` | Standalone SQLite CRUD and migrations |
 | `samples:sharding` | Catalog safety and multiple database instances |
 | `samples:sqlite-cache` | SQLite cache in front of PostgreSQL |
+| `samples:cross-instance-cache` | Cross-instance cache invalidation over Redis (rethis) |
 | `samples:ktor-di` | Ktor CRUD with built-in DI |
 | `samples:ktor-koin` | Ktor CRUD with Koin |
 | `samples:r2dbc` | Ktor CRUD on async r2dbc PostgreSQL |
