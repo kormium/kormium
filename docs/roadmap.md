@@ -18,6 +18,9 @@ Shipped today:
 - typed predicates, joins and aggregations;
 - transactions, savepoints, suspend scopes and migrations;
 - reactive `Flow` queries (`kormium-observe`) over a `WriteListener` commit hook;
+- cross-process change notification via a pluggable `NotificationTransport` (the Postgres
+  `LISTEN/NOTIFY` transport ships with no external dependency), making observe — and any cache —
+  work across instances;
 - Ktor integration for explicit database passing, Ktor DI and Koin;
 - Maven Central publishing with a BOM.
 
@@ -99,6 +102,12 @@ These are useful but should not distract from core reliability:
 - Reimplementing a full SQL parser.
 - Adding every backend before the existing ones are boring.
 - Building a heavy runtime metadata system if Kotlin types already express the constraint.
+- A built-in second-level (L2) entity cache. Caching policy — what to cache, for how long, and the
+  consistency model — belongs to the application, not the ORM; a transparent cache under the DSL
+  would hide round-trips (against Kormium's explicitness) and invite silent staleness. Kormium
+  instead ships the *mechanism* a cache needs — the `WriteListener` commit hook plus cross-process
+  `NotificationTransport` — and leaves the cache itself to the app. See the production guide's
+  caching section.
 
 ## How to Use This Roadmap
 

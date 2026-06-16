@@ -23,5 +23,6 @@ include(
     "samples:repository",
     "samples:sharding",
     "samples:sqlite-cache",
+    "samples:cross-instance-cache",
     "samples:r2dbc",
 )

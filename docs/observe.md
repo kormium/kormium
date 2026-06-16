@@ -71,14 +71,45 @@ Without `invalidates`, a raw write commits normally but does not fire observers.
 
 ## Boundaries
 
-Observation sees writes made **through this database handle's API**. It does not see:
+By default, observation sees writes made **through this database handle's API**. It does not see:
 
-- writes by another process or another `Database` instance over the same database;
+- writes by another process or another `Database` instance over the same database (unless you
+  connect a notification transport — see [Cross-process](#cross-process));
 - raw SQL whose tables you did not declare via `invalidates`;
 - cascading changes from triggers or `ON DELETE CASCADE` (only the table you wrote is marked).
 
-This is the same default boundary Room has for a single in-process database. Cross-process
-invalidation (PostgreSQL `LISTEN/NOTIFY`, SQLite update hooks) is a separate, later concern.
+This is the same default boundary Room has for a single in-process database.
+
+## Cross-process
+
+To make `observe` (and any cache built on the same commit hook) re-fire when **another instance**
+commits — the multi-instance / clustered case — connect a `NotificationTransport`:
+
+```kotlin
+import io.github.kormium.connectNotifications
+import io.github.kormium.postgresListenNotifyTransport
+
+val registration = db.connectNotifications(
+    postgresListenNotifyTransport(host, port, database, user, password),
+)
+// ... later, on shutdown:
+registration.remove()
+```
+
+Once connected, every committed write is published to the transport, and signals from other
+instances are delivered into this handle's listeners exactly as a local commit would be — so the
+`Flow`s above re-fire cluster-wide with no change to the query code.
+
+Transports are pluggable. Kormium ships the Postgres `LISTEN/NOTIFY` transport with **no external
+dependency** (`postgresListenNotifyTransport` for JDBC/libpq, `r2dbcListenNotifyTransport` for
+r2dbc — both interoperate on the same channel). Backends without native pub/sub (MySQL, SQLite) use
+a broker-backed transport instead; the `cross-instance-cache` sample implements one over Redis with
+the multiplatform `rethis` client. Writing your own is two methods — see [NotificationTransport] in
+`kormium-core`.
+
+Delivery is best-effort: a transport that drops a signal (a reconnect, a network blip) won't
+re-fire observers for that commit, so anything correctness-sensitive (a cache) should also carry a
+TTL. Notifications are table-granular.
 
 ## Lifecycle
 
