@@ -2,6 +2,9 @@ package io.github.kormium
 
 import io.github.kormium.database.SuspendDatabase
 import io.github.kormium.resultset.ResultSet
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 /**
  * The suspend counterpart of [Scope], the receiver inside a [suspendTransaction] /
@@ -11,6 +14,7 @@ import io.github.kormium.resultset.ResultSet
  * the connection stays pinned. Raw SQL run through [execute] / [executeUpdate] goes to
  * the same pinned connection.
  */
+@KormiumDsl
 class SuspendScope<G : Catalog> internal constructor(
     private val exec: SuspendSqlExecutor,
     /** The owning database's configuration (e.g. the default [BatchInsertMode]). */
@@ -188,7 +192,9 @@ class SuspendScope<G : Catalog> internal constructor(
      * [IllegalStateException] (a savepoint without a surrounding transaction is a server
      * error on PostgreSQL and backend-dependent elsewhere).
      */
+    @OptIn(ExperimentalContracts::class)
     suspend fun <R> savepoint(block: suspend SuspendScope<G>.() -> R): R {
+        contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         check(transactional) { "savepoint { } requires a transaction; use suspendTransaction { }, not suspendAutocommit { }" }
         val name = "korm_sp_${savepointCounter++}"
         exec.executeUpdate("SAVEPOINT $name")
@@ -207,7 +213,9 @@ class SuspendScope<G : Catalog> internal constructor(
  * suspend while the connection stays pinned. Whether this is true async or a blocking
  * driver offloaded to a dispatcher depends on the backend's [SuspendDatabase.useConnection].
  */
+@OptIn(ExperimentalContracts::class)
 suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(block: suspend SuspendScope<G>.() -> R): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
     val result = useConnection(transactional = true) { SuspendScope<G>(it, config, dirty, transactional = true).block() }
     writeListeners.fire(dirty)
@@ -219,7 +227,9 @@ suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(block: suspen
  * Runs [block] on a pinned connection in autocommit (no surrounding transaction) — the
  * suspend counterpart of [autocommit], the cheap path for reads / single statements.
  */
+@OptIn(ExperimentalContracts::class)
 suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendAutocommit(block: suspend SuspendScope<G>.() -> R): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
     val result = useConnection(transactional = false) { SuspendScope<G>(it, config, dirty, transactional = false).block() }
     writeListeners.fire(dirty)

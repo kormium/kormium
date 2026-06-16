@@ -17,6 +17,7 @@ package io.github.kormium
  * It is a thin, ergonomic layer over [Query]: an empty block builds `Query()` (no `WHERE`,
  * no ordering, no limit/offset). [Query] stays available for reusable/prebuilt queries.
  */
+@KormiumDsl
 class QueryBuilder {
     private val conditions = mutableListOf<Expression>()
     private val orderings = LinkedHashMap<Column<*, *, *>, AscDescOrder>()
