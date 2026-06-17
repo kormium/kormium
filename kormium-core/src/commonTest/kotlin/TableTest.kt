@@ -697,6 +697,38 @@ class TableTest {
 
         db.transaction { TestTable.find(Query(not(TestTable.position eq 0))) }
         assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains("""NOT("position"=:p0)"""))
+
+        db.transaction { TestTable.find(Query(TestTable.position notInList listOf(1, 2))) }
+        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains(""""position"NOTIN(:p0,:p1)"""))
+
+        // NOT IN () matches everything, so it short-circuits to TRUE (mirror of the IN () -> FALSE case).
+        db.transaction { TestTable.find(Query(TestTable.position notInList emptyList())) }
+        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains("WHERETRUE"))
+    }
+
+    @Test
+    fun testBetweenNotLikeStringFunctionsAndVarargInList() {
+        db.transaction { TestTable.find(Query(TestTable.position between 1..5)) }
+        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains(""""position"BETWEEN:p0AND:p1"""))
+        assertEquals(mapOf("p0" to 1, "p1" to 5), databaseMockObj.internalParams)
+
+        db.transaction { TestTable.find(Query(TestTable.position.between(1, 5))) }
+        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains(""""position"BETWEEN:p0AND:p1"""))
+
+        db.transaction { TestTable.find(Query(TestTable.text notLike "a%")) }
+        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains(""""text"NOTLIKE:p0"""))
+
+        db.transaction { TestTable.find(Query(TestTable.text.lower() eq "bob")) }
+        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains("""LOWER("text")=:p0"""))
+
+        db.transaction { TestTable.find(Query(TestTable.text.upper() like "A%")) }
+        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains("""UPPER("text")LIKE:p0"""))
+
+        db.transaction { TestTable.find(Query(TestTable.position.inList(1, 2, 3))) }
+        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains(""""position"IN(:p0,:p1,:p2)"""))
+
+        db.transaction { TestTable.find(Query(TestTable.position.notInList(1, 2))) }
+        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains(""""position"NOTIN(:p0,:p1)"""))
     }
 
     @Test

@@ -127,19 +127,65 @@ class GreaterEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, ex
 infix fun <T : Expression, T2 : Expression> T.gtEq(other: T2): Expression = GreaterEqOp(this, other)
 infix fun <Z> Column<Z, *, *>.gtEq(value: Z): Expression = GreaterEqOp(this, Value(bindParam(value)))
 
-/** `column IN (v1, v2, ...)`. An empty list renders to `FALSE` (matches nothing). */
-class InListOp(private val column: Expression, private val values: List<*>) : Expression {
+/**
+ * `column IN (v1, v2, ...)`, or `NOT IN` when [negated]. An empty list short-circuits to a constant
+ * that preserves set semantics: `IN ()` matches nothing (`FALSE`), `NOT IN ()` matches everything
+ * (`TRUE`).
+ */
+class InListOp(private val column: Expression, private val values: List<*>, private val negated: Boolean = false) : Expression {
     override fun toSql(builder: ParamBuilder): String =
-        if (values.isEmpty()) "FALSE"
-        else "${column.toSql(builder)} IN (${values.joinToString(", ") { builder.bind(it) }})"
+        if (values.isEmpty()) (if (negated) "TRUE" else "FALSE")
+        else "${column.toSql(builder)} ${if (negated) "NOT IN" else "IN"} (${values.joinToString(", ") { builder.bind(it) }})"
 }
 
 infix fun <Z> Column<Z, *, *>.inList(values: List<Z>): Expression = InListOp(this, values.map { bindParam(it) })
+infix fun <Z> Column<Z, *, *>.notInList(values: List<Z>): Expression = InListOp(this, values.map { bindParam(it) }, negated = true)
 
-/** `column LIKE pattern` (text columns only). */
-class LikeOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "LIKE")
+// Vararg forms for inline literals: `Users.id.inList(1, 2, 3)` without wrapping in a list.
+fun <Z> Column<Z, *, *>.inList(vararg values: Z): Expression = InListOp(this, values.map { bindParam(it) })
+fun <Z> Column<Z, *, *>.notInList(vararg values: Z): Expression = InListOp(this, values.map { bindParam(it) }, negated = true)
+
+/** `column BETWEEN low AND high` (inclusive on both ends). */
+class BetweenOp(private val column: Expression, private val low: Expression, private val high: Expression) : Expression {
+    override fun toSql(builder: ParamBuilder): String =
+        "${column.toSql(builder)} BETWEEN ${low.toSql(builder)} AND ${high.toSql(builder)}"
+}
+
+/** `Users.age between 18..65` -> `"age" BETWEEN :p0 AND :p1` (both ends inclusive). */
+infix fun <Z : Comparable<Z>> Column<Z, *, *>.between(range: ClosedRange<Z>): Expression =
+    BetweenOp(this, Value(bindParam(range.start)), Value(bindParam(range.endInclusive)))
+
+/** `Users.price.between(low, high)`: the explicit-bounds form, for types without a `..` operator. */
+fun <Z : Comparable<Z>> Column<Z, *, *>.between(low: Z, high: Z): Expression =
+    BetweenOp(this, Value(bindParam(low)), Value(bindParam(high)))
+
+/** `column LIKE pattern`, or `NOT LIKE` (text columns only). */
+class LikeOp(expr1: Expression, expr2: Expression, negated: Boolean = false) : ComparisonOp(expr1, expr2, if (negated) "NOT LIKE" else "LIKE")
 
 infix fun Column<String, *, *>.like(pattern: String): Expression = LikeOp(this, Value(pattern))
+infix fun Column<String, *, *>.notLike(pattern: String): Expression = LikeOp(this, Value(pattern), negated = true)
+
+/**
+ * A text-valued SQL expression such as `LOWER(col)`, comparable to `String` literals via the
+ * operators below. Results stay usable anywhere an [Expression] is (e.g. compared to another
+ * column through the generic comparison operators).
+ */
+interface StringExpr : Expression
+
+private class StringFunctionOp(private val fn: String, private val arg: Expression) : StringExpr {
+    override fun toSql(builder: ParamBuilder): String = "$fn(${arg.toSql(builder)})"
+}
+
+/** `LOWER(column)` — for case-insensitive comparison: `Users.name.lower() eq "bob"`. */
+fun Column<String, *, *>.lower(): StringExpr = StringFunctionOp("LOWER", this)
+
+/** `UPPER(column)`. */
+fun Column<String, *, *>.upper(): StringExpr = StringFunctionOp("UPPER", this)
+
+infix fun StringExpr.eq(value: String): Expression = EqOp(this, Value(value))
+infix fun StringExpr.neq(value: String): Expression = NeqOp(this, Value(value))
+infix fun StringExpr.like(pattern: String): Expression = LikeOp(this, Value(pattern))
+infix fun StringExpr.notLike(pattern: String): Expression = LikeOp(this, Value(pattern), negated = true)
 
 /** `column IS NULL` / `column IS NOT NULL`. */
 class IsNullOp(private val column: Expression, private val negated: Boolean) : Expression {
