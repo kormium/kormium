@@ -6,6 +6,8 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.8.0] — Cross-instance notifications, Windows async, expression UPDATE
+
 ### Added
 - **Cross-instance change notifications (`NotificationTransport`).** Commit notifications — the
   seam behind `kormium-observe` and app-level caches — now cross process boundaries. A
