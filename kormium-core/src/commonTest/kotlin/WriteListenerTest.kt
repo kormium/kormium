@@ -69,6 +69,16 @@ class WriteListenerTest {
     }
 
     @Test
+    fun transactionContractAllowsValInitialization() {
+        // Compiles only because transaction declares callsInPlace(block, EXACTLY_ONCE):
+        // the contract lets a val be assigned inside the block and read after.
+        val (db, _) = freshDb()
+        val collected: String
+        db.transaction { collected = TestTable.tableName }
+        assertEquals("products", collected)
+    }
+
+    @Test
     fun removedListenerStopsReceiving() {
         val (db, _) = freshDb()
         var count = 0

@@ -266,6 +266,23 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql.trimIndent() to builder.params
     }
 
+    private fun updateSql(query: Query, assignments: Map<Column<*, *, *>, Expression>, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+        val builder = paramBuilder(dialect, typeMapper)
+        // Order matters: render SET (collecting binds) before WHERE so placeholders are numbered
+        // left-to-right as they appear in the statement.
+        val setClause = assignments.entries.joinToString(", ") { (column, expr) ->
+            "${dialect.quoteIdentifier(column.name)} = ${expr.toSql(builder)}"
+        }
+        // WHERE only: a plain UPDATE doesn't take ORDER BY / LIMIT / OFFSET (invalid in Postgres).
+        val queryStr = query.toWhereSql(builder)
+        val sql = """
+            UPDATE ${qualifiedTableName(dialect)}
+            SET $setClause
+           $queryStr
+        """
+        return sql.trimIndent() to builder.params
+    }
+
     private fun deleteSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         // WHERE only: a plain DELETE doesn't take ORDER BY / LIMIT / OFFSET (invalid in Postgres).
@@ -360,6 +377,11 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return exec.executeUpdate(sql = sql, namedParameters = params)
     }
 
+    internal fun updateRows(query: Query, assignments: Map<Column<*, *, *>, Expression>, exec: SqlExecutor): Long {
+        val (sql, params) = updateSql(query, assignments, exec.dialect, exec.typeMapper)
+        return exec.executeUpdate(sql = sql, namedParameters = params)
+    }
+
     internal fun deleteRows(query: Query, exec: SqlExecutor): Long {
         val (sql, params) = deleteSql(query, exec.dialect, exec.typeMapper)
         return exec.executeUpdate(sql = sql, namedParameters = params)
@@ -445,6 +467,11 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
 
     internal suspend fun updateRows(query: Query, entity: T, exec: SuspendSqlExecutor): Long {
         val (sql, params) = updateSql(query, entity, exec.dialect, exec.typeMapper)
+        return exec.executeUpdate(sql = sql, namedParameters = params)
+    }
+
+    internal suspend fun updateRows(query: Query, assignments: Map<Column<*, *, *>, Expression>, exec: SuspendSqlExecutor): Long {
+        val (sql, params) = updateSql(query, assignments, exec.dialect, exec.typeMapper)
         return exec.executeUpdate(sql = sql, namedParameters = params)
     }
 

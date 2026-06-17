@@ -19,6 +19,25 @@ All notable changes to Kormium are documented here. The format is based on
   `samples/cross-instance-cache`. Delivery is best-effort (rely on a cache TTL as the safety net).
   The shared `encodeTablePayload`/`decodeTablePayload` wire format lets JDBC and r2dbc instances
   interoperate on one channel.
+- **Expression-form `UPDATE`.** `Table.update { }` assigns a SQL [Expression] to each column, so a
+  column can be updated from its own value without raw SQL: `Posts.update { Posts.views set
+  (Posts.views + 1); where { Posts.id eq id } }` renders `SET "views" = "views" + $1`. Literals
+  (`col set false`) bind as parameters; arithmetic composes (`(col + 2) * 3`, `col * col`) and works
+  in `where` too. Complements the existing entity-patch `update(entity)` form.
+- **PostgreSQL Native: true-async on Windows too.** `WindowsSocketReactor` (WSAPoll over the
+  in-flight sockets + a loopback-UDP wake socket) gives mingwX64 the same non-blocking suspend path
+  Linux/macOS got in 0.6.0, instead of the blocking offload. Kotlin/Native doesn't expose WSAPoll
+  and a direct cinterop on `<winsock2.h>` yields empty bindings, so a project-owned `winsock_shim.h`
+  wraps the calls behind a small static-inline `ksock_*` C API that cinterop compiles into the stub
+  klib (no separate link step beyond `-lws2_32`). Verified on a native Windows host.
+
+### Changed
+- **Core: DSL scope safety (`@DslMarker`) and `EXACTLY_ONCE` contracts.** `Scope`, `SuspendScope`
+  and `QueryBuilder` are marked `@KormiumDsl`, so an outer-scope member can no longer be called
+  implicitly from inside a `find`/`count`/`update` builder block (an accidental mutation inside a
+  read block is now a compile error; reach the outer receiver deliberately with `this@transaction`).
+  `transaction`/`autocommit`/`savepoint` (sync + suspend) gained `callsInPlace(EXACTLY_ONCE)`
+  contracts, so a `val` initialised inside the block smart-casts afterwards. Both are additive.
 
 ## [0.7.0] — MySQL / MariaDB engine
 

@@ -156,6 +156,86 @@ fun Column<*, *, *>.isNotNull(): Expression = IsNullOp(this, true)
 infix fun Column<*, *, *>.eq(value: Nothing?): Expression = IsNullOp(this, false)
 infix fun Column<*, *, *>.neq(value: Nothing?): Expression = IsNullOp(this, true)
 
+/**
+ * A typed numeric operand: a [Column] participates via the operators below, and every arithmetic
+ * result is itself a [NumericExpr] of the same type [Z], so expressions chain and nest while
+ * staying type-checked (`(base + bonus) * 2`). Carrying [columnType] lets a literal on either side
+ * bind through the originating column's converter rather than a guessed mapping.
+ */
+interface NumericExpr<Z> : Expression {
+    val columnType: ColumnType<Z>
+}
+
+/**
+ * Arithmetic node: renders `left op right`, binding any literal as a parameter. A nested
+ * [ArithmeticOp] operand is parenthesized so SQL precedence matches the Kotlin expression that
+ * built it (`(a + b) * c`, not `a + b * c`).
+ */
+class ArithmeticOp<Z>(
+    private val left: Expression,
+    private val right: Expression,
+    private val opSign: String,
+    override val columnType: ColumnType<Z>,
+) : NumericExpr<Z> {
+    override fun toSql(builder: ParamBuilder): String = "${render(left, builder)} $opSign ${render(right, builder)}"
+
+    private fun render(expr: Expression, builder: ParamBuilder): String {
+        val sql = expr.toSql(builder)
+        return if (expr is ArithmeticOp<*>) "($sql)" else sql
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun <Z> ColumnType<Z>.lit(value: Z): Value = Value(if (value == null) null else (this as ColumnType<Any?>).toParam(value))
+
+// Arithmetic is generic over the column's value type Z and closed under itself: each operator takes
+// a same-typed literal `Z`, a same-typed `Column`, or another `NumericExpr<Z>`, and returns a
+// `NumericExpr<Z>`. So a wrong-typed operand is a compile error, and results nest (the left operand
+// always carries the result's column type). Usable in `WHERE` or an `update { }` `set`.
+operator fun <Z> Column<Z, *, *>.plus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "+", columnType)
+operator fun <Z> Column<Z, *, *>.plus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
+operator fun <Z> Column<Z, *, *>.plus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
+operator fun <Z> NumericExpr<Z>.plus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "+", columnType)
+operator fun <Z> NumericExpr<Z>.plus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
+operator fun <Z> NumericExpr<Z>.plus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
+
+operator fun <Z> Column<Z, *, *>.minus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "-", columnType)
+operator fun <Z> Column<Z, *, *>.minus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
+operator fun <Z> Column<Z, *, *>.minus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
+operator fun <Z> NumericExpr<Z>.minus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "-", columnType)
+operator fun <Z> NumericExpr<Z>.minus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
+operator fun <Z> NumericExpr<Z>.minus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
+
+operator fun <Z> Column<Z, *, *>.times(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "*", columnType)
+operator fun <Z> Column<Z, *, *>.times(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
+operator fun <Z> Column<Z, *, *>.times(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
+operator fun <Z> NumericExpr<Z>.times(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "*", columnType)
+operator fun <Z> NumericExpr<Z>.times(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
+operator fun <Z> NumericExpr<Z>.times(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
+
+operator fun <Z> Column<Z, *, *>.div(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "/", columnType)
+operator fun <Z> Column<Z, *, *>.div(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
+operator fun <Z> Column<Z, *, *>.div(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
+operator fun <Z> NumericExpr<Z>.div(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "/", columnType)
+operator fun <Z> NumericExpr<Z>.div(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
+operator fun <Z> NumericExpr<Z>.div(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
+
+operator fun <Z> Column<Z, *, *>.rem(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "%", columnType)
+operator fun <Z> Column<Z, *, *>.rem(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
+operator fun <Z> Column<Z, *, *>.rem(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
+operator fun <Z> NumericExpr<Z>.rem(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "%", columnType)
+operator fun <Z> NumericExpr<Z>.rem(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
+operator fun <Z> NumericExpr<Z>.rem(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
+
+// Compare a nested arithmetic expression to a same-typed literal: `(likes - dislikes) gtEq 100`.
+// (NumericExpr-vs-Column/Expression already works through the generic comparison operators.)
+infix fun <Z> NumericExpr<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
+infix fun <Z> NumericExpr<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
+infix fun <Z> NumericExpr<Z>.less(value: Z): Expression = LessOp(this, columnType.lit(value))
+infix fun <Z> NumericExpr<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
+infix fun <Z> NumericExpr<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
+infix fun <Z> NumericExpr<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
+
 /** Groups an expression in parentheses so it composes safely with surrounding `AND`/`OR`. */
 class ParenExpression(private val expr: Expression) : Expression {
     override fun toSql(builder: ParamBuilder): String = "(${expr.toSql(builder)})"

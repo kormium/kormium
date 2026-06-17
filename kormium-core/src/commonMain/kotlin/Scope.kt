@@ -2,6 +2,9 @@ package io.github.kormium
 
 import io.github.kormium.database.Database
 import io.github.kormium.resultset.ResultSet
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 /**
  * The receiver inside a [transaction] / [autocommit] block. It pins one connection
@@ -9,6 +12,7 @@ import io.github.kormium.resultset.ResultSet
  * so using a table from a different catalog is a compile error. Raw SQL run through
  * [execute] / [executeUpdate] goes to the same pinned connection.
  */
+@KormiumDsl
 class Scope<G : Catalog> internal constructor(
     private val exec: SqlExecutor,
     /** The owning database's configuration (e.g. the default [BatchInsertMode]). */
@@ -110,6 +114,18 @@ class Scope<G : Catalog> internal constructor(
         return updateRows(QueryBuilder().apply(block).build(), entity, exec)
     }
 
+    /**
+     * Expression form of [update]: assign each column a SQL [Expression], enabling atomic
+     * self-referential updates without raw SQL — `Posts.views set (Posts.views + 1)`. Multiple
+     * `where { }` blocks AND together; an empty `where` updates every row. Returns the affected
+     * row count. See [UpdateBuilder].
+     */
+    fun <T : Entity> Table<G, T>.update(block: UpdateBuilder.() -> Unit): Long {
+        markWritten()
+        val builder = UpdateBuilder().apply(block)
+        return updateRows(builder.buildWhere(), builder.buildAssignments(), exec)
+    }
+
     /** Deletes rows matching [query]; returns the affected row count. */
     fun <T : Entity> Table<G, T>.deleteWhere(query: Query): Long {
         markWritten()
@@ -209,7 +225,9 @@ class Scope<G : Catalog> internal constructor(
      * [IllegalStateException] (a savepoint without a surrounding transaction is a server
      * error on PostgreSQL and backend-dependent elsewhere).
      */
+    @OptIn(ExperimentalContracts::class)
     fun <R> savepoint(block: Scope<G>.() -> R): R {
+        contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         check(transactional) { "savepoint { } requires a transaction; use transaction { }, not autocommit { }" }
         val name = "korm_sp_${savepointCounter++}"
         exec.executeUpdate("SAVEPOINT $name")
@@ -228,7 +246,9 @@ class Scope<G : Catalog> internal constructor(
  * catalog [G]. Calling another database's `transaction` inside opens an independent
  * transaction (separate connection); use [Scope.savepoint] for a nested unit.
  */
+@OptIn(ExperimentalContracts::class)
 fun <G : Catalog, R> Database<G>.transaction(block: Scope<G>.() -> R): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     // The dirty-table set outlives the block so we can fire it after the commit returns.
     val dirty = mutableSetOf<String>()
     val result = usePinned(transactional = true) { Scope<G>(it, config, dirty, transactional = true).block() }
@@ -241,7 +261,9 @@ fun <G : Catalog, R> Database<G>.transaction(block: Scope<G>.() -> R): R {
  * Runs [block] on a pinned connection in autocommit (no surrounding transaction) —
  * the cheap path for reads / single statements.
  */
+@OptIn(ExperimentalContracts::class)
 fun <G : Catalog, R> Database<G>.autocommit(block: Scope<G>.() -> R): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
     val result = usePinned(transactional = false) { Scope<G>(it, config, dirty, transactional = false).block() }
     writeListeners.fire(dirty)
