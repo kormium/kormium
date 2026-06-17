@@ -119,7 +119,7 @@ module details.
 
 | Platform | PostgreSQL | SQLite | Notes |
 | --- | --- | --- | --- |
-| JVM | JDBC/HikariCP; async r2dbc | sqlite-jdbc | Main server target |
+| JVM | JDBC/HikariCP; async r2dbc | sqlite-jdbc | The most stable server target |
 | Linux Native | libpq | sqlite3 | Covered by CI native tests |
 | macOS Native | libpq | sqlite3 | Published artifacts for x64 and arm64 |
 | Android | Not shipped | AndroidX SQLite | `kormium-core` and `kormium-sqlite` compile for Android |

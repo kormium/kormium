@@ -25,15 +25,22 @@ class User : Entity() {
 
 ## Create Tables and Indexes
 
-Kormium does not own schema; create it with raw SQL or a migration tool.
+Kormium does not manage the database schema automatically, but provides a built-in migration tool. It is recommended to use the kormium-migrate module for schema management.
 
 ```kotlin
-db.transaction {
-    executeUpdate(
-        """CREATE TABLE IF NOT EXISTS "users" ("id" uuid NOT NULL, "email" text NOT NULL, "name" text NOT NULL, "deletedAt" timestamptz, PRIMARY KEY ("id"))""",
+db.migrate(
+    listOf(
+        Migration(
+            "001-init",
+            """
+            CREATE TABLE "users" (
+                "id" uuid PRIMARY KEY,
+                "name" text NOT NULL
+            );
+            """
+        )
     )
-    executeUpdate("""CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON "users" ("email")""")
-}
+)
 ```
 
 ## Foreign Keys and Check Constraints
