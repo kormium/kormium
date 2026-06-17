@@ -114,6 +114,18 @@ class Scope<G : Catalog> internal constructor(
         return updateRows(QueryBuilder().apply(block).build(), entity, exec)
     }
 
+    /**
+     * Expression form of [update]: assign each column a SQL [Expression], enabling atomic
+     * self-referential updates without raw SQL — `Posts.views set (Posts.views + 1)`. Multiple
+     * `where { }` blocks AND together; an empty `where` updates every row. Returns the affected
+     * row count. See [UpdateBuilder].
+     */
+    fun <T : Entity> Table<G, T>.update(block: UpdateBuilder.() -> Unit): Long {
+        markWritten()
+        val builder = UpdateBuilder().apply(block)
+        return updateRows(builder.buildWhere(), builder.buildAssignments(), exec)
+    }
+
     /** Deletes rows matching [query]; returns the affected row count. */
     fun <T : Entity> Table<G, T>.deleteWhere(query: Query): Long {
         markWritten()

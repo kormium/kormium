@@ -96,6 +96,13 @@ class SuspendScope<G : Catalog> internal constructor(
         return updateRows(QueryBuilder().apply(block).build(), entity, exec)
     }
 
+    /** Expression form of [update]: `Posts.views set (Posts.views + 1)`; see [Scope.update]. */
+    suspend fun <T : Entity> Table<G, T>.update(block: UpdateBuilder.() -> Unit): Long {
+        markWritten()
+        val builder = UpdateBuilder().apply(block)
+        return updateRows(builder.buildWhere(), builder.buildAssignments(), exec)
+    }
+
     /** Deletes rows matching [query]; returns the affected row count. */
     suspend fun <T : Entity> Table<G, T>.deleteWhere(query: Query): Long {
         markWritten()

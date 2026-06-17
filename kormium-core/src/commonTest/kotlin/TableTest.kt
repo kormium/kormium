@@ -226,6 +226,66 @@ class TableTest {
     }
 
     @Test
+    fun testExpressionUpdateAtomicIncrement() {
+        val uuid = Uuid.random()
+        databaseMockObj.result = 1L
+        val affected = db.transaction {
+            TestTable.update {
+                TestTable.position set (TestTable.position + 1)
+                where { TestTable.id eq uuid }
+            }
+        }
+        assertEquals(1L, affected)
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains("""UPDATE"products"SET"position"="position"+:p0"""), sql)
+        assertTrue(sql.contains("""WHERE"id"=:p1"""), sql)
+        assertEquals(1, databaseMockObj.internalParams["p0"])
+        databaseMockObj.result = null
+    }
+
+    @Test
+    fun testExpressionUpdateNestedArithmeticAndMixedAssignments() {
+        databaseMockObj.result = 1L
+        db.transaction {
+            TestTable.update {
+                TestTable.position set ((TestTable.position + 2) * 3)
+                TestTable.text set "x"
+            }
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        // The nested arithmetic operand is parenthesized; assignments keep their order.
+        assertTrue(sql.contains("""SET"position"=("position"+:p0)*:p1,"text"=:p2"""), sql)
+        databaseMockObj.result = null
+    }
+
+    @Test
+    fun testExpressionUpdateColumnTimesColumn() {
+        databaseMockObj.result = 1L
+        db.transaction { TestTable.update { TestTable.position set (TestTable.position * TestTable.position) } }
+        assertTrue(
+            remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains("""SET"position"="position"*"position""""),
+            databaseMockObj.internalSql,
+        )
+        databaseMockObj.result = null
+    }
+
+    @Test
+    fun testArithmeticInWhereClause() {
+        db.transaction { TestTable.find { where { (TestTable.position + 1) gtEq 10 } } }
+        assertTrue(
+            remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains(""""position"+:p0>=:p1"""),
+            databaseMockObj.internalSql,
+        )
+    }
+
+    @Test
+    fun testExpressionUpdateRejectsEmptySet() {
+        assertFailsWith<IllegalArgumentException> {
+            db.transaction { TestTable.update { where { TestTable.id eq Uuid.random() } } }
+        }
+    }
+
+    @Test
     fun testDeleteBlockDslReturnsAffectedRows() {
         databaseMockObj.result = 2L
         val affected = db.transaction { TestTable.deleteWhere { where { TestTable.position eq 5 } } }
