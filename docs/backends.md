@@ -133,6 +133,44 @@ val db: SuspendDatabase<App> = createR2dbcDatabase(
 `kormium-r2dbc` is JVM-only and implements the suspend API only. It is the backend to choose
 when you need true non-blocking PostgreSQL I/O.
 
+## Backend behavior matrix
+
+The DSL is uniform, but a few operations resolve to backend-specific SQL or surface
+backend-specific errors. This table documents the differences so they are visible rather than
+hidden behind a generic failure. Each row is covered by edge-case tests
+(`EdgeCaseTest` / `QueryCoverageTest` and the per-backend `*EdgeCaseTest` / `*QueryCoverageTest`).
+
+| Behavior | PostgreSQL (JVM/Native) | r2dbc PostgreSQL | SQLite | MySQL / MariaDB |
+| --- | --- | --- | --- | --- |
+| `insert(returning = true)` | Native `INSERT ... RETURNING` | Native `INSERT ... RETURNING` | Native `INSERT ... RETURNING` | No `RETURNING`; the insert runs, then the row is re-selected (`supportsReturning = false`) |
+| `upsert` (single & composite conflict) | `ON CONFLICT (...) DO UPDATE` | `ON CONFLICT (...) DO UPDATE` | `ON CONFLICT (...) DO UPDATE` | `ON DUPLICATE KEY UPDATE` (the conflict columns must back a key) |
+| `insertOrIgnore` | `ON CONFLICT (...) DO NOTHING` | `ON CONFLICT (...) DO NOTHING` | `ON CONFLICT (...) DO NOTHING` | `INSERT IGNORE` |
+| `savepoint { }` nesting/rollback | `SAVEPOINT` / `ROLLBACK TO SAVEPOINT` | same, over the reactive connection | `SAVEPOINT` / `ROLLBACK TO SAVEPOINT` | `SAVEPOINT` / `ROLLBACK TO SAVEPOINT` |
+| `savepoint` outside a transaction | throws `IllegalStateException` (checked before any SQL) | same | same | same |
+| Nullable left-join projection | unmatched right side is `null` (`Pair<A, B?>`); `row[col]` throws, `row.getOrNull(col)` is `null` | same | same | same |
+| Colliding join column names | qualified `"table"."col"` keeps each side distinct | same | same | same |
+| Empty `IN ()` list | matches nothing (no row) | same | same | same |
+
+### Constraint-violation mapping
+
+All backends map integrity violations to the same typed exceptions
+(`UniqueViolationException`, `ForeignKeyViolationException`, `NotNullViolationException`,
+`CheckViolationException`, all extending `QueryException`). What differs is the **source code**
+carried in `QueryException.sqlState`:
+
+| Violation | Exception | PostgreSQL / r2dbc (SQLSTATE) | SQLite (extended result code) | MySQL (vendor code) |
+| --- | --- | --- | --- | --- |
+| Unique / primary key | `UniqueViolationException` | `23505` | `2067` / `1555` | `1062` |
+| Foreign key | `ForeignKeyViolationException` | `23503` | `787` | `1452` |
+| Not null | `NotNullViolationException` | `23502` | `1299` | `1048` |
+| Check | `CheckViolationException` | `23514` | `275` | `3819` |
+
+PostgreSQL and r2dbc report a real 5-character SQLSTATE. SQLite has no SQLSTATE, so the mapper
+keys off the extended result code (carried in `sqlState` as a decimal string) and falls back to
+the stable message text. MySQL reports every constraint violation under SQLSTATE `23000`, so the
+mapper keys off the vendor error number instead. Foreign-key enforcement on SQLite requires
+`PRAGMA foreign_keys=ON`, which Kormium sets on every connection.
+
 ## Type Mapping
 
 Kormium's common column types map through backend-specific SQL types:

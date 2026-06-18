@@ -1,4 +1,5 @@
 import io.github.kormium.Catalog
+import io.github.kormium.CheckViolationException
 import io.github.kormium.Column
 import io.github.kormium.Entity
 import io.github.kormium.ForeignKeyViolationException
@@ -7,6 +8,7 @@ import io.github.kormium.Query
 import io.github.kormium.Table
 import io.github.kormium.UniqueViolationException
 import io.github.kormium.Value
+import io.github.kormium.and
 import io.github.kormium.autocommit
 import io.github.kormium.avg
 import io.github.kormium.count
@@ -25,6 +27,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
@@ -51,6 +54,8 @@ class QueryCoverageTest {
             QcSales.execSql(qcSalesDdl)
             QcUnique.execSql(qcUniqueDdl)
             QcNotNull.execSql(qcNotNullDdl)
+            QcCheck.execSql(qcCheckDdl)
+            QcUpsert.execSql(qcUpsertDdl)
             executeUpdate("CREATE TABLE IF NOT EXISTS qc_fk_parent (id uuid PRIMARY KEY)")
             executeUpdate(
                 "CREATE TABLE IF NOT EXISTS qc_fk_child (" +
@@ -239,6 +244,83 @@ class QueryCoverageTest {
         }
         assertEquals("23503", ex.sqlState)
     }
+
+    /** CHECK constraint violation maps to CheckViolationException carrying SQLSTATE 23514. */
+    @Test
+    fun checkConstraintViolationIsTyped() {
+        val ex = assertFailsWith<CheckViolationException> {
+            ItDatabase.transaction {
+                QcCheck.insert(QcCheckRow().apply { id = Uuid.random(); amount = -1 })
+            }
+        }
+        assertEquals("23514", ex.sqlState)
+    }
+
+    // ---- 4. Composite-conflict upsert / insertOrIgnore -------------------------------------
+
+    /**
+     * `upsert` / `insertOrIgnore` with a *composite* conflict target ((tenant, sku)): the first
+     * write inserts, the second collides on both columns and is routed to DO UPDATE / DO NOTHING.
+     */
+    @Test
+    fun compositeConflictUpsertAndInsertOrIgnore() {
+        val tenant = Uuid.random()
+        val sku = "sku-${Uuid.random()}"
+        ItDatabase.transaction {
+            QcUpsert.upsert(
+                entity = QcUpsertRow().apply { this.tenant = tenant; this.sku = sku; qty = 1 },
+                onConflict = listOf(QcUpsert.tenant, QcUpsert.sku),
+                update = QcUpsertRow().apply { qty = 1 },
+            )
+        }
+        // Conflict on the full (tenant, sku) pair → DO UPDATE applies the patch.
+        ItDatabase.transaction {
+            QcUpsert.upsert(
+                entity = QcUpsertRow().apply { this.tenant = tenant; this.sku = sku; qty = 99 },
+                onConflict = listOf(QcUpsert.tenant, QcUpsert.sku),
+                update = QcUpsertRow().apply { qty = 5 },
+            )
+        }
+        assertEquals(5, ItDatabase.autocommit {
+            QcUpsert.find { where { (QcUpsert.tenant eq tenant) and (QcUpsert.sku eq sku) } }
+        }.single().qty)
+
+        // insertOrIgnore: same composite key → 0 rows; a fresh sku → 1 row.
+        assertEquals(0L, ItDatabase.transaction {
+            QcUpsert.insertOrIgnore(
+                QcUpsertRow().apply { this.tenant = tenant; this.sku = sku; qty = 123 },
+                onConflict = listOf(QcUpsert.tenant, QcUpsert.sku),
+            )
+        })
+        assertEquals(1L, ItDatabase.transaction {
+            QcUpsert.insertOrIgnore(
+                QcUpsertRow().apply { this.tenant = tenant; this.sku = "$sku-2"; qty = 1 },
+                onConflict = listOf(QcUpsert.tenant, QcUpsert.sku),
+            )
+        })
+        ItDatabase.transaction { QcUpsert.deleteWhere(Query(QcUpsert.tenant eq tenant)) }
+    }
+
+    // ---- 5. Block DSL equivalence with an explicit Query ----------------------------------
+
+    /** `find { where { ... } }` must return exactly what the explicit `find(Query(...))` does. */
+    @Test
+    fun blockDslEqualsExplicitQuery() {
+        val tag = "eq-${Uuid.random()}"
+        ItDatabase.transaction {
+            QcSales.insertAll(listOf(7, 8).map { amt ->
+                QcSale().apply { id = Uuid.random(); region = tag; amount = amt }
+            })
+        }
+        val viaQuery = ItDatabase.autocommit { QcSales.find(Query(QcSales.region eq tag)) }
+            .map { it.amount }.sorted()
+        val viaBlock = ItDatabase.autocommit { QcSales.find { where { QcSales.region eq tag } } }
+            .map { it.amount }.sorted()
+        assertEquals(viaQuery, viaBlock)
+        assertEquals(listOf(7, 8), viaBlock)
+        assertNull(ItDatabase.autocommit { QcSales.find { where { QcSales.region eq "nope-$tag" } } }.firstOrNull())
+        ItDatabase.transaction { QcSales.deleteWhere(Query(QcSales.region eq tag)) }
+    }
 }
 
 // dept and emp deliberately share the column names "id" and "name".
@@ -306,9 +388,37 @@ object QcNotNull : Table<ItCatalog, QcNotNullRow>("qc_notnull", ::QcNotNullRow) 
     init { id; label }
 }
 
+class QcCheckRow : Entity() {
+    var id by QcCheck.id
+    var amount by QcCheck.amount
+}
+
+object QcCheck : Table<ItCatalog, QcCheckRow>("qc_check", ::QcCheckRow) {
+    val id by Column.UUID().primaryKey()
+    val amount by Column.Int()
+
+    init { id; amount }
+}
+
+class QcUpsertRow : Entity() {
+    var tenant by QcUpsert.tenant
+    var sku by QcUpsert.sku
+    var qty by QcUpsert.qty
+}
+
+object QcUpsert : Table<ItCatalog, QcUpsertRow>("qc_upsert", ::QcUpsertRow) {
+    val tenant by Column.UUID()
+    val sku by Column.Text()
+    val qty by Column.Int()
+
+    init { tenant; sku; qty }
+}
+
 // Raw schema DDL (Kormium does not own schema management). Postgres types.
 private val qcDeptsDdl = """CREATE TABLE IF NOT EXISTS "qc_depts" ("id" uuid NOT NULL, "name" text NOT NULL, PRIMARY KEY ("id"))"""
 private val qcEmpsDdl = """CREATE TABLE IF NOT EXISTS "qc_emps" ("id" uuid NOT NULL, "deptId" uuid NOT NULL, "name" text NOT NULL, PRIMARY KEY ("id"))"""
 private val qcSalesDdl = """CREATE TABLE IF NOT EXISTS "qc_sales" ("id" uuid NOT NULL, "region" text NOT NULL, "amount" integer NOT NULL, PRIMARY KEY ("id"))"""
 private val qcUniqueDdl = """CREATE TABLE IF NOT EXISTS "qc_unique" ("id" uuid NOT NULL, "email" text NOT NULL UNIQUE, PRIMARY KEY ("id"))"""
 private val qcNotNullDdl = """CREATE TABLE IF NOT EXISTS "qc_notnull" ("id" uuid NOT NULL, "label" text NOT NULL, PRIMARY KEY ("id"))"""
+private val qcCheckDdl = """CREATE TABLE IF NOT EXISTS "qc_check" ("id" uuid NOT NULL, "amount" integer NOT NULL CHECK ("amount" >= 0), PRIMARY KEY ("id"))"""
+private val qcUpsertDdl = """CREATE TABLE IF NOT EXISTS "qc_upsert" ("tenant" uuid NOT NULL, "sku" text NOT NULL, "qty" integer NOT NULL, UNIQUE ("tenant", "sku"))"""

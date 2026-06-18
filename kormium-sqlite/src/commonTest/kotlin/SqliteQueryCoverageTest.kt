@@ -1,4 +1,5 @@
 import io.github.kormium.Catalog
+import io.github.kormium.CheckViolationException
 import io.github.kormium.Column
 import io.github.kormium.Entity
 import io.github.kormium.ForeignKeyViolationException
@@ -288,6 +289,18 @@ class SqliteQueryCoverageTest {
             }
         }
     }
+
+    /** A CHECK constraint maps to CheckViolationException. */
+    @Test
+    fun checkConstraintViolationIsTyped() {
+        db.transaction { QcCheck.execSql(qcCheckDdl) }
+        val ex = assertFailsWith<CheckViolationException> {
+            db.transaction {
+                QcCheck.insert(QcCheckRow().apply { id = Uuid.random(); amount = -1 })
+            }
+        }
+        assertTrue(ex.sqlState != null, "a mapped check violation should carry a sqlState code")
+    }
 }
 
 object QcCatalog : Catalog
@@ -357,9 +370,22 @@ object QcNotNull : Table<QcCatalog, QcNotNullRow>("qc_notnull", ::QcNotNullRow) 
     init { id; label }
 }
 
+class QcCheckRow : Entity() {
+    var id by QcCheck.id
+    var amount by QcCheck.amount
+}
+
+object QcCheck : Table<QcCatalog, QcCheckRow>("qc_check", ::QcCheckRow) {
+    val id by Column.UUID().primaryKey()
+    val amount by Column.Int()
+
+    init { id; amount }
+}
+
 // Raw schema DDL (Kormium does not own schema management). SQLite type affinity.
 internal val qcDeptsDdl = """CREATE TABLE IF NOT EXISTS "qc_depts" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, PRIMARY KEY ("id"))"""
 internal val qcEmpsDdl = """CREATE TABLE IF NOT EXISTS "qc_emps" ("id" TEXT NOT NULL, "deptId" TEXT NOT NULL, "name" TEXT NOT NULL, PRIMARY KEY ("id"))"""
 internal val qcSalesDdl = """CREATE TABLE IF NOT EXISTS "qc_sales" ("id" TEXT NOT NULL, "region" TEXT NOT NULL, "amount" INTEGER NOT NULL, PRIMARY KEY ("id"))"""
 internal val qcUniqueDdl = """CREATE TABLE IF NOT EXISTS "qc_unique" ("id" TEXT NOT NULL, "email" TEXT NOT NULL UNIQUE, PRIMARY KEY ("id"))"""
 internal val qcNotNullDdl = """CREATE TABLE IF NOT EXISTS "qc_notnull" ("id" TEXT NOT NULL, "label" TEXT NOT NULL, PRIMARY KEY ("id"))"""
+internal val qcCheckDdl = """CREATE TABLE IF NOT EXISTS "qc_check" ("id" TEXT NOT NULL, "amount" INTEGER NOT NULL CHECK ("amount" >= 0), PRIMARY KEY ("id"))"""

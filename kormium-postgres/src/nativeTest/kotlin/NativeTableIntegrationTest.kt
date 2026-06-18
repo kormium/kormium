@@ -1,10 +1,13 @@
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.Catalog
+import io.github.kormium.CheckViolationException
 import io.github.kormium.Column
 import io.github.kormium.Entity
+import io.github.kormium.ForeignKeyViolationException
 import io.github.kormium.Query
 import io.github.kormium.SqlParameterSource
 import io.github.kormium.UniqueViolationException
+import io.github.kormium.and
 import io.github.kormium.autocommit
 import io.github.kormium.Table
 import io.github.kormium.database.Database
@@ -164,6 +167,107 @@ class NativeTableIntegrationTest {
         NativeDatabase.transaction { NativeProducts.deleteWhere(Query(NativeProducts.id eq id)) }
     }
 
+    /** A throwing inner SAVEPOINT rolls back only its work; the outer row survives the commit. */
+    @Test
+    fun testNestedSavepointRollsBackInnerWork() {
+        if (env("KORMIUM_DB_HOST") == null) {
+            println("KORMIUM_DB_HOST not set — skipping native integration test")
+            return
+        }
+        val keep = Uuid.random()
+        val inner = Uuid.random()
+        NativeDatabase.transaction {
+            NativeProducts.insert(NativeProduct().apply {
+                this.id = keep; this.price = BigDecimal.fromInt(1); this.qty = 1
+                this.displayName = "keep"; this.note = null; this.rank = null
+            })
+            runCatching {
+                savepoint {
+                    NativeProducts.insert(NativeProduct().apply {
+                        this.id = inner; this.price = BigDecimal.fromInt(1); this.qty = 2
+                        this.displayName = "doomed"; this.note = null; this.rank = null
+                    })
+                    throw RuntimeException("boom")
+                }
+            }
+        }
+        assertEquals(keep, NativeDatabase.autocommit { NativeProducts.findById(keep) }?.id)
+        assertNull(NativeDatabase.autocommit { NativeProducts.findById(inner) })
+        NativeDatabase.transaction { NativeProducts.deleteWhere(Query(NativeProducts.id eq keep)) }
+    }
+
+    /** Composite-conflict upsert/insertOrIgnore route to DO UPDATE / DO NOTHING on (tenant, sku). */
+    @Test
+    fun testCompositeConflictUpsertAndInsertOrIgnore() {
+        if (env("KORMIUM_DB_HOST") == null) {
+            println("KORMIUM_DB_HOST not set — skipping native integration test")
+            return
+        }
+        val tenant = Uuid.random()
+        val sku = "sku-${Uuid.random()}"
+        NativeDatabase.transaction {
+            executeUpdate(
+                """CREATE TABLE IF NOT EXISTS public.native_upsert (""" +
+                    """tenant uuid NOT NULL, sku text NOT NULL, qty int NOT NULL, UNIQUE (tenant, sku))"""
+            )
+            NativeUpsert.upsert(
+                entity = NativeUpsertRow().apply { this.tenant = tenant; this.sku = sku; qty = 1 },
+                onConflict = listOf(NativeUpsert.tenant, NativeUpsert.sku),
+                update = NativeUpsertRow().apply { qty = 1 },
+            )
+            NativeUpsert.upsert(
+                entity = NativeUpsertRow().apply { this.tenant = tenant; this.sku = sku; qty = 99 },
+                onConflict = listOf(NativeUpsert.tenant, NativeUpsert.sku),
+                update = NativeUpsertRow().apply { qty = 5 },
+            )
+        }
+        assertEquals(5, NativeDatabase.autocommit {
+            NativeUpsert.find(Query((NativeUpsert.tenant eq tenant) and (NativeUpsert.sku eq sku)))
+        }.single().qty)
+        assertEquals(0L, NativeDatabase.transaction {
+            NativeUpsert.insertOrIgnore(
+                NativeUpsertRow().apply { this.tenant = tenant; this.sku = sku; qty = 7 },
+                onConflict = listOf(NativeUpsert.tenant, NativeUpsert.sku),
+            )
+        })
+        NativeDatabase.transaction { NativeUpsert.deleteWhere(Query(NativeUpsert.tenant eq tenant)) }
+    }
+
+    /** CHECK / FK violations surface as the typed exceptions carrying their SQLSTATE. */
+    @Test
+    fun testCheckAndForeignKeyViolationsAreTyped() {
+        if (env("KORMIUM_DB_HOST") == null) {
+            println("KORMIUM_DB_HOST not set — skipping native integration test")
+            return
+        }
+        NativeDatabase.transaction {
+            executeUpdate(
+                """CREATE TABLE IF NOT EXISTS public.native_check (""" +
+                    """id uuid PRIMARY KEY, amount int NOT NULL CHECK (amount >= 0))"""
+            )
+            executeUpdate("""CREATE TABLE IF NOT EXISTS public.native_fk_parent (id uuid PRIMARY KEY)""")
+            executeUpdate(
+                """CREATE TABLE IF NOT EXISTS public.native_fk_child (""" +
+                    """id uuid PRIMARY KEY, parent_id uuid REFERENCES public.native_fk_parent(id))"""
+            )
+        }
+        val check = assertFailsWith<CheckViolationException> {
+            NativeDatabase.transaction {
+                NativeCheck.insert(NativeCheckRow().apply { id = Uuid.random(); amount = -1 })
+            }
+        }
+        assertEquals("23514", check.sqlState)
+        val fk = assertFailsWith<ForeignKeyViolationException> {
+            NativeDatabase.transaction {
+                executeUpdate(
+                    "INSERT INTO public.native_fk_child (id, parent_id) VALUES (:id::uuid, :p::uuid)",
+                    mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                )
+            }
+        }
+        assertEquals("23503", fk.sqlState)
+    }
+
     /**
      * End-to-end date/time reads against real Postgres text output. timestamptz is rendered
      * with an hours-only `+00` offset under UTC, which the old fixed-index parser could not
@@ -276,6 +380,32 @@ class NativeProduct : Entity() {
 }
 
 object NativeCatalog : Catalog
+
+class NativeUpsertRow : Entity() {
+    var tenant by NativeUpsert.tenant
+    var sku by NativeUpsert.sku
+    var qty by NativeUpsert.qty
+}
+
+object NativeUpsert : Table<NativeCatalog, NativeUpsertRow>("native_upsert", ::NativeUpsertRow) {
+    val tenant by Column.UUID()
+    val sku by Column.Text()
+    val qty by Column.Int()
+
+    init { tenant; sku; qty }
+}
+
+class NativeCheckRow : Entity() {
+    var id by NativeCheck.id
+    var amount by NativeCheck.amount
+}
+
+object NativeCheck : Table<NativeCatalog, NativeCheckRow>("native_check", ::NativeCheckRow) {
+    val id by Column.UUID().primaryKey()
+    val amount by Column.Int()
+
+    init { id; amount }
+}
 
 object NativeProducts : Table<NativeCatalog, NativeProduct>("native_products", ::NativeProduct) {
     val id by Column.UUID()
