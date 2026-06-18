@@ -17,18 +17,61 @@ Today Kormium has:
 
 - typed exceptions for common constraint failures;
 - backend-specific exception translation for JDBC, r2dbc, SQLite and libpq paths;
+- a public per-statement query observer (`KormiumConfig.queryObserver`) — see
+  [Query Observer](#query-observer) below;
 - some internal trace logging through kotlin-logging;
 - HikariCP underneath JVM JDBC backends, which has its own metrics integrations if the
   application configures them.
 
 Current gaps:
 
-- no public query listener/interceptor;
-- no stable slow query logging;
-- no built-in parameter redaction policy;
-- no common metrics contract across backends;
+- no stable slow query logging helper (the observer makes it a one-liner, but there is no
+  built-in threshold/logger);
+- no built-in parameter redaction policy beyond "values are never exposed";
+- no turn-key metrics bridge (the observer is the seam; no shipped Micrometer/OTel adapter);
 - no documented pool metrics story;
 - no request/correlation context story.
+
+## Query Observer
+
+`KormiumConfig.queryObserver` is a single, backend-neutral hook called once per executed
+statement — DSL operations, raw `execute`/`executeUpdate`, and migrations — across every backend
+(JDBC, r2dbc, SQLite, libpq). It is installed only when set, so the default path wraps nothing
+and pays nothing.
+
+```kotlin
+val db = createDatabase(
+    host = "localhost", database = "postgres", user = "postgres", password = "password",
+    config = KormiumConfig(
+        queryObserver = { e ->
+            meterRegistry.timer("kormium.query.duration", "backend", e.backend, "kind", e.kind.name,
+                "outcome", if (e.succeeded) "ok" else "error")
+                .record(e.durationNanos, TimeUnit.NANOSECONDS)
+            if (!e.succeeded) errorCounter.increment(e.sqlState ?: "unknown")
+            if (e.durationNanos > 250_000_000) slowLog.warn("slow ${e.kind} ${e.durationNanos / 1_000_000}ms: ${e.sql}")
+        },
+    ),
+)
+```
+
+Each `QueryEvent` carries:
+
+| Field | Meaning |
+| --- | --- |
+| `backend` | dialect tag (e.g. `SqliteDialect`, `PostgresDialect`) — a low-cardinality metric label |
+| `sql` | the parameterized SQL template — **placeholders only, never bound values** |
+| `kind` | `Select` / `Insert` / `Update` / `Delete` / `Other`, derived from the leading keyword |
+| `durationNanos` | monotonic wall-clock duration of the statement |
+| `rowCount` | rows returned (queries) or affected (writes) when the backend reports one, else `null` |
+| `error` / `succeeded` | the failure that ended the statement, or `null` on success |
+| `sqlState` | SQLSTATE / backend error code when the failure carried one |
+
+Rules the hook guarantees:
+
+- **Parameter values are never present on the event** — redaction is by construction, not policy.
+- **A throwing observer never affects the query** — exceptions from the callback are swallowed.
+- The callback runs **synchronously** on the executing thread; keep it cheap (record/enqueue/log).
+- `sql` is high-cardinality — use `backend` + `kind` as metric labels, not the SQL text.
 
 ## Principles
 
@@ -90,7 +133,9 @@ Events should carry:
 - exception type and SQLSTATE/error code on failure.
 
 This does not need to be the final API, but it defines the contract that docs and tests
-should eventually cover.
+should eventually cover. The shipped [Query Observer](#query-observer) is the minimal first
+cut of this contract: one `onQuery(QueryEvent)` callback covering success and failure, without
+the separate start/transaction events or pluggable parameter redaction yet.
 
 ## Slow Query Logging
 
@@ -157,13 +202,14 @@ Failures should be easy to classify:
 Before recommending Kormium for production, observability should have:
 
 - documented exception taxonomy;
-- no parameter values in logs by default;
-- slow query logging story;
-- query timing hook or metrics bridge;
+- no parameter values in logs by default — **done**: `queryObserver` never receives values;
+- slow query logging story — **partial**: trivial to build on `queryObserver`, no built-in helper;
+- query timing hook or metrics bridge — **done** (hook): `KormiumConfig.queryObserver`; no shipped
+  metrics adapter yet;
 - pool metrics guide for JDBC/HikariCP;
 - examples for Ktor `StatusPages`;
-- tests proving observers run on success and failure (the `WriteListener` commit hook now
-  exists — see below).
+- tests proving observers run on success and failure — **done**: covered for the query observer
+  (core + SQLite) and the `WriteListener` commit hook (see below).
 
 ## Write Notification
 
@@ -183,11 +229,12 @@ see [Observing changes](observe.md#raw-sql).
 
 ## Current Recommendation
 
-For timing and pool metrics (not yet covered by a built-in API):
+For query timing and failure metrics:
 
+- set `KormiumConfig.queryObserver` and forward events to your metrics/logging stack — this
+  replaces wrapping every repository method (see [Query Observer](#query-observer));
 - rely on typed exceptions for application-level handling;
-- configure HikariCP metrics directly for JVM JDBC pool visibility;
-- use database-native tools for slow query analysis;
-- avoid enabling trace logs in environments where parameter values may contain sensitive
-  data;
-- wrap Kormium calls at your application boundary if you need timings today.
+- use the observer's `durationNanos` for slow-query logging (pick your own threshold);
+- configure HikariCP metrics directly for JVM JDBC **pool** visibility (the observer covers
+  statements, not pool acquisition);
+- avoid enabling trace logs in environments where parameter values may contain sensitive data.
