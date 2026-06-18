@@ -171,6 +171,33 @@ the stable message text. MySQL reports every constraint violation under SQLSTATE
 mapper keys off the vendor error number instead. Foreign-key enforcement on SQLite requires
 `PRAGMA foreign_keys=ON`, which Kormium sets on every connection.
 
+## Database lifecycle
+
+Every `Database` / `SuspendDatabase` follows one lifecycle contract, the same across JDBC, libpq,
+native SQLite, native MySQL and r2dbc:
+
+| Aspect | Contract |
+| --- | --- |
+| `close()` | **Idempotent** — calling it again is a safe no-op; only the first call tears down the pool. |
+| `isClosed` | `false` until `close()` is called, `true` afterwards. Cheap to read (a single atomic flag); use it for health checks. |
+| Use after close | `usePinned` / `useConnection` — and therefore any `transaction` / `autocommit` / `suspendTransaction` / `suspendAutocommit` — throw `DatabaseClosedException` (a `KormiumException`), **not** a backend-specific closed-connection error. |
+| In-flight statement during close | A statement that already borrowed a connection is allowed to finish: the native pools *drain* on close (they wait for every borrowed connection to come back before tearing down). The JVM pools (HikariCP, r2dbc) follow their own pool-shutdown semantics. |
+| Statement that races close | May either run to completion or throw `DatabaseClosedException`, depending on the exact interleaving. |
+
+```kotlin
+val db = createDatabase(/* ... */)
+db.use {
+    // ... queries ...
+}                      // close() called here by use { }
+check(db.isClosed)
+db.close()             // idempotent: safe
+db.autocommit { }      // throws DatabaseClosedException
+```
+
+`DatabaseClosedException` extends `KormiumException`, so it is caught by the same boundary that
+handles other Kormium errors; in Ktor it is not a constraint violation, so it does not map to a
+4xx by default — treat it as a programming/lifecycle error.
+
 ## Type Mapping
 
 Kormium's common column types map through backend-specific SQL types:

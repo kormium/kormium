@@ -13,6 +13,7 @@ class DatabaseMock: Database<Nothing>, SuspendDatabase<Nothing> {
 
     override var config = KormiumConfig()
     override val writeListeners = WriteListeners()
+    override val isClosed: Boolean = false
 
     var result: Any? = null
     var internalSql: String = ""

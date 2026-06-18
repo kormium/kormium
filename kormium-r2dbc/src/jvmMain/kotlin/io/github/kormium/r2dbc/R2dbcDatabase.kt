@@ -1,5 +1,6 @@
 package io.github.kormium.r2dbc
 
+import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.PostgresDialect
@@ -41,7 +42,13 @@ class R2dbcDatabase internal constructor(
     // Supports change observation (kormium-observe): writes through this database notify here.
     override val writeListeners: WriteListeners = WriteListeners()
 
+    // Open/closed state: idempotent dispose + use-after-close guard.
+    private val lifecycle = DatabaseLifecycle { pool.dispose() }
+
+    override val isClosed: Boolean get() = lifecycle.isClosed
+
     override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+        lifecycle.checkOpen()
         val connection = pool.create().awaitSingle()
         try {
             if (transactional) connection.beginTransaction().awaitFirstOrNull()
@@ -59,9 +66,7 @@ class R2dbcDatabase internal constructor(
         }
     }
 
-    override fun close() {
-        pool.dispose()
-    }
+    override fun close() = lifecycle.close()
 }
 
 /**

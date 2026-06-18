@@ -1,6 +1,7 @@
 package io.github.kormium.mysql
 
 import io.github.kormium.ConnectionPool
+import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.KormiumConfig
 import io.github.kormium.MySqlDialect
 import io.github.kormium.MySqlDriver
@@ -33,7 +34,6 @@ import kotlinx.cinterop.value
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
 import mysql.MYSQL
 import mysql.MYSQL_BIND
 import mysql.MYSQL_RES
@@ -101,7 +101,14 @@ internal class MySqlNativeDriver(
     // "free connection" queue (the same model as the native Postgres driver).
     private val connections: List<MysqlPtr> = List(poolSize) { openConnection() }
     private val pool = Channel<MysqlPtr>(poolSize).also { ch -> connections.forEach { ch.trySend(it) } }
-    private val closeLock = Mutex()
+
+    // Open/closed state: idempotent close (drains the pool first) + use-after-close guard.
+    private val lifecycle = DatabaseLifecycle {
+        // Draining the pool first waits for any in-flight statement to return its connection, so
+        // we never mysql_close one another thread still uses.
+        runBlocking { repeat(poolSize) { mysql_close(pool.receive()) } }
+        pool.close()
+    }
 
     private fun openConnection(): MysqlPtr {
         val conn = mysql_init(null) ?: throw QueryExecutionException("mysql_init failed (out of memory)")
@@ -155,20 +162,19 @@ internal class MySqlNativeDriver(
         override fun release() { pool.trySend(conn) }
     }
 
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R =
-        connectionPool.runPinned(transactional, block)
-
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R =
-        connectionPool.runConnection(transactional, block)
-
-    override fun close() {
-        // tryLock() succeeds only for the first caller; the lock is never released, making close()
-        // idempotent. Draining the pool first waits for any in-flight statement to return its
-        // connection, so we never mysql_close one another thread still uses.
-        if (!closeLock.tryLock()) return
-        runBlocking { repeat(poolSize) { mysql_close(pool.receive()) } }
-        pool.close()
+    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+        lifecycle.checkOpen()
+        return connectionPool.runPinned(transactional, block)
     }
+
+    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+        lifecycle.checkOpen()
+        return connectionPool.runConnection(transactional, block)
+    }
+
+    override val isClosed: Boolean get() = lifecycle.isClosed
+
+    override fun close() = lifecycle.close()
 
     private inner class MysqlExecutor(private val conn: MysqlPtr) : SqlExecutor {
         override val dialect = MySqlDialect

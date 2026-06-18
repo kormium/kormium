@@ -1,6 +1,7 @@
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
+import io.github.kormium.DatabaseClosedException
 import io.github.kormium.Entity
 import io.github.kormium.MySqlDriver
 import io.github.kormium.Query
@@ -47,6 +48,16 @@ class NativeMySqlTest {
     } catch (e: Throwable) {
         println("Skipping native MySQL test: ${e.message}")
         null
+    }
+
+    @Test
+    fun lifecycleContract() {
+        val driver = connectOrNull() ?: return
+        assertEquals(false, driver.isClosed)
+        driver.close()
+        assertEquals(true, driver.isClosed)
+        driver.close() // idempotent: must not throw
+        assertFailsWith<DatabaseClosedException> { driver.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) } } }
     }
 
     @Test

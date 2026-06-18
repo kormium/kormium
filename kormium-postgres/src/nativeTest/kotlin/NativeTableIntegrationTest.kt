@@ -2,6 +2,7 @@ import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.Catalog
 import io.github.kormium.CheckViolationException
 import io.github.kormium.Column
+import io.github.kormium.DatabaseClosedException
 import io.github.kormium.Entity
 import io.github.kormium.ForeignKeyViolationException
 import io.github.kormium.Query
@@ -104,7 +105,7 @@ class NativeTableIntegrationTest {
         }
     }
 
-    /** Using the driver after close() must fail instead of touching a finished connection. */
+    /** Using the driver after close() throws the uniform DatabaseClosedException. */
     @Test
     fun testUseAfterCloseThrows() {
         if (env("KORMIUM_DB_HOST") == null) {
@@ -113,9 +114,24 @@ class NativeTableIntegrationTest {
         }
         val driver = nativeDriver(poolSize = 1)
         driver.close()
-        assertFailsWith<Exception> {
+        assertFailsWith<DatabaseClosedException> {
             driver.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) } }
         }
+    }
+
+    /** close() is idempotent and isClosed reflects lifecycle state. */
+    @Test
+    fun testIsClosedAndDoubleClose() {
+        if (env("KORMIUM_DB_HOST") == null) {
+            println("KORMIUM_DB_HOST not set — skipping native integration test")
+            return
+        }
+        val driver = nativeDriver(poolSize = 1)
+        assertEquals(false, driver.isClosed)
+        driver.close()
+        assertEquals(true, driver.isClosed)
+        driver.close() // idempotent: must not throw
+        assertEquals(true, driver.isClosed)
     }
 
     /** An exception out of a transaction block must ROLLBACK every statement in it. */

@@ -18,4 +18,7 @@ interface PostgresDriver : Database<Nothing>, SuspendDatabase<Nothing>, AutoClos
     // Resolves the writeListeners default inherited from both interfaces; concrete drivers
     // supply a real registry so change observation (kormium-observe) works.
     override val writeListeners: WriteListeners
+
+    // Resolves the isClosed default inherited from both interfaces; concrete drivers track it.
+    override val isClosed: Boolean
 }

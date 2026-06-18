@@ -35,6 +35,24 @@ interface Database<out G : Catalog> : AutoCloseable {
      */
     fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R
 
-    /** Closes the underlying connection(s); the database is unusable afterwards. */
+    /**
+     * Whether [close] has been called. Defaults to `false` for backends that do not track it.
+     * Once `true`, [usePinned] (and any `transaction` / `autocommit`) throws
+     * [io.github.kormium.DatabaseClosedException].
+     */
+    val isClosed: Boolean get() = false
+
+    /**
+     * Closes the underlying connection(s); the database is unusable afterwards. The contract,
+     * honored by all shipped backends:
+     *
+     *  - **Idempotent:** calling [close] more than once is safe; only the first call tears down.
+     *  - **Use-after-close throws:** a [usePinned] (and therefore any `transaction` /
+     *    `autocommit`) after [close] throws [io.github.kormium.DatabaseClosedException], not a
+     *    backend-specific error.
+     *  - **In-flight statements:** a statement already running when [close] is called is allowed
+     *    to finish where the backend can wait for its connection (the native pools drain on
+     *    close); a call that races [close] may instead throw `DatabaseClosedException`.
+     */
     override fun close()
 }
