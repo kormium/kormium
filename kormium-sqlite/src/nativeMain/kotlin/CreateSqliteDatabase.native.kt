@@ -21,7 +21,6 @@ import kotlinx.cinterop.value
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
 import csqlite.*
 
 // SQLite's SQLITE_TRANSIENT (a (-1)-cast function pointer) is a macro cinterop can't
@@ -61,7 +60,11 @@ private class SqliteNativeDriver(path: String, private val poolSize: Int, overri
         connections.forEach { channel.trySend(it) }
     }
 
-    private val closeLock = Mutex()
+    // Open/closed state: idempotent close (drains the pool once) + use-after-close guard.
+    private val lifecycle = DatabaseLifecycle {
+        runBlocking { repeat(poolSize) { sqlite3_close_v2(pool.receive()) } }
+        pool.close()
+    }
 
     // One pool, two entry points (blocking usePinned + suspend useConnection). acquire mirrors
     // withConnection's borrow; acquireSuspending overrides the default to take the Channel's
@@ -98,11 +101,15 @@ private class SqliteNativeDriver(path: String, private val poolSize: Int, overri
         }
     }
 
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R =
-        connectionPool.runPinned(transactional, block)
+    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+        lifecycle.checkOpen()
+        return connectionPool.runPinned(transactional, block)
+    }
 
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R =
-        connectionPool.runConnection(transactional, block)
+    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+        lifecycle.checkOpen()
+        return connectionPool.runConnection(transactional, block)
+    }
 
     // An SqlExecutor bound to the pinned connection for the duration of usePinned.
     private inner class NativeExecutor(private val conn: CPointer<sqlite3>) : SqlExecutor {
@@ -125,11 +132,9 @@ private class SqliteNativeDriver(path: String, private val poolSize: Int, overri
             updateOrCount(conn, sql, mapBinder(namedParameters))
     }
 
-    override fun close() {
-        if (!closeLock.tryLock()) return
-        runBlocking { repeat(poolSize) { sqlite3_close_v2(pool.receive()) } }
-        pool.close()
-    }
+    override val isClosed: Boolean get() = lifecycle.isClosed
+
+    override fun close() = lifecycle.close()
 
     // ---- statement execution -------------------------------------------------------
 

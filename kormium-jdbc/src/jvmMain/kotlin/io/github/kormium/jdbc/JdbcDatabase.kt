@@ -3,6 +3,7 @@ package io.github.kormium.jdbc
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.kormium.ConnectionPool
+import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.PinnedConnection
@@ -75,13 +76,21 @@ open class JdbcDatabase(
             JdbcPinnedConnection(ds.connection, dialect, typeMapper, wrap, translate)
     }
 
-    override fun close() = ds.close()
+    private val lifecycle = DatabaseLifecycle { ds.close() }
 
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R =
-        pool.runPinned(transactional, block)
+    override val isClosed: Boolean get() = lifecycle.isClosed
 
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R =
-        pool.runConnection(transactional, block)
+    override fun close() = lifecycle.close()
+
+    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+        lifecycle.checkOpen()
+        return pool.runPinned(transactional, block)
+    }
+
+    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+        lifecycle.checkOpen()
+        return pool.runConnection(transactional, block)
+    }
 }
 
 /** A [PinnedConnection] over one borrowed JDBC connection. */

@@ -13,7 +13,6 @@ import io.github.kormium.resultset.ResultSet
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
 
 actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
     SqliteAndroidDriver(path, poolSize, config)
@@ -55,7 +54,11 @@ private class SqliteAndroidDriver(path: String, private val poolSize: Int, overr
         connections.forEach { channel.trySend(it) }
     }
 
-    private val closeLock = Mutex()
+    // Open/closed state: idempotent close (drains the pool once) + use-after-close guard.
+    private val lifecycle = DatabaseLifecycle {
+        runBlocking { repeat(poolSize) { pool.receive().close() } }
+        pool.close()
+    }
 
     // One pool, two entry points (blocking usePinned + suspend useConnection). acquire mirrors
     // withConnection's borrow; acquireSuspending overrides the default to take the Channel's
@@ -93,11 +96,15 @@ private class SqliteAndroidDriver(path: String, private val poolSize: Int, overr
         }
     }
 
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R =
-        connectionPool.runPinned(transactional, block)
+    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+        lifecycle.checkOpen()
+        return connectionPool.runPinned(transactional, block)
+    }
 
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R =
-        connectionPool.runConnection(transactional, block)
+    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+        lifecycle.checkOpen()
+        return connectionPool.runConnection(transactional, block)
+    }
 
     // An SqlExecutor bound to the pinned connection for the duration of usePinned.
     private inner class AndroidExecutor(private val conn: SQLiteConnection) : SqlExecutor {
@@ -120,11 +127,9 @@ private class SqliteAndroidDriver(path: String, private val poolSize: Int, overr
             updateOrCount(conn, sql, mapBinder(namedParameters))
     }
 
-    override fun close() {
-        if (!closeLock.tryLock()) return
-        runBlocking { repeat(poolSize) { pool.receive().close() } }
-        pool.close()
-    }
+    override val isClosed: Boolean get() = lifecycle.isClosed
+
+    override fun close() = lifecycle.close()
 
     // ---- statement execution -------------------------------------------------------
 

@@ -31,6 +31,17 @@ interface SuspendDatabase<out G : Catalog> : AutoCloseable {
      */
     suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R
 
-    /** Closes the underlying connection(s); the database is unusable afterwards. */
+    /**
+     * Whether [close] has been called. Defaults to `false` for backends that do not track it.
+     * Once `true`, [useConnection] (and any `suspendTransaction` / `suspendAutocommit`) throws
+     * [io.github.kormium.DatabaseClosedException].
+     */
+    val isClosed: Boolean get() = false
+
+    /**
+     * Closes the underlying connection(s); the database is unusable afterwards. Same contract as
+     * [Database.close]: idempotent, and use-after-close throws
+     * [io.github.kormium.DatabaseClosedException] uniformly across backends.
+     */
     override fun close()
 }

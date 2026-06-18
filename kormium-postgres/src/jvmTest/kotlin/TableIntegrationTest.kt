@@ -1,6 +1,7 @@
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
+import io.github.kormium.DatabaseClosedException
 import io.github.kormium.Entity
 import io.github.kormium.Query
 import io.github.kormium.SqlParameterSource
@@ -145,15 +146,27 @@ class TableIntegrationTest {
         }
     }
 
-    /** Using the driver after close() must fail. */
+    /** Using the driver after close() throws the uniform DatabaseClosedException. */
     @Test
     fun testUseAfterCloseThrows() {
         assumeDockerAvailable()
         val driver = ItDatabase.newDriver(poolSize = 1)
         driver.close()
-        assertFailsWith<Exception> {
+        assertFailsWith<DatabaseClosedException> {
             driver.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) } }
         }
+    }
+
+    /** close() is idempotent and isClosed reflects lifecycle state. */
+    @Test
+    fun testIsClosedAndDoubleClose() {
+        assumeDockerAvailable()
+        val driver = ItDatabase.newDriver(poolSize = 1)
+        assertEquals(false, driver.isClosed)
+        driver.close()
+        assertEquals(true, driver.isClosed)
+        driver.close() // idempotent: must not throw
+        assertEquals(true, driver.isClosed)
     }
 
     /**

@@ -17,10 +17,10 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import libpq.*
 import io.github.kormium.ConnectionPool
+import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.PinnedConnection
@@ -96,8 +96,14 @@ private class PostgresDriverImpl(
         connections.forEach { channel.trySend(it) }
     }
 
-    // Held terminally by the first close() caller so the pool is torn down once.
-    private val closeLock = Mutex()
+    // Open/closed state: idempotent close (drains the pool once) + use-after-close guard.
+    private val lifecycle = DatabaseLifecycle {
+        // Drain the pool before finishing: receiving every connection waits for any in-flight
+        // statement to return its connection, so we never PQfinish one another thread is using.
+        runBlocking { repeat(poolSize) { PQfinish(pool.receive()) } }
+        pool.close()
+        reactor?.close()
+    }
 
     // One I/O reactor shared by every connection's async (useConnection) path: it polls all
     // in-flight sockets on a single thread so a suspended read holds no coroutine thread.
@@ -149,14 +155,17 @@ private class PostgresDriverImpl(
         override fun release() { pool.trySend(conn) }
     }
 
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R =
-        connectionPool.runPinned(transactional, block)
+    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+        lifecycle.checkOpen()
+        return connectionPool.runPinned(transactional, block)
+    }
 
     // useConnection: when a reactor exists (Unix poll, Windows WSAPoll), run truly async — borrow
     // by suspending on the pool Channel, drive every statement and BEGIN/COMMIT/ROLLBACK through
     // the reactor (the coroutine thread is freed during each network wait), cleaning up under
     // NonCancellable. When there is no reactor, fall back to the core blocking offload.
     override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+        lifecycle.checkOpen()
         val activeReactor = reactor ?: return connectionPool.runConnection(transactional, block)
         val conn = acquireConnectionSuspending()
         try {
@@ -253,17 +262,9 @@ private class PostgresDriverImpl(
             runQuery(conn, sql, namedParameters).returnCount()
     }
 
-    override fun close() {
-        // tryLock() succeeds only for the first caller; the lock is never released,
-        // making close() idempotent. Concurrent/later callers return immediately.
-        if (!closeLock.tryLock()) return
-        // Drain the pool before finishing: receiving every connection waits for any
-        // in-flight statement to return its connection, so we never PQfinish one that
-        // another thread is still using.
-        runBlocking { repeat(poolSize) { PQfinish(pool.receive()) } }
-        pool.close()
-        reactor?.close()
-    }
+    override val isClosed: Boolean get() = lifecycle.isClosed
+
+    override fun close() = lifecycle.close()
 
     private fun runQuery(
         connection: CPointer<PGconn>,
