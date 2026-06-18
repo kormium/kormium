@@ -6,6 +6,19 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Compile-time validation of `upsert` / `insertOrIgnore` conflict columns.** `onConflict` is now
+  typed `Column<*, *, T>` (and `List<Column<*, *, T>>`), so a conflict column from another table is
+  a compile error instead of rendering the wrong column into `ON CONFLICT`. Same-table targets,
+  including `onConflict = Table.primaryKey`, are unchanged. A runtime backstop still rejects an
+  empty target — and the rare same-entity-other-table case — with a clear `IllegalArgumentException`
+  naming the column and tables (#32).
+
+### Changed
+- `Table.primaryKey` is now `List<Column<*, *, T>>` (was `List<Column<*, *, *>>`) and the table's
+  columns carry their entity type. Source-compatible for normal use; code that passed columns held
+  as a bare `Column<*, *, *>` to `onConflict` must use the table's own columns.
+
 ## [0.8.0] — Cross-instance notifications, Windows async, expression UPDATE
 
 ### Added

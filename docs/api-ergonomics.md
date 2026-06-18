@@ -135,6 +135,18 @@ val inserted: Long = Users.insertOrIgnore(
 )
 ```
 
+The conflict target is validated on two levels:
+
+- **Compile time:** `onConflict` is typed `Column<*, *, T>` (and `List<Column<*, *, T>>`), so a
+  column from another table does not compile — `Users.upsert(onConflict = Orders.id)` is a type
+  error, caught in the IDE. Same-table targets (including `onConflict = Users.primaryKey`) work
+  unchanged.
+- **Runtime backstop:** before any SQL is built, the target is also checked to be non-empty and to
+  belong to this table, failing fast with an `IllegalArgumentException` that names the offending
+  column and tables. This covers what types cannot express — an empty list, or the rare case of a
+  column from a different table that happens to share this entity type — instead of emitting
+  invalid `ON CONFLICT ()` or the wrong column name.
+
 ## Raw SQL
 
 Raw SQL is the escape hatch for schema, backend-specific features and complex conflict

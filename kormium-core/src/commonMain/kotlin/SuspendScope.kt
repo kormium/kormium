@@ -47,25 +47,25 @@ class SuspendScope<G : Catalog> internal constructor(
     }
 
     /** Insert-or-update on a single-column conflict target; see [Scope.upsert]. */
-    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, *>, update: T, returning: Boolean = false): T? {
+    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T? {
         markWritten()
         return upsert(entity, listOf(onConflict), update, exec, returning)
     }
 
     /** Insert-or-update on a composite conflict target; see [Scope.upsert]. */
-    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, *>>, update: T, returning: Boolean = false): T? {
+    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T? {
         markWritten()
         return upsert(entity, onConflict, update, exec, returning)
     }
 
     /** Insert-or-do-nothing on a single-column conflict target; see [Scope.insertOrIgnore]. */
-    suspend fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: Column<*, *, *>): Long {
+    suspend fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: Column<*, *, T>): Long {
         markWritten()
         return insertOrIgnore(entity, listOf(onConflict), exec)
     }
 
     /** Insert-or-do-nothing on a composite conflict target; see [Scope.insertOrIgnore]. */
-    suspend fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: List<Column<*, *, *>>): Long {
+    suspend fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: List<Column<*, *, T>>): Long {
         markWritten()
         return insertOrIgnore(entity, onConflict, exec)
     }

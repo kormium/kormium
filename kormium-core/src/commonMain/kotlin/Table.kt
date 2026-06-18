@@ -37,7 +37,9 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return factory().also { it.replaceFields(fields) }
     }
 
-    private val fieldDisplayName: MutableMap<String, Column<*, *, *>> = mutableMapOf()
+    // Columns carry their entity type T, so a conflict-target type like `Column<*, *, T>` can
+    // reject a column from another (differently-typed) table at compile time.
+    private val fieldDisplayName: MutableMap<String, Column<*, *, T>> = mutableMapOf()
 
     /** The table's columns keyed by entity field name (Kotlin property name), in declaration order. */
     fun getFieldDisplayNames(): Map<String, Column<*, *, *>> = fieldDisplayName
@@ -46,10 +48,10 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
      * The primary-key column(s): those declared with `primaryKey = true`, or the column
      * named "id" if none are marked.
      */
-    val primaryKey: List<Column<*, *, *>>
+    val primaryKey: List<Column<*, *, T>>
         get() = fieldDisplayName.values.filter { it.isPrimaryKey }
             .ifEmpty { fieldDisplayName.values.filter { it.fieldKey == "id" } }
-    internal fun addColumn(fieldName: String, column: Column<*, *, *>) {
+    internal fun addColumn(fieldName: String, column: Column<*, *, T>) {
         logger.trace { "add column/field ${column.name}/$fieldName" }
         fieldDisplayName[fieldName] = column
     }
@@ -214,6 +216,20 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return statements
     }
 
+    // Runtime backstop for the conflict target. The DSL overloads already constrain `onConflict`
+    // to `Column<*, *, T>`, so a column from a *differently-typed* table is rejected at compile
+    // time. This still guards what types can't express: a non-empty target, and a column from a
+    // different table that happens to share this entity type (or direct internal calls).
+    private fun validateConflictTarget(op: String, conflict: List<Column<*, *, *>>) {
+        require(conflict.isNotEmpty()) { "$op() conflict target must contain at least one column on '$tableName'" }
+        for (column in conflict) {
+            require(column.tableRef === this) {
+                "$op() conflict column '${column.name}' belongs to table '${column.tableRef.tableName}', " +
+                    "not '$tableName' — pass conflict columns of the table being written"
+            }
+        }
+    }
+
     private fun upsertSql(
         entity: T,
         conflict: List<Column<*, *, *>>,
@@ -223,7 +239,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         returning: Boolean,
     ): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
-        require(conflict.isNotEmpty()) { "upsert() conflict target must contain at least one column" }
+        validateConflictTarget("upsert", conflict)
         val insertFields = generatePresentFields(entity)
         require(insertFields.isNotEmpty()) { "upsert() needs at least one field set on the insert entity" }
         val columns = insertFields.joinToString(", ") { dialect.quoteIdentifier(it.first) }
@@ -245,7 +261,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         typeMapper: TypeMapper,
     ): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
-        require(conflict.isNotEmpty()) { "insertOrIgnore() conflict target must contain at least one column" }
+        validateConflictTarget("insertOrIgnore", conflict)
         val insertFields = generatePresentFields(entity)
         require(insertFields.isNotEmpty()) { "insertOrIgnore() needs at least one field set on the entity" }
         val columns = insertFields.joinToString(", ") { dialect.quoteIdentifier(it.first) }
