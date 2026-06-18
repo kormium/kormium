@@ -61,25 +61,25 @@ class Scope<G : Catalog> internal constructor(
      * and on conflict with [onConflict] updates with [update]'s present fields. Pass
      * `returning = true` to fetch the resulting row.
      */
-    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, *>, update: T, returning: Boolean = false): T? {
+    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T? {
         markWritten()
         return upsert(entity, listOf(onConflict), update, exec, returning)
     }
 
     /** Insert-or-update on a composite (multi-column) conflict target; see the single-column overload. */
-    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, *>>, update: T, returning: Boolean = false): T? {
+    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T? {
         markWritten()
         return upsert(entity, onConflict, update, exec, returning)
     }
 
     /** Insert-or-do-nothing on a single-column conflict target; returns the affected row count (1 inserted, 0 ignored). */
-    fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: Column<*, *, *>): Long {
+    fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: Column<*, *, T>): Long {
         markWritten()
         return insertOrIgnore(entity, listOf(onConflict), exec)
     }
 
     /** Insert-or-do-nothing on a composite conflict target; see the single-column overload. */
-    fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: List<Column<*, *, *>>): Long {
+    fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: List<Column<*, *, T>>): Long {
         markWritten()
         return insertOrIgnore(entity, onConflict, exec)
     }

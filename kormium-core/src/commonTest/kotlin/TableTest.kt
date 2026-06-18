@@ -58,6 +58,21 @@ object CompositeKey : Table<TestCatalog, CompositeKeyEntity>("composite", ::Comp
     val right by Column.Int().primaryKey()
 }
 
+// Two tables parameterized with the SAME entity type: a column of one type-checks as a conflict
+// target for the other (both are Column<*, *, SharedRow>), exercising the runtime ownership
+// backstop that the compile-time `Column<*, *, T>` constraint cannot catch.
+class SharedRow : Entity() {
+    var a by SharedA.a
+}
+
+object SharedA : Table<TestCatalog, SharedRow>("shared_a", ::SharedRow) {
+    val a by Column.Int()
+}
+
+object SharedB : Table<TestCatalog, SharedRow>("shared_b", ::SharedRow) {
+    val b by Column.Int()
+}
+
 class NamedEntity : Entity() {
     var id by Named.id
     var createdAt by Named.createdAt
@@ -380,6 +395,28 @@ class TableTest {
                 )
             }
         }
+    }
+
+    // Regression (#32): a conflict column from a *differently-typed* table is rejected at COMPILE
+    // time — `onConflict` is `Column<*, *, T>`, so `TestTable.upsert(onConflict = TestOrders.orderId)`
+    // does not compile (TestOrders' columns carry TestOrderEntity, not TestEntity). That guarantee
+    // can't be expressed as a runtime test; the case below covers what types *can't*: a foreign
+    // column from a table that shares this entity type, caught by the runtime backstop.
+    @Test
+    fun testUpsertRejectsConflictColumnFromSameEntityOtherTable() {
+        val ex = assertFailsWith<IllegalArgumentException> {
+            db.transaction {
+                // SharedA and SharedB are both Table<_, SharedRow>, so SharedB.b type-checks as a
+                // conflict target for SharedA but does not belong to it.
+                SharedA.upsert(
+                    entity = SharedRow().apply { a = 1 },
+                    onConflict = SharedB.b,
+                    update = SharedRow().apply { a = 2 },
+                )
+            }
+        }
+        val msg = ex.message ?: ""
+        assertTrue("shared_b" in msg && "shared_a" in msg, "message should name both tables: $msg")
     }
 
     @Test
