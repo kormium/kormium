@@ -89,6 +89,12 @@ Column.UUID().primaryKey()
 named `id`. For composite primary keys, use `find { ... }` or `find(Query(...))` instead
 of `findById`.
 
+A non-null column (one declared without `.nullable()`) is enforced on read as well as on write:
+if the database returns SQL `NULL` for it, hydration fails fast with a `ResultMappingException`
+naming the table and column, rather than letting an invalid `null` reach the entity. This
+surfaces a schema/entity mismatch (or a bad row) at the read boundary. Nullable columns hydrate
+`NULL` normally.
+
 ## Custom Column Types
 
 The type list is open. Two ready-made helpers cover the common cases:

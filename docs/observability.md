@@ -193,6 +193,8 @@ Failures should be easy to classify:
 | not-null violation | `NotNullViolationException` |
 | check violation | `CheckViolationException` |
 | other SQL failure | `QueryException` with SQLSTATE/error code when available |
+| non-null column read as NULL | `ResultMappingException` naming the table and column |
+| use after close | `DatabaseClosedException` |
 | pool closed | `QueryException` or backend-specific closed connection error |
 | cancellation | should preserve coroutine cancellation semantics |
 | timeout | should be distinguishable where backend reports it |
