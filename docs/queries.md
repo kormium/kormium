@@ -63,6 +63,39 @@ Users.find {
 }
 ```
 
+## Reusable Queries with `Query`
+
+The `find { ... }` / `count { ... }` block is a thin ergonomic layer over `Query`, the value
+type. `QueryBuilder.build()` simply returns a `Query`, so anything you can express in the block
+has an equivalent `Query` — use `Query` when you want to **build a query once and reuse it**, pass
+it around, store it, or compose it:
+
+```kotlin
+import io.github.kormium.Query
+import io.github.kormium.AscDescOrder
+
+// Prebuilt, reusable value — construct it anywhere, run it against any matching table.
+val adultsByAge = Query(
+    whereExpression = Users.age gtEq 18,
+    orderBy = mapOf(Users.age to AscDescOrder.DESC),
+    limit = 50u,
+)
+
+val page: List<User> = db.autocommit { Users.find(adultsByAge) }
+val howMany: Long = db.autocommit { Users.count(adultsByAge) }
+```
+
+Every `find` / `count` / `update` / `deleteWhere` has both forms: pass a `Query` value, or open a
+`{ ... }` block. They render to the same SQL and bind parameters. Reach for the block at a call
+site for readability; reach for `Query` when the query is reusable, parameterized in your own code,
+or assembled ahead of time. The block does not replace `Query` — it is built on it.
+
+```kotlin
+// These two are equivalent:
+Users.find(Query(Users.age gtEq 18))
+Users.find { where { Users.age gtEq 18 } }
+```
+
 ## Insert, Returning and Count
 
 ```kotlin
