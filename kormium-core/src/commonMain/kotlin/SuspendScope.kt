@@ -224,7 +224,7 @@ class SuspendScope<G : Catalog> internal constructor(
 suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(block: suspend SuspendScope<G>.() -> R): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
-    val result = useConnection(transactional = true) { SuspendScope<G>(it, config, dirty, transactional = true).block() }
+    val result = useConnection(transactional = true) { SuspendScope<G>(it.observed(config), config, dirty, transactional = true).block() }
     writeListeners.fire(dirty)
     writeListeners.publishCommit(dirty)
     return result
@@ -238,7 +238,7 @@ suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(block: suspen
 suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendAutocommit(block: suspend SuspendScope<G>.() -> R): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
-    val result = useConnection(transactional = false) { SuspendScope<G>(it, config, dirty, transactional = false).block() }
+    val result = useConnection(transactional = false) { SuspendScope<G>(it.observed(config), config, dirty, transactional = false).block() }
     writeListeners.fire(dirty)
     writeListeners.publishCommit(dirty)
     return result

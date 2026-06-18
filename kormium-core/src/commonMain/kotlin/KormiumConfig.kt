@@ -31,4 +31,13 @@ enum class BatchInsertMode {
 data class KormiumConfig(
     /** Default [BatchInsertMode] for [insertAll] when no per-call override is given. */
     val batchInsertMode: BatchInsertMode = BatchInsertMode.GroupByAssignedFields,
+
+    /**
+     * Optional per-statement observation hook. When set, every statement run through a scope
+     * (DSL operations, raw `execute`/`executeUpdate`, and migrations) is timed and reported as a
+     * [QueryEvent] — across all backends, without wrapping repository methods. The event carries
+     * the SQL template only, never parameter values. `null` (the default) disables observation
+     * entirely: no executor wrapping, no overhead.
+     */
+    val queryObserver: QueryObserver? = null,
 )

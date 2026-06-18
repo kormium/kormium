@@ -27,7 +27,7 @@ Before deploying:
 - define connection pool size and timeouts;
 - define transaction boundaries in code;
 - add error mapping at service boundaries;
-- add query timing and pool metrics through application wrappers or backend tools;
+- collect query timing/failure metrics via `KormiumConfig.queryObserver`, and pool metrics through backend tools;
 - document how to roll back a failed release.
 
 ## Connection Pools
@@ -122,12 +122,15 @@ services should still translate database errors into application-specific respon
 
 ## Observability
 
-A `WriteListener` commit hook (`db.writeListeners`) is available for write notification —
-cache invalidation, audit, metrics on commit — and backs reactive `kormium-observe` queries.
-For timing/pool metrics, which are not yet built in:
+For per-query timing and failures, set `KormiumConfig.queryObserver`: a single backend-neutral
+hook called once per statement (DSL, raw SQL, migrations) with backend, SQL template (no
+parameter values), kind, duration, row count and SQLSTATE on failure. It replaces wrapping every
+repository method. A `WriteListener` commit hook (`db.writeListeners`) is also available for
+write notification — cache invalidation, audit, metrics on commit — and backs reactive
+`kormium-observe` queries. For the rest:
 
-- wrap repository/service calls with timers;
-- configure HikariCP metrics directly on JVM JDBC deployments;
+- forward `queryObserver` events to your metrics stack, and threshold `durationNanos` for slow-query logs;
+- configure HikariCP metrics directly on JVM JDBC deployments for pool visibility;
 - use database logs and slow query tooling;
 - do not log parameter values in production;
 - include SQLSTATE/error codes in internal error logs where safe.
