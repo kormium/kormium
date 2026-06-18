@@ -35,6 +35,13 @@ class NotNullViolationException(message: String, sqlState: String?, cause: Throw
 class CheckViolationException(message: String, sqlState: String?, cause: Throwable? = null) :
     QueryException(message, sqlState, cause)
 
+/**
+ * A database row could not be mapped into an entity. The common case: a column the entity
+ * declares non-null came back as SQL `NULL` (a schema mismatch or a bad row). The message names
+ * the table and column so the offending row/schema is easy to find.
+ */
+class ResultMappingException(message: String, cause: Throwable? = null) : KormiumException(message, cause)
+
 /** Maps a SQLSTATE to the most specific [QueryException] subtype. */
 fun sqlException(message: String, sqlState: String?, cause: Throwable? = null): QueryException = when (sqlState) {
     "23505" -> UniqueViolationException(message, sqlState, cause)

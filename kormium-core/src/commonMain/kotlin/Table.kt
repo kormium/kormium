@@ -18,8 +18,24 @@ private val logger = KotlinLogging.logger {}
  * helper and differ only in how they execute it.
  */
 abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: () -> T) {
-    /** Builds an entity from a loaded field map (the database read path). */
-    internal fun hydrate(fields: MutableMap<String, Any?>): T = factory().also { it.replaceFields(fields) }
+    /**
+     * Builds an entity from a loaded field map (the database read path). Fails fast at the
+     * database boundary when a column the entity declares non-null came back as SQL NULL — that
+     * is a schema mismatch or a bad row, and would otherwise surface as a confusing null only when
+     * the property is later read. Nullable columns hydrate NULL normally.
+     */
+    internal fun hydrate(fields: MutableMap<String, Any?>): T {
+        for ((fieldName, column) in fieldDisplayName) {
+            if (!column.nullable && fields[fieldName] == null) {
+                throw ResultMappingException(
+                    "Column '${column.name}' of table '$tableName' is non-null, but the database " +
+                        "returned NULL for it (entity field '$fieldName'). The row or the schema does " +
+                        "not match the entity definition.",
+                )
+            }
+        }
+        return factory().also { it.replaceFields(fields) }
+    }
 
     private val fieldDisplayName: MutableMap<String, Column<*, *, *>> = mutableMapOf()
 
