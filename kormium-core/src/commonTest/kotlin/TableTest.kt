@@ -95,6 +95,10 @@ class TableTest {
         assertEquals(listOf(TestTable.id), TestTable.primaryKey)
     }
 
+    // Regression (#33): isSet/unset take `Column<*, *, N>`, so a column from a differently-typed
+    // table is rejected at COMPILE time — `TestEntity().isSet(TestOrders.orderId)` does not compile
+    // (TestOrders' columns carry TestOrderEntity, not TestEntity). That guarantee can't be expressed
+    // as a runtime test; this test pins the absent/explicit-null/value semantics that stay unchanged.
     @Test
     fun testIsSetAndUnset() {
         val e = TestEntity()
@@ -110,6 +114,13 @@ class TableTest {
         // A concrete value is set.
         e.text = "hi"
         assertTrue(e.isSet(TestTable.text))
+        // A column from another entity of the same catalog also type-checks only for its own entity.
+        val order = TestOrderEntity()
+        assertFalse(order.isSet(TestOrders.orderId))
+        order.orderId = Uuid.random()
+        assertTrue(order.isSet(TestOrders.orderId))
+        order.unset(TestOrders.orderId)
+        assertFalse(order.isSet(TestOrders.orderId))
     }
 
     @Test
