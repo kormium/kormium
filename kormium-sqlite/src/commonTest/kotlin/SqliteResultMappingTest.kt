@@ -12,6 +12,7 @@ import io.github.kormium.transaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
@@ -39,6 +40,43 @@ class SqliteResultMappingTest {
         }
         val msg = ex.message ?: ""
         assertTrue("rm_items" in msg && "name" in msg, "should name table+column: $msg")
+        // Diagnostics now also name the entity field and the expected Korm column type.
+        assertTrue("'name'" in msg && "Text" in msg, "should name entity field + expected type: $msg")
+    }
+
+    @Test
+    fun typeConversionFailureNamesColumnAndPreservesCause() {
+        val id = Uuid.random()
+        db.transaction {
+            RmTyped.execSql(rmTypedDdl)
+            // Plant a non-parseable UUID in the non-null `ref` column.
+            executeUpdate(
+                "INSERT INTO rm_typed (id, ref, status) VALUES (:id, :ref, :status)",
+                mapOf("id" to id.toString(), "ref" to "not-a-uuid", "status" to "ACTIVE"),
+            )
+        }
+        val ex = assertFailsWith<ResultMappingException> { db.autocommit { RmTyped.findById(id) } }
+        val msg = ex.message ?: ""
+        assertTrue("rm_typed" in msg && "ref" in msg, "should name table+column: $msg")
+        assertTrue("Uuid" in msg, "should name expected Korm type: $msg")
+        assertNotNull(ex.cause, "the backend/parse failure must be preserved as the cause")
+    }
+
+    @Test
+    fun invalidEnumValueNamesColumnAndConvertedType() {
+        val id = Uuid.random()
+        db.transaction {
+            RmTyped.execSql(rmTypedDdl)
+            executeUpdate(
+                "INSERT INTO rm_typed (id, ref, status) VALUES (:id, :ref, :status)",
+                mapOf("id" to id.toString(), "ref" to Uuid.random().toString(), "status" to "BOGUS"),
+            )
+        }
+        val ex = assertFailsWith<ResultMappingException> { db.autocommit { RmTyped.findById(id) } }
+        val msg = ex.message ?: ""
+        assertTrue("rm_typed" in msg && "status" in msg, "should name table+column: $msg")
+        assertTrue("converted" in msg, "should mark the type as a converted ColumnType: $msg")
+        assertNotNull(ex.cause, "the underlying enum-decode failure must be preserved as the cause")
     }
 
     @Test
@@ -74,3 +112,23 @@ object RmItems : Table<RmCat, RmItem>("rm_items", ::RmItem) {
 // ...but the DDL allows NULL in "name", so a raw insert can plant a contract-violating row.
 private val rmDdlNameNullable =
     """CREATE TABLE IF NOT EXISTS "rm_items" ("id" TEXT NOT NULL, "name" TEXT, "note" TEXT, PRIMARY KEY ("id"))"""
+
+enum class RmStatus { ACTIVE, ARCHIVED }
+
+class RmTypedItem : Entity() {
+    var id by RmTyped.id
+    var ref by RmTyped.ref
+    var status by RmTyped.status
+}
+
+object RmTyped : Table<RmCat, RmTypedItem>("rm_typed", ::RmTypedItem) {
+    val id by Column.UUID().primaryKey()
+    val ref by Column.UUID()              // a second UUID column, to plant non-parseable text in
+    val status by Column.enum<RmStatus>() // a convert-based (text) column type
+
+    init { id; ref; status }
+}
+
+// All columns TEXT so a raw insert can plant values that violate the entity's typed contract.
+private val rmTypedDdl =
+    """CREATE TABLE IF NOT EXISTS "rm_typed" ("id" TEXT NOT NULL, "ref" TEXT NOT NULL, "status" TEXT NOT NULL, PRIMARY KEY ("id"))"""

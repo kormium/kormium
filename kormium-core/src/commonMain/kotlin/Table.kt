@@ -23,14 +23,25 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
      * database boundary when a column the entity declares non-null came back as SQL NULL — that
      * is a schema mismatch or a bad row, and would otherwise surface as a confusing null only when
      * the property is later read. Nullable columns hydrate NULL normally.
+     *
+     * [absentFields] are entity fields that were not present in the result at all (e.g. a column a
+     * projection/join did not select), as opposed to a column that was selected and came back NULL;
+     * the two get different, actionable messages.
      */
-    internal fun hydrate(fields: MutableMap<String, Any?>): T {
+    internal fun hydrate(fields: MutableMap<String, Any?>, absentFields: Set<String> = emptySet()): T {
         for ((fieldName, column) in fieldDisplayName) {
             if (!column.nullable && fields[fieldName] == null) {
+                val expected = column.columnType.description
                 throw ResultMappingException(
-                    "Column '${column.name}' of table '$tableName' is non-null, but the database " +
-                        "returned NULL for it (entity field '$fieldName'). The row or the schema does " +
-                        "not match the entity definition.",
+                    if (fieldName in absentFields) {
+                        "Column '${column.name}' of table '$tableName' is non-null but was not selected " +
+                            "(entity field '$fieldName', expected Korm type $expected). Add it to the " +
+                            "projection/SELECT, or read the full row, before mapping into this entity."
+                    } else {
+                        "Column '${column.name}' of table '$tableName' is non-null, but the database " +
+                            "returned NULL for it (entity field '$fieldName', expected Korm type $expected). " +
+                            "The row or the schema does not match the entity definition."
+                    },
                 )
             }
         }
@@ -72,11 +83,27 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         val fields = HashMap<String, Any?>(fieldDisplayName.size * 2)
         var index = 0
         for ((fieldName, column) in fieldDisplayName) {
-            fields[fieldName] = column.columnType.read(rs, index)
+            fields[fieldName] = readColumn(column, fieldName, rs, index)
             index++
         }
         return hydrate(fields)
     }
+
+    // Reads one column's value, wrapping any backend/conversion failure in a ResultMappingException
+    // that names the table, SQL column, entity field, expected Korm type and result index — and
+    // preserves the original error as the cause.
+    private fun readColumn(column: Column<*, *, T>, fieldName: String, rs: ResultSet, index: Int): Any? =
+        try {
+            column.columnType.read(rs, index)
+        } catch (e: ResultMappingException) {
+            throw e
+        } catch (e: Throwable) {
+            throw ResultMappingException(
+                "Failed to read column '${column.name}' of table '$tableName' (entity field '$fieldName', " +
+                    "expected Korm type ${column.columnType.description}, result index $index): ${e.message}",
+                cause = e,
+            )
+        }
 
     // Only the columns the entity actually assigned (present in its fields map),
     // so update() can tell "leave untouched" (absent) from "set to NULL" (present and null).
