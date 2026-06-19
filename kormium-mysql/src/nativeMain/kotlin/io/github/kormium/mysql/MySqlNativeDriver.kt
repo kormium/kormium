@@ -9,6 +9,7 @@ import io.github.kormium.PinnedConnection
 import io.github.kormium.SqlExecutor
 import io.github.kormium.SqlParameterSource
 import io.github.kormium.SuspendSqlExecutor
+import io.github.kormium.TransactionIsolation
 import io.github.kormium.WriteListeners
 import io.github.kormium.database.SuspendDatabase
 import io.github.kormium.mysql.exception.ConnectionClosedException
@@ -156,20 +157,36 @@ internal class MySqlNativeDriver(
 
     private inner class MysqlPinnedConnection(private val conn: MysqlPtr) : PinnedConnection {
         override val executor: SqlExecutor = MysqlExecutor(conn)
-        override fun begin() { simpleQuery(conn, "BEGIN") }
+
+        // MySQL takes the isolation level via a SET TRANSACTION that applies to the *next*
+        // transaction only (so it self-resets), then START TRANSACTION [READ ONLY].
+        override fun begin(isolation: TransactionIsolation?, readOnly: Boolean) {
+            if (isolation != null) simpleQuery(conn, "SET TRANSACTION ISOLATION LEVEL ${isolation.sql}")
+            simpleQuery(conn, if (readOnly) "START TRANSACTION READ ONLY" else "START TRANSACTION")
+        }
         override fun commit() { simpleQuery(conn, "COMMIT") }
         override fun rollback() { simpleQuery(conn, "ROLLBACK") }
         override fun release() { pool.trySend(conn) }
     }
 
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+    override fun <R> usePinned(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: (SqlExecutor) -> R,
+    ): R {
         lifecycle.checkOpen()
-        return connectionPool.runPinned(transactional, block)
+        return connectionPool.runPinned(transactional, isolation, readOnly, block)
     }
 
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+    override suspend fun <R> useConnection(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: suspend (SuspendSqlExecutor) -> R,
+    ): R {
         lifecycle.checkOpen()
-        return connectionPool.runConnection(transactional, block)
+        return connectionPool.runConnection(transactional, isolation, readOnly, block)
     }
 
     override val isClosed: Boolean get() = lifecycle.isClosed

@@ -11,7 +11,13 @@ import kotlinx.coroutines.withContext
  */
 interface PinnedConnection {
     val executor: SqlExecutor
-    fun begin()
+
+    /**
+     * Opens a transaction. [isolation] (when non-null) and [readOnly] are applied here; how
+     * each backend honors them — and any state it must restore on [release] — is backend-specific
+     * (see [TransactionIsolation]).
+     */
+    fun begin(isolation: TransactionIsolation? = null, readOnly: Boolean = false)
     fun commit()
     fun rollback()
     /** Returns the connection to the pool (and restores any per-borrow state). */
@@ -38,11 +44,16 @@ interface ConnectionPool {
  * Blocking pinned-connection run: borrow, BEGIN/COMMIT/ROLLBACK around [block] when
  * [transactional], always release. Backs [Database.usePinned].
  */
-fun <R> ConnectionPool.runPinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+fun <R> ConnectionPool.runPinned(
+    transactional: Boolean,
+    isolation: TransactionIsolation? = null,
+    readOnly: Boolean = false,
+    block: (SqlExecutor) -> R,
+): R {
     val conn = acquire()
     try {
         if (!transactional) return block(conn.executor)
-        conn.begin()
+        conn.begin(isolation, readOnly)
         return try {
             block(conn.executor).also { conn.commit() }
         } catch (e: Throwable) {
@@ -63,12 +74,17 @@ fun <R> ConnectionPool.runPinned(transactional: Boolean, block: (SqlExecutor) ->
  * [io.github.kormium.database.SuspendDatabase.useConnection] for blocking drivers;
  * a truly async backend (r2dbc) implements useConnection itself instead.
  */
-suspend fun <R> ConnectionPool.runConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+suspend fun <R> ConnectionPool.runConnection(
+    transactional: Boolean,
+    isolation: TransactionIsolation? = null,
+    readOnly: Boolean = false,
+    block: suspend (SuspendSqlExecutor) -> R,
+): R {
     val conn = acquireSuspending()
     try {
         val exec = SuspendExecutorAdapter(conn.executor, ioDispatcher)
         if (!transactional) return block(exec)
-        withContext(ioDispatcher) { conn.begin() }
+        withContext(ioDispatcher) { conn.begin(isolation, readOnly) }
         return try {
             block(exec).also { withContext(ioDispatcher) { conn.commit() } }
         } catch (e: Throwable) {

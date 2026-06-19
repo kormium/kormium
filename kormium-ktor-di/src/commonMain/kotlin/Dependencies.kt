@@ -27,7 +27,7 @@ suspend inline fun <reified G : Catalog> ApplicationCall.kormium(): KormiumHandl
 
 suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
     noinline block: suspend SuspendScope<G>.() -> R,
-): R = kormium<G>().database.suspendTransaction(block)
+): R = kormium<G>().database.suspendTransaction(block = block)
 
 suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
     noinline block: suspend SuspendScope<G>.() -> R,
@@ -39,7 +39,7 @@ suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
 suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
     catalog: G,
     noinline block: suspend SuspendScope<G>.() -> R,
-): R = kormium<G>().database.suspendTransaction(block)
+): R = kormium<G>().database.suspendTransaction(block = block)
 
 suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
     catalog: G,

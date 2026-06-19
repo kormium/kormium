@@ -3,6 +3,7 @@ package io.github.kormium.database
 import io.github.kormium.Catalog
 import io.github.kormium.KormiumConfig
 import io.github.kormium.SqlExecutor
+import io.github.kormium.TransactionIsolation
 import io.github.kormium.WriteListeners
 
 /**
@@ -31,9 +32,16 @@ interface Database<out G : Catalog> : AutoCloseable {
     /**
      * Pins one connection for the duration of [block]; the [SqlExecutor] passed to it
      * routes every statement to that connection. Wraps BEGIN/COMMIT/ROLLBACK when
-     * [transactional] is true, otherwise runs in autocommit. Backend-specific.
+     * [transactional] is true, otherwise runs in autocommit. When transactional, [isolation]
+     * (if non-null) and [readOnly] are applied to the opened transaction; both are ignored in
+     * autocommit. Backend-specific.
      */
-    fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R
+    fun <R> usePinned(
+        transactional: Boolean,
+        isolation: TransactionIsolation? = null,
+        readOnly: Boolean = false,
+        block: (SqlExecutor) -> R,
+    ): R
 
     /**
      * Whether [close] has been called. Defaults to `false` for backends that do not track it.
