@@ -33,6 +33,13 @@ interface ColumnType<T> {
      * a returned [JsonElement] is cast to `::jsonb` on Postgres). The default is identity.
      */
     fun toParam(value: T): Any? = value
+
+    /**
+     * A short human-readable name for this type, used only in diagnostics (e.g. result-mapping
+     * errors). The default derives it from the class name (`IntColumnType` → `Int`); [convert]
+     * and custom types may override for a clearer label.
+     */
+    val description: String get() = this::class.simpleName?.removeSuffix("ColumnType") ?: "custom"
 }
 
 /**
@@ -46,6 +53,7 @@ fun <Domain, Stored> ColumnType<Stored>.convert(
 ): ColumnType<Domain> = object : ColumnType<Domain> {
     override fun read(rs: ResultSet, index: Int): Domain? = this@convert.read(rs, index)?.let(fromStored)
     override fun toParam(value: Domain): Any? = this@convert.toParam(toStored(value))
+    override val description: String get() = "${this@convert.description} (converted)"
 }
 
 // ---- built-in column types (the 14 Kormium ships) ----

@@ -148,15 +148,25 @@ infix fun <G : Catalog, A : Entity, B : Entity> Table<G, A>.leftJoin(other: Tabl
  */
 class ResultRow internal constructor(private val values: Map<Any, Any?>) {
     operator fun <Z> get(field: Selectable<Z>): Z {
+        val key = fieldKey(field)
+        if (key !in values) {
+            error("Field '$key' was not selected in this projection — add it to select(...), or use getOrNull.")
+        }
         @Suppress("UNCHECKED_CAST")
-        return (values[fieldKey(field)] as Z?)
-            ?: error("Selected field is NULL or was not selected; use getOrNull for nullable fields")
+        return (values[key] as Z?)
+            ?: error("Selected field '$key' is NULL; use getOrNull for nullable fields.")
     }
 
     fun <Z> getOrNull(field: Selectable<Z>): Z? {
         @Suppress("UNCHECKED_CAST")
         return values[fieldKey(field)] as Z?
     }
+
+    // Key-based accessors (the key is computed once by the caller, avoiding a second fieldKey()
+    // string-concat per column). containsKey distinguishes a selected-but-NULL value from a field
+    // the projection never selected, so hydrate can give the right diagnostic.
+    internal fun containsKey(key: Any): Boolean = key in values
+    internal fun getByKey(key: Any): Any? = values[key]
 }
 
 // Identifies a selected field. A Column's property delegate yields a fresh instance on each
@@ -197,7 +207,23 @@ private fun buildSelect(
 
 // Reads each field positionally into a ResultRow.
 private fun mapRow(fields: List<Selectable<*>>, rs: ResultSet, typeMapper: TypeMapper): ResultRow =
-    ResultRow(fields.withIndex().associate { (i, f) -> fieldKey(f) to f.read(rs, i, typeMapper) })
+    ResultRow(fields.withIndex().associate { (i, f) -> fieldKey(f) to readSelectable(f, i, rs, typeMapper) })
+
+// Reads one selected field, wrapping any backend/conversion failure in a ResultMappingException
+// that names the source (column+table+expected type, or the expression) and preserves the cause.
+private fun readSelectable(field: Selectable<*>, index: Int, rs: ResultSet, typeMapper: TypeMapper): Any? =
+    try {
+        field.read(rs, index, typeMapper)
+    } catch (e: ResultMappingException) {
+        throw e
+    } catch (e: Throwable) {
+        val what = if (field is Column<*, *, *>) {
+            "column '${field.name}' of table '${field.tableRef.tableName}' (expected Korm type ${field.columnType.description})"
+        } else {
+            "selected expression"
+        }
+        throw ResultMappingException("Failed to read $what at result index $index: ${e.message}", cause = e)
+    }
 
 // ---- entity-pair hydration (shared by Scope and SuspendScope) ----
 
@@ -205,8 +231,19 @@ private fun mapRow(fields: List<Selectable<*>>, rs: ResultSet, typeMapper: TypeM
 internal fun pairSelectFields(left: Table<*, *>, right: Table<*, *>): List<Selectable<*>> =
     (left.getFieldDisplayNames().values + right.getFieldDisplayNames().values).toList()
 
-private fun <T : Entity> Table<*, T>.hydrateFrom(row: ResultRow): T =
-    hydrate(getFieldDisplayNames().mapValues { (_, c) -> row.getOrNull(c) }.toMutableMap())
+private fun <T : Entity> Table<*, T>.hydrateFrom(row: ResultRow): T {
+    val columns = getFieldDisplayNames()
+    // One pass, one map allocation, one fieldKey() per column; the absent set is allocated only if
+    // a column is actually missing (the common all-columns-selected case stays allocation-free).
+    val fields = HashMap<String, Any?>(columns.size * 2)
+    var absent: MutableSet<String>? = null
+    for ((fieldName, c) in columns) {
+        val key = fieldKey(c)
+        if (!row.containsKey(key)) (absent ?: mutableSetOf<String>().also { absent = it }).add(fieldName)
+        fields[fieldName] = row.getByKey(key)
+    }
+    return hydrate(fields, absentFields = absent ?: emptySet())
+}
 
 internal fun <A : Entity, B : Entity> hydrateInnerPairs(
     left: Table<*, A>,

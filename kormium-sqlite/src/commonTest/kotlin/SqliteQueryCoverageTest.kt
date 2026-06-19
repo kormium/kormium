@@ -113,6 +113,31 @@ class SqliteQueryCoverageTest {
         }
     }
 
+    /**
+     * Reading a field that the projection did not select must fail with clear guidance ("was not
+     * selected — add it to select(...)"), distinct from the message for a selected-but-NULL field.
+     */
+    @Test
+    fun readingUnselectedProjectionFieldGivesActionableError() {
+        val deptId = Uuid.random()
+        db.transaction {
+            QcDepts.execSql(qcDeptsDdl)
+            QcEmps.execSql(qcEmpsDdl)
+            QcDepts.insert(QcDept().apply { id = deptId; name = "Ops" })
+            QcEmps.insert(QcEmp().apply { id = Uuid.random(); this.deptId = deptId; name = "Lin" })
+        }
+        val row = db.autocommit {
+            (QcDepts innerJoin QcEmps on (QcDepts.id eq QcEmps.deptId)).select(QcDepts.name).single()
+        }
+        val ex = assertFailsWith<IllegalStateException> { row[QcEmps.id] }
+        val msg = ex.message ?: ""
+        assertTrue("not selected" in msg, "should explain the field was not selected: $msg")
+        db.transaction {
+            QcEmps.deleteWhere { where { QcEmps.deptId eq deptId } }
+            QcDepts.deleteWhere(Query(QcDepts.id eq deptId))
+        }
+    }
+
     // ---- 2. Aggregations + HAVING ----------------------------------------------------------
 
     /** count/sum/avg/min/max over a single group, all read from one row. */
