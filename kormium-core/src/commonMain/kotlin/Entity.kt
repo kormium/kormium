@@ -24,19 +24,23 @@ abstract class Entity protected constructor() {
     internal fun replaceFields(fields: MutableMap<String, Any?>) {
         this.fields = fields
     }
+}
 
-    /**
-     * True when [column] has an assigned or loaded value on this entity, including an
-     * explicit `null`. Use it to tell "set to null" from "never assigned".
-     */
-    fun isSet(column: Column<*, *, *>): Boolean = fields.containsKey(column.fieldKey)
+/**
+ * True when [column] has an assigned or loaded value on this entity, including an
+ * explicit `null`. Use it to tell "set to null" from "never assigned".
+ *
+ * The column must belong to this entity's type: `user.isSet(Orders.id)` is a compile error.
+ */
+fun <N : Entity> N.isSet(column: Column<*, *, N>): Boolean = fields.containsKey(column.fieldKey)
 
-    /**
-     * Removes [column]'s value, returning it to absent state (so it is omitted from
-     * INSERT/UPDATE again). `entity.note = null` means explicit null; `entity.unset(T.note)`
-     * means absent.
-     */
-    fun unset(column: Column<*, *, *>) {
-        fields.remove(column.fieldKey)
-    }
+/**
+ * Removes [column]'s value, returning it to absent state (so it is omitted from
+ * INSERT/UPDATE again). `entity.note = null` means explicit null; `entity.unset(T.note)`
+ * means absent.
+ *
+ * The column must belong to this entity's type: `user.unset(Orders.id)` is a compile error.
+ */
+fun <N : Entity> N.unset(column: Column<*, *, N>) {
+    fields.remove(column.fieldKey)
 }
