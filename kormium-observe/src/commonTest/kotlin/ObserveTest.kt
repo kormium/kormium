@@ -26,8 +26,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 private class FakeDb : SuspendDatabase<Nothing> {
     override val writeListeners = WriteListeners()
 
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R =
-        block(NoopExecutor)
+    override suspend fun <R> useConnection(
+        transactional: Boolean,
+        isolation: io.github.kormium.TransactionIsolation?,
+        readOnly: Boolean,
+        block: suspend (SuspendSqlExecutor) -> R,
+    ): R = block(NoopExecutor)
 
     override fun close() {}
 }

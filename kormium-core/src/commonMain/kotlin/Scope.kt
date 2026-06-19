@@ -245,13 +245,21 @@ class Scope<G : Catalog> internal constructor(
  * ROLLBACK if it throws. Table operations inside are constrained to this database's
  * catalog [G]. Calling another database's `transaction` inside opens an independent
  * transaction (separate connection); use [Scope.savepoint] for a nested unit.
+ *
+ * [isolation] sets the transaction's isolation level (`null` leaves the connection default;
+ * SQLite ignores it — see [TransactionIsolation]). [readOnly] opens a read-only transaction
+ * where the backend supports it.
  */
 @OptIn(ExperimentalContracts::class)
-fun <G : Catalog, R> Database<G>.transaction(block: Scope<G>.() -> R): R {
+fun <G : Catalog, R> Database<G>.transaction(
+    isolation: TransactionIsolation? = null,
+    readOnly: Boolean = false,
+    block: Scope<G>.() -> R,
+): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     // The dirty-table set outlives the block so we can fire it after the commit returns.
     val dirty = mutableSetOf<String>()
-    val result = usePinned(transactional = true) { Scope<G>(it.observed(config), config, dirty, transactional = true).block() }
+    val result = usePinned(transactional = true, isolation = isolation, readOnly = readOnly) { Scope<G>(it.observed(config), config, dirty, transactional = true).block() }
     writeListeners.fire(dirty)
     writeListeners.publishCommit(dirty)
     return result

@@ -462,8 +462,12 @@ object NativeDatabase : Database<NativeCatalog> {
         }
     }
 
-    override fun <R> usePinned(transactional: Boolean, block: (io.github.kormium.SqlExecutor) -> R): R =
-        driver.usePinned(transactional, block)
+    override fun <R> usePinned(
+        transactional: Boolean,
+        isolation: io.github.kormium.TransactionIsolation?,
+        readOnly: Boolean,
+        block: (io.github.kormium.SqlExecutor) -> R,
+    ): R = driver.usePinned(transactional, isolation, readOnly, block)
 
     override fun close() = driver.close()
 }

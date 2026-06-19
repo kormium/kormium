@@ -5,6 +5,7 @@ import io.github.kormium.SqlParameterSource
 import io.github.kormium.StandardDialect
 import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
+import io.github.kormium.TransactionIsolation
 import io.github.kormium.database.Database
 import io.github.kormium.database.SuspendDatabase
 import io.github.kormium.resultset.ResultSet
@@ -21,11 +22,19 @@ class DatabaseMock: Database<Nothing>, SuspendDatabase<Nothing> {
 
     // The mock records SQL rather than pinning a real connection; both the blocking and the
     // suspend scopes get an executor that writes back into these fields (BEGIN/COMMIT are no-ops).
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R =
-        block(MockExecutor(this))
+    override fun <R> usePinned(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: (SqlExecutor) -> R,
+    ): R = block(MockExecutor(this))
 
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R =
-        block(SuspendMockExecutor(this))
+    override suspend fun <R> useConnection(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: suspend (SuspendSqlExecutor) -> R,
+    ): R = block(SuspendMockExecutor(this))
 
     override fun close() = Unit
 }

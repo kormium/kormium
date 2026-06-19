@@ -31,12 +31,23 @@ import io.github.kormium.SqlExecutor
 import io.github.kormium.SqlParameterSource
 import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
+import io.github.kormium.TransactionIsolation
 import io.github.kormium.TypeMapper
 import io.github.kormium.database.SuspendDatabase
 import io.github.kormium.resultset.ResultSet
 import io.github.kormium.runConnection
 import io.github.kormium.runPinned
 import io.github.kormium.sqlException
+
+/**
+ * Renders the `BEGIN` statement for a transaction. PostgreSQL accepts the isolation level and
+ * read-only mode in one statement: `BEGIN [ISOLATION LEVEL ...] [READ ONLY]`.
+ */
+private fun pgBeginSql(isolation: TransactionIsolation?, readOnly: Boolean): String = buildString {
+    append("BEGIN")
+    if (isolation != null) append(" ISOLATION LEVEL ").append(isolation.sql)
+    if (readOnly) append(" READ ONLY")
+}
 
 @OptIn(ExperimentalForeignApi::class)
 fun FPostgresDriver(
@@ -148,30 +159,42 @@ private class PostgresDriverImpl(
 
     private inner class PgPinnedConnection(private val conn: CPointer<PGconn>) : PinnedConnection {
         override val executor: SqlExecutor = NativeExecutor(conn)
-        override fun begin() { PQclear(doExecute(conn, "BEGIN")) }
+        override fun begin(isolation: TransactionIsolation?, readOnly: Boolean) {
+            PQclear(doExecute(conn, pgBeginSql(isolation, readOnly)))
+        }
         override fun commit() { PQclear(doExecute(conn, "COMMIT")) }
         override fun rollback() { PQclear(doExecute(conn, "ROLLBACK")) }
         // Capacity == poolSize, so a borrowed connection always fits back in.
         override fun release() { pool.trySend(conn) }
     }
 
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+    override fun <R> usePinned(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: (SqlExecutor) -> R,
+    ): R {
         lifecycle.checkOpen()
-        return connectionPool.runPinned(transactional, block)
+        return connectionPool.runPinned(transactional, isolation, readOnly, block)
     }
 
     // useConnection: when a reactor exists (Unix poll, Windows WSAPoll), run truly async — borrow
     // by suspending on the pool Channel, drive every statement and BEGIN/COMMIT/ROLLBACK through
     // the reactor (the coroutine thread is freed during each network wait), cleaning up under
     // NonCancellable. When there is no reactor, fall back to the core blocking offload.
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+    override suspend fun <R> useConnection(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: suspend (SuspendSqlExecutor) -> R,
+    ): R {
         lifecycle.checkOpen()
-        val activeReactor = reactor ?: return connectionPool.runConnection(transactional, block)
+        val activeReactor = reactor ?: return connectionPool.runConnection(transactional, isolation, readOnly, block)
         val conn = acquireConnectionSuspending()
         try {
             val exec = NativeSuspendExecutor(conn, activeReactor)
             if (!transactional) return block(exec)
-            asyncCommand(conn, "BEGIN", activeReactor)
+            asyncCommand(conn, pgBeginSql(isolation, readOnly), activeReactor)
             return try {
                 block(exec).also { asyncCommand(conn, "COMMIT", activeReactor) }
             } catch (e: Throwable) {

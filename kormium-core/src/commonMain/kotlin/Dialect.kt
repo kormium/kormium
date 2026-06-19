@@ -69,7 +69,33 @@ interface Dialect {
      */
     fun renderInsertOrIgnoreSuffix(conflictColumns: List<String>): String =
         "ON CONFLICT (${conflictColumns.joinToString(", ")}) DO NOTHING"
+
+    // ---- transaction options (isolation / read-only); see [TransactionIsolation] ----
+
+    /**
+     * Whether the backend honors a settable transaction isolation level. When `false` (SQLite,
+     * which has a single effective level ≈ `SERIALIZABLE`), a [TransactionIsolation] passed to a
+     * transaction is silently ignored rather than emulated or rejected. Default `true`.
+     */
+    val supportsTransactionIsolation: Boolean get() = true
+
+    /**
+     * SQL a backend runs to enter / leave a read-only transaction, for databases that toggle
+     * read-only with a statement rather than a native connection flag. `null` (the default) means
+     * there is no such statement, so the JDBC backend falls back to `Connection.setReadOnly`.
+     * SQLite has no native flag (and sqlite-jdbc rejects `setReadOnly` after connect), so
+     * [SqliteDialect] supplies `PRAGMA query_only` here — the single source the JDBC and the
+     * native/Android SQLite backends all read.
+     */
+    val readOnlyToggle: ReadOnlyToggle? get() = null
 }
+
+/**
+ * A pair of connection-level statements that turn read-only mode on ([enter]) and off ([exit]),
+ * used by a backend whose database toggles read-only with a statement rather than a native
+ * connection flag (see [Dialect.readOnlyToggle]).
+ */
+data class ReadOnlyToggle(val enter: String, val exit: String)
 
 /**
  * Standard-SQL rendering: double-quoted identifiers, `:name` placeholders, plain

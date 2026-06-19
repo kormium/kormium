@@ -2,6 +2,7 @@ package io.github.kormium.ktor
 
 import io.github.kormium.Catalog
 import io.github.kormium.SuspendScope
+import io.github.kormium.TransactionIsolation
 import io.github.kormium.database.SuspendDatabase
 import io.github.kormium.suspendAutocommit
 import io.github.kormium.suspendTransaction
@@ -19,8 +20,10 @@ import io.ktor.server.application.ApplicationCall
  */
 suspend fun <G : Catalog, R> ApplicationCall.transaction(
     db: SuspendDatabase<G>,
+    isolation: TransactionIsolation? = null,
+    readOnly: Boolean = false,
     block: suspend SuspendScope<G>.() -> R,
-): R = db.suspendTransaction(block)
+): R = db.suspendTransaction(isolation, readOnly, block)
 
 /**
  * Runs [block] on [db] in autocommit (no surrounding transaction) — the cheap path for reads /

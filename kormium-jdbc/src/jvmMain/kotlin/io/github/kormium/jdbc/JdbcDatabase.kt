@@ -7,9 +7,11 @@ import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.PinnedConnection
+import io.github.kormium.ReadOnlyToggle
 import io.github.kormium.SqlExecutor
 import io.github.kormium.SqlParameterSource
 import io.github.kormium.SuspendSqlExecutor
+import io.github.kormium.TransactionIsolation
 import io.github.kormium.TypeMapper
 import io.github.kormium.WriteListeners
 import io.github.kormium.database.Database
@@ -82,29 +84,60 @@ open class JdbcDatabase(
 
     override fun close() = lifecycle.close()
 
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+    override fun <R> usePinned(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: (SqlExecutor) -> R,
+    ): R {
         lifecycle.checkOpen()
-        return pool.runPinned(transactional, block)
+        return pool.runPinned(transactional, isolation, readOnly, block)
     }
 
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+    override suspend fun <R> useConnection(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: suspend (SuspendSqlExecutor) -> R,
+    ): R {
         lifecycle.checkOpen()
-        return pool.runConnection(transactional, block)
+        return pool.runConnection(transactional, isolation, readOnly, block)
     }
 }
 
 /** A [PinnedConnection] over one borrowed JDBC connection. */
 private class JdbcPinnedConnection(
     private val conn: Connection,
-    dialect: Dialect,
+    private val dialect: Dialect,
     typeMapper: TypeMapper,
     wrap: ResultSetWrapper,
     private val translate: SqlExceptionTranslator,
 ) : PinnedConnection {
     override val executor: SqlExecutor = JdbcExecutor(conn, dialect, typeMapper, wrap, translate)
     private var previousAutoCommit = true
+    // Each is non-null only when begin() changed that setting, recording how to undo it on release:
+    private var previousIsolation: Int? = null      // restore the driver isolation level
+    private var previousReadOnly: Boolean? = null    // restore the native read-only flag
+    private var readOnlyToggle: ReadOnlyToggle? = null // run this toggle's exit SQL (e.g. SQLite PRAGMA)
 
-    override fun begin() {
+    override fun begin(isolation: TransactionIsolation?, readOnly: Boolean) {
+        // Apply isolation / read-only before turning off autocommit, so the opening
+        // transaction inherits them; capture the prior values to restore on release.
+        if (isolation != null && dialect.supportsTransactionIsolation) {
+            previousIsolation = conn.transactionIsolation
+            conn.transactionIsolation = isolation.jdbcLevel
+        }
+        if (readOnly) {
+            val toggle = dialect.readOnlyToggle
+            if (toggle != null) {
+                // Driver flag is unusable (sqlite-jdbc) — toggle read-only via SQL instead.
+                conn.createStatement().use { it.execute(toggle.enter) }
+                readOnlyToggle = toggle
+            } else {
+                previousReadOnly = conn.isReadOnly
+                conn.isReadOnly = true
+            }
+        }
         previousAutoCommit = conn.autoCommit
         conn.autoCommit = false
     }
@@ -127,9 +160,22 @@ private class JdbcPinnedConnection(
 
     override fun release() {
         runCatching { conn.autoCommit = previousAutoCommit }
+        // Restore per-borrow transaction state before the connection returns to the pool.
+        readOnlyToggle?.let { t -> runCatching { conn.createStatement().use { it.execute(t.exit) } } }
+        previousReadOnly?.let { ro -> runCatching { conn.isReadOnly = ro } }
+        previousIsolation?.let { iso -> runCatching { conn.transactionIsolation = iso } }
         conn.close()
     }
 }
+
+/** Maps a portable [TransactionIsolation] to its `java.sql.Connection.TRANSACTION_*` constant. */
+private val TransactionIsolation.jdbcLevel: Int
+    get() = when (this) {
+        TransactionIsolation.ReadUncommitted -> Connection.TRANSACTION_READ_UNCOMMITTED
+        TransactionIsolation.ReadCommitted -> Connection.TRANSACTION_READ_COMMITTED
+        TransactionIsolation.RepeatableRead -> Connection.TRANSACTION_REPEATABLE_READ
+        TransactionIsolation.Serializable -> Connection.TRANSACTION_SERIALIZABLE
+    }
 
 /** An [SqlExecutor] bound to one already-open JDBC connection. */
 class JdbcExecutor(

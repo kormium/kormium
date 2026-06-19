@@ -219,12 +219,20 @@ class SuspendScope<G : Catalog> internal constructor(
  * ROLLBACK if it throws. The suspend counterpart of [transaction]; [block] may itself
  * suspend while the connection stays pinned. Whether this is true async or a blocking
  * driver offloaded to a dispatcher depends on the backend's [SuspendDatabase.useConnection].
+ *
+ * [isolation] sets the transaction's isolation level (`null` leaves the connection default;
+ * SQLite ignores it — see [TransactionIsolation]). [readOnly] opens a read-only transaction
+ * where the backend supports it.
  */
 @OptIn(ExperimentalContracts::class)
-suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(block: suspend SuspendScope<G>.() -> R): R {
+suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(
+    isolation: TransactionIsolation? = null,
+    readOnly: Boolean = false,
+    block: suspend SuspendScope<G>.() -> R,
+): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
-    val result = useConnection(transactional = true) { SuspendScope<G>(it.observed(config), config, dirty, transactional = true).block() }
+    val result = useConnection(transactional = true, isolation = isolation, readOnly = readOnly) { SuspendScope<G>(it.observed(config), config, dirty, transactional = true).block() }
     writeListeners.fire(dirty)
     writeListeners.publishCommit(dirty)
     return result

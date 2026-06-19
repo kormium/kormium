@@ -20,6 +20,52 @@ val users = db.autocommit {
 - `autocommit { }` pins a connection but does not wrap the block in an explicit
   transaction.
 
+## Isolation and read-only
+
+`transaction { }` and `suspendTransaction { }` take two optional, portable parameters:
+
+```kotlin
+import io.github.kormium.TransactionIsolation
+
+db.transaction(isolation = TransactionIsolation.Serializable, readOnly = true) {
+    Reports.all()
+}
+
+db.suspendTransaction(isolation = TransactionIsolation.RepeatableRead) {
+    Accounts.update(account) { where { Accounts.id eq account.id } }
+}
+```
+
+- **`isolation`** is one of the four SQL-standard levels — `ReadUncommitted`, `ReadCommitted`,
+  `RepeatableRead`, `Serializable`. The default (`null`) leaves the connection's configured level
+  untouched (no `SET TRANSACTION` is emitted).
+- **`readOnly`** opens a read-only transaction where the backend supports it.
+
+Both apply only to `transaction` / `suspendTransaction`; `autocommit` ignores them. The Ktor
+helpers (`call.transaction(db, isolation = …, readOnly = …) { }` and
+`call.kormium<G>().transaction(isolation = …, readOnly = …) { }`) forward them too.
+
+### Backend differences
+
+These are intentionally not hidden — the behavior maps to what each database actually offers:
+
+| Backend | Isolation | Read-only |
+| --- | --- | --- |
+| **PostgreSQL** (JDBC, native libpq, r2dbc) | All four levels; `READ UNCOMMITTED` behaves as `READ COMMITTED` (Postgres has no dirty reads) | Honored — writes raise `25006 read_only_sql_transaction` |
+| **MySQL/MariaDB** (JDBC, native, r2dbc) | All four levels | Honored (`START TRANSACTION READ ONLY`) |
+| **SQLite** (JDBC, native, Android) | **Ignored** — SQLite has a single level (≈ `SERIALIZABLE`); a non-null value is silently dropped, never emulated or rejected | Honored via `PRAGMA query_only` |
+
+How it is applied per backend: the JDBC backend uses the driver API
+(`Connection.setTransactionIsolation` / `setReadOnly`), except SQLite-over-JDBC — whose driver
+rejects `setReadOnly` — which uses `PRAGMA query_only`. The native libpq backend emits
+`BEGIN ISOLATION LEVEL … READ ONLY`; native MySQL emits `SET TRANSACTION ISOLATION LEVEL …` then
+`START TRANSACTION [READ ONLY]`; r2dbc carries both through a `TransactionDefinition`. Any
+per-connection state is restored when the connection returns to the pool.
+
+> Because SQLite ignores isolation, code that relies on a specific level for correctness is not
+> portable to SQLite. Reach for `readOnly` (which SQLite does honor) or test against your target
+> database.
+
 ## Savepoints
 
 Use `savepoint { }` when one nested unit may fail without rolling back the whole outer

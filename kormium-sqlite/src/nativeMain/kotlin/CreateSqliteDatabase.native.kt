@@ -91,24 +91,49 @@ private class SqliteNativeDriver(path: String, private val poolSize: Int, overri
 
     private inner class SqlitePinnedConnection(private val conn: CPointer<sqlite3>) : PinnedConnection {
         override val executor: SqlExecutor = NativeExecutor(conn)
-        override fun begin() { rawExec(conn, "BEGIN") }
+        private var readOnlyActive = false
+
+        // SQLite has a single isolation level (effectively SERIALIZABLE), so [isolation] is
+        // ignored; read-only is honored via the connection-level PRAGMA (sourced from
+        // SqliteDialect so the toggle SQL lives in one place), reset on release.
+        override fun begin(isolation: TransactionIsolation?, readOnly: Boolean) {
+            rawExec(conn, "BEGIN")
+            if (readOnly) {
+                rawExec(conn, SqliteDialect.readOnlyToggle.enter)
+                readOnlyActive = true
+            }
+        }
         override fun commit() { rawExec(conn, "COMMIT") }
         override fun rollback() { rawExec(conn, "ROLLBACK") }
         // If the pool is already closed (a release racing close()), close the connection
         // directly instead of silently leaking it.
         override fun release() {
+            if (readOnlyActive) {
+                runCatching { rawExec(conn, SqliteDialect.readOnlyToggle.exit) }
+                readOnlyActive = false
+            }
             if (pool.trySend(conn).isFailure) sqlite3_close_v2(conn)
         }
     }
 
-    override fun <R> usePinned(transactional: Boolean, block: (SqlExecutor) -> R): R {
+    override fun <R> usePinned(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: (SqlExecutor) -> R,
+    ): R {
         lifecycle.checkOpen()
-        return connectionPool.runPinned(transactional, block)
+        return connectionPool.runPinned(transactional, isolation, readOnly, block)
     }
 
-    override suspend fun <R> useConnection(transactional: Boolean, block: suspend (SuspendSqlExecutor) -> R): R {
+    override suspend fun <R> useConnection(
+        transactional: Boolean,
+        isolation: TransactionIsolation?,
+        readOnly: Boolean,
+        block: suspend (SuspendSqlExecutor) -> R,
+    ): R {
         lifecycle.checkOpen()
-        return connectionPool.runConnection(transactional, block)
+        return connectionPool.runConnection(transactional, isolation, readOnly, block)
     }
 
     // An SqlExecutor bound to the pinned connection for the duration of usePinned.
