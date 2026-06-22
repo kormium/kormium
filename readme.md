@@ -67,11 +67,43 @@ val adults = db.autocommit {
 
 ## Status
 
-Kormium is **pre-1.0**. The public API is usable and tested, but still allowed to change.
-It is a good fit for experiments, internal tools, prototypes, benchmarks and feedback.
-Do not make it the only persistence layer for critical production systems yet.
+**Pre-1.0 — stable core.** The core API is ~90% frozen and covered by tests.
+Kormium follows strict [Semantic Versioning](https://semver.org/): any breaking
+change before 1.0 is called out explicitly in [CHANGELOG.md](CHANGELOG.md) with a
+migration path. You get predictable upgrades, not surprise rewrites.
 
 Requires **JDK 21+** for JVM builds. The JVM suspend offload path uses virtual threads.
+
+## Testing strategy
+
+Every backend is exercised against a **real database**, never a mock or an
+in-memory fake standing in for the production engine. The same suite runs across
+the platform matrix so a green build means "works on every supported target",
+not just on the JVM.
+
+**Integration & end-to-end, on real engines.** On the JVM, the async (r2dbc),
+JDBC MySQL and Ktor/Koin/sample backends spin up ephemeral **PostgreSQL** and
+**MySQL** instances per run via [Testcontainers](https://testcontainers.com/),
+so tests own their database lifecycle and leave nothing behind. SQLite is tested
+against a genuine SQLite library (in-memory) on every target.
+
+**Kotlin/Native, against live servers.** Testcontainers is a JVM library, so the
+native path takes a different route: the `linuxX64` and `mingwX64` test
+executables link the real `libpq` / `libsqlite3` / `libmariadb` and connect to a
+**PostgreSQL 16** and **MariaDB 11** server provisioned by CI (service containers
+on Linux, the preinstalled PostgreSQL service on Windows). The native drivers are
+validated end-to-end, not just compiled.
+
+**Platform matrix (CI).**
+
+| Target | Where it runs | What's verified |
+|---|---|---|
+| JVM (JDK 21) | Linux + Windows | Unit + integration; both the blocking and the suspend/offload paths |
+| Native `linuxX64` | Linux | Native tests against live Postgres, MySQL, SQLite |
+| Native `mingwX64` (Windows) | Windows | Native tests against a live Postgres + in-memory SQLite |
+| Android + iOS (`iosArm64`/`iosX64`/`iosSimulatorArm64`) | macOS | Klibs cross-compiled for every Compose-Multiplatform module |
+
+Test reports are uploaded as CI artifacts on every run.
 
 ## Install
 
