@@ -37,7 +37,7 @@ abstract class Repository<G : Catalog, T : Entity>(
     protected suspend fun <R> read(block: suspend SuspendScope<G>.() -> R): R = db.suspendAutocommit(block)
 
     /** Run a write in a transaction on this database. Use in subclasses for custom mutations. */
-    protected suspend fun <R> write(block: suspend SuspendScope<G>.() -> R): R = db.suspendTransaction(block)
+    protected suspend fun <R> write(block: suspend SuspendScope<G>.() -> R): R = db.suspendTransaction(block = block)
 }
 
 // For unit-testing services against an interface (mocking), declare a domain interface your
