@@ -1,2 +1,8 @@
 # Batch scripts must keep CRLF: cmd.exe misparses goto/labels in LF-only files.
 *.bat text eol=crlf
+
+# Vendored third-party C (SQLite amalgamation, cinterop shims): exclude from
+# GitHub Linguist language stats so the repo reads as Kotlin, not C.
+*.c linguist-vendored
+*.h linguist-vendored
+**/nativeInterop/cinterop/** linguist-vendored
