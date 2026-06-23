@@ -35,6 +35,12 @@ kotlin {
     macosArm64()
     mingwX64()
 
+    // Kotlin/JS + Kotlin/Wasm: change observation is pure coroutines Flow over core's WriteListener
+    // seam, so it compiles to the web stack too.
+    js { nodejs() }
+    wasmJs { nodejs() }
+    wasmWasi { nodejs() }
+
     applyDefaultHierarchyTemplate()
 
     sourceSets {

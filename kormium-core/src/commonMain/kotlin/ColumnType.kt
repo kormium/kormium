@@ -72,6 +72,7 @@ object ShortColumnType : ColumnType<Short> { override fun read(rs: ResultSet, in
 object LocalDateColumnType : ColumnType<LocalDate> { override fun read(rs: ResultSet, index: Int) = rs.getDate(index) }
 object LocalTimeColumnType : ColumnType<LocalTime> { override fun read(rs: ResultSet, index: Int) = rs.getTime(index) }
 object LocalDateTimeColumnType : ColumnType<LocalDateTime> { override fun read(rs: ResultSet, index: Int) = rs.getLocalDateTime(index) }
+object BytesColumnType : ColumnType<ByteArray> { override fun read(rs: ResultSet, index: Int) = rs.getBytes(index) }
 
 // ---- ready-made custom types built on [convert] ----
 

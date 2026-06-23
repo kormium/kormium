@@ -12,6 +12,7 @@ import io.github.kormium.suspendAutocommit
 import io.github.kormium.suspendTransaction
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -72,6 +73,21 @@ class PgIntegrationTest {
     }
 
     @Test
+    fun bytesRoundTrip() = runTest {
+        val db = open() ?: return@runTest
+        try {
+            db.suspendTransaction { Blobs.execSql(blobsDdl) }
+            val id = Uuid.random()
+            val payload = byteArrayOf(0, 1, 2, 42, 127, -1, -128, 99)
+            db.suspendTransaction { Blobs.insert(BlobRow().apply { this.id = id; this.data = payload }) }
+            val found = db.suspendAutocommit { Blobs.findById(id) }
+            assertContentEquals(payload, found?.data)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun transactionRollsBackOnThrow() = runTest {
         val db = open() ?: return@runTest
         try {
@@ -110,3 +126,18 @@ object Widgets : Table<WidgetCatalog, Widget>("pg_node_widgets", ::Widget) {
 
 private val widgetsDdl =
     """CREATE TABLE IF NOT EXISTS "pg_node_widgets" ("id" uuid NOT NULL, "name" text NOT NULL, "qty" integer NOT NULL, PRIMARY KEY ("id"))"""
+
+class BlobRow : Entity() {
+    var id by Blobs.id
+    var data by Blobs.data
+}
+
+object Blobs : Table<WidgetCatalog, BlobRow>("pg_node_blobs", ::BlobRow) {
+    val id by Column.UUID().primaryKey()
+    val data by Column.Bytes()
+
+    init { id; data }
+}
+
+private val blobsDdl =
+    """CREATE TABLE IF NOT EXISTS "pg_node_blobs" ("id" uuid NOT NULL, "data" bytea NOT NULL, PRIMARY KEY ("id"))"""
