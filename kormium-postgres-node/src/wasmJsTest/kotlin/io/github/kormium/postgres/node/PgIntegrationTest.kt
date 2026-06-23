@@ -26,19 +26,24 @@ private fun env(name: String, fallback: String): String = js("process.env[name] 
  */
 class PgIntegrationTest {
 
-    private suspend fun open(): SuspendDatabase<WidgetCatalog>? =
-        try {
-            createNodePostgresDatabase(
-                host = env("KORMIUM_PG_HOST", "localhost"),
-                port = env("KORMIUM_PG_PORT", "5433").toInt(),
-                database = env("KORMIUM_PG_DB", "kormtest"),
-                user = env("KORMIUM_PG_USER", "postgres"),
-                password = env("KORMIUM_PG_PASSWORD", "korm"),
-            )
+    private suspend fun open(): SuspendDatabase<WidgetCatalog>? {
+        val db: SuspendDatabase<WidgetCatalog> = createNodePostgresDatabase(
+            host = env("KORMIUM_PG_HOST", "localhost"),
+            port = env("KORMIUM_PG_PORT", "5433").toInt(),
+            database = env("KORMIUM_PG_DB", "kormtest"),
+            user = env("KORMIUM_PG_USER", "postgres"),
+            password = env("KORMIUM_PG_PASSWORD", "korm"),
+        )
+        // The pool connects lazily, so probe a connection here to skip cleanly if no server is up.
+        return try {
+            db.suspendAutocommit { }
+            db
         } catch (e: Throwable) {
             println("Skipping PgIntegrationTest: no Postgres reachable (${e.message})")
+            db.close()
             null
         }
+    }
 
     @Test
     fun crudRoundTrip() = runTest {

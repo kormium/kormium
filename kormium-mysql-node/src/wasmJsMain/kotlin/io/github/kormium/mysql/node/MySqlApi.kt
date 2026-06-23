@@ -2,19 +2,25 @@ package io.github.kormium.mysql.node
 
 import kotlin.js.Promise
 
-/** One mysql2 connection. query() resolves to a `[rows, fields]` tuple (a JS array of length 2). */
-internal external interface MySqlConnection : JsAny {
-    fun query(config: JsAny): Promise<JsArray<JsAny?>>
+/** A mysql2 connection pool: hands out [PoolConnection]s (one per pinned connection). */
+internal external interface MyPool : JsAny {
+    fun getConnection(): Promise<PoolConnection>
     fun end(): Promise<JsAny?>
+}
+
+/** One pinned connection borrowed from a [MyPool]; [release] returns it. query() → `[rows, fields]`. */
+internal external interface PoolConnection : JsAny {
+    fun query(config: JsAny): Promise<JsArray<JsAny?>>
+    fun release()
 }
 
 internal external interface MySqlField : JsAny {
     val name: String
 }
 
-/** Builds the mysql2 connection config. */
-internal fun mysqlConfig(host: String, port: Int, database: String, user: String, password: String): JsAny =
-    js("({ host: host, port: port, database: database, user: user, password: password })")
+/** Builds the mysql2 pool config (`connectionLimit` caps the pool size). */
+internal fun mysqlPoolConfig(host: String, port: Int, database: String, user: String, password: String, connectionLimit: Int): JsAny =
+    js("({ host: host, port: port, database: database, user: user, password: password, connectionLimit: connectionLimit })")
 
 /** Query config: positional `?` params, rows returned as arrays (so reads are by index). */
 internal fun mysqlQueryConfig(sql: String, params: JsArray<JsAny?>): JsAny =

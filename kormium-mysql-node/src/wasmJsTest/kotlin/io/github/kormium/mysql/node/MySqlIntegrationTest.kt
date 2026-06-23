@@ -25,19 +25,24 @@ private fun env(name: String, fallback: String): String = js("process.env[name] 
  */
 class MySqlIntegrationTest {
 
-    private suspend fun open(): SuspendDatabase<WidgetCatalog>? =
-        try {
-            createNodeMysqlDatabase(
-                host = env("KORMIUM_MY_HOST", "localhost"),
-                port = env("KORMIUM_MY_PORT", "3307").toInt(),
-                database = env("KORMIUM_MY_DB", "kormtest"),
-                user = env("KORMIUM_MY_USER", "root"),
-                password = env("KORMIUM_MY_PASSWORD", "korm"),
-            )
+    private suspend fun open(): SuspendDatabase<WidgetCatalog>? {
+        val db: SuspendDatabase<WidgetCatalog> = createNodeMysqlDatabase(
+            host = env("KORMIUM_MY_HOST", "localhost"),
+            port = env("KORMIUM_MY_PORT", "3307").toInt(),
+            database = env("KORMIUM_MY_DB", "kormtest"),
+            user = env("KORMIUM_MY_USER", "root"),
+            password = env("KORMIUM_MY_PASSWORD", "korm"),
+        )
+        // The pool connects lazily, so probe a connection here to skip cleanly if no server is up.
+        return try {
+            db.suspendAutocommit { }
+            db
         } catch (e: Throwable) {
             println("Skipping MySqlIntegrationTest: no MySQL reachable (${e.message})")
+            db.close()
             null
         }
+    }
 
     @Test
     fun crudRoundTrip() = runTest {

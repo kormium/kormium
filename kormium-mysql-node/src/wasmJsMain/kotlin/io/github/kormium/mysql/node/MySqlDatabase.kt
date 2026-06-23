@@ -10,27 +10,23 @@ import io.github.kormium.WriteListeners
 import io.github.kormium.database.SuspendDatabase
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.await
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
- * An async MySQL/MariaDB [SuspendDatabase] for Node, backed by one mysql2 connection. Suspend-only
- * (no blocking on a JS event loop); one connection, so a [Mutex] serialises [useConnection].
+ * An async MySQL/MariaDB [SuspendDatabase] for Node, backed by a mysql2 connection [MyPool]. Each
+ * [useConnection] borrows a [PoolConnection] for the block and returns it after — independent calls
+ * run on independent connections (real concurrency, no Mutex). Suspend-only.
  */
 class MySqlDatabase internal constructor(
-    private val connection: MySqlConnection,
+    private val pool: MyPool,
     override val config: KormiumConfig,
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
 
-    private val lifecycle = DatabaseLifecycle { connection.end() }
-    private val connectionLock = Mutex()
+    private val lifecycle = DatabaseLifecycle { pool.end() }
 
     override val isClosed: Boolean get() = lifecycle.isClosed
-
-    private val executor = MySqlExecutor(connection, MySqlDialect, StandardTypeMapper)
 
     override suspend fun <R> useConnection(
         transactional: Boolean,
@@ -39,17 +35,22 @@ class MySqlDatabase internal constructor(
         block: suspend (SuspendSqlExecutor) -> R,
     ): R {
         lifecycle.checkOpen()
-        return connectionLock.withLock {
-            if (!transactional) return@withLock block(executor)
-            // MySQL applies SET TRANSACTION to the next transaction, so set isolation before START.
-            isolation?.let { executor.execute("SET TRANSACTION ISOLATION LEVEL ${it.sql}") }
-            executor.execute(if (readOnly) "START TRANSACTION READ ONLY" else "START TRANSACTION")
-            try {
-                block(executor).also { executor.execute("COMMIT") }
+        val connection = pool.getConnection().await<PoolConnection>()
+        val exec = MySqlExecutor(connection, MySqlDialect, StandardTypeMapper)
+        try {
+            if (transactional) {
+                // MySQL applies SET TRANSACTION to the next transaction, so set isolation before START.
+                isolation?.let { exec.execute("SET TRANSACTION ISOLATION LEVEL ${it.sql}") }
+                exec.execute(if (readOnly) "START TRANSACTION READ ONLY" else "START TRANSACTION")
+            }
+            return try {
+                block(exec).also { if (transactional) exec.execute("COMMIT") }
             } catch (e: Throwable) {
-                withContext(NonCancellable) { runCatching { executor.execute("ROLLBACK") } }
+                if (transactional) withContext(NonCancellable) { runCatching { exec.execute("ROLLBACK") } }
                 throw e
             }
+        } finally {
+            connection.release()
         }
     }
 
@@ -64,15 +65,16 @@ private val TransactionIsolation.sql: String
         TransactionIsolation.Serializable -> "SERIALIZABLE"
     }
 
-/** Opens a MySQL/MariaDB database over mysql2. Tagged [Nothing]; pin the catalog at the call site. */
-suspend fun createNodeMysqlDatabase(
+/**
+ * Opens a MySQL/MariaDB database over a mysql2 connection pool of [poolSize] connections. Tagged
+ * [Nothing]; pin the catalog at the call site.
+ */
+fun createNodeMysqlDatabase(
     host: String,
     port: Int = 3306,
     database: String,
     user: String,
     password: String,
+    poolSize: Int = 10,
     config: KormiumConfig = KormiumConfig(),
-): MySqlDatabase {
-    val connection = createConnection(mysqlConfig(host, port, database, user, password)).await<MySqlConnection>()
-    return MySqlDatabase(connection, config)
-}
+): MySqlDatabase = MySqlDatabase(createPool(mysqlPoolConfig(host, port, database, user, password, poolSize)), config)
