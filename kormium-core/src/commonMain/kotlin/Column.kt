@@ -1,12 +1,11 @@
 package io.github.kormium
 
 import io.github.kormium.resultset.ResultSet
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonElement
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
-private val logger = KotlinLogging.logger {}
+private val logger = kormiumLogger()
 
 /**
  * A typed column on table [T]. A column is the SQL identifier (an [Expression]/[Selectable])

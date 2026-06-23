@@ -45,6 +45,10 @@ kotlin {
                 // Exposes createDatabase(...) plus the MySQL Dialect + MySqlDriver interface.
                 // MySqlDriver is part of the public return type, so :kormium-core is an api dependency.
                 api(project(":kormium-core"))
+                // MySqlDialect lives in the pure dialect module (split out so it can also compile
+                // to js/wasm). `api` keeps `io.github.kormium.MySqlDialect` visible to existing
+                // consumers exactly as before.
+                api(project(":kormium-mysql-dialect"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
                 // MySqlJvmTypeMapper binds a JsonElement as its text form into a JSON column.
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
