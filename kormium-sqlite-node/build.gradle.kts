@@ -7,15 +7,13 @@ repositories {
 }
 
 kotlin {
-    // wa-sqlite is SQLite compiled to WASM, reached through JS interop, so this engine is
-    // Kotlin/Wasm (JS) only. nodejs() runs the tests against an in-memory database (`:memory:`);
-    // the browser uses the IndexedDB VFS for persistence (see the todo sample).
+    // A SQLite engine for Kotlin running on Node, over the synchronous better-sqlite3 package.
+    // Node only (no browser); nodejs() also runs the tests against a real on-disk/in-memory SQLite.
     compilerOptions {
         optIn.add("kotlin.js.ExperimentalWasmJsInterop")
     }
 
     wasmJs {
-        browser()
         nodejs()
     }
 
@@ -24,7 +22,6 @@ kotlin {
     sourceSets {
         val wasmJsMain by getting {
             dependencies {
-                // The suspend SPI from core; the public surface.
                 api(project(":kormium-core"))
                 // Reuse the shared, pure SqliteDialect (no duplication) — see ADR 0001.
                 implementation(project(":kormium-sqlite-dialect"))
@@ -32,8 +29,8 @@ kotlin {
                 implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-                // wa-sqlite: SQLite in WASM with async VFS (IndexedDB-capable). https://github.com/rhashimoto/wa-sqlite
-                implementation(npm("wa-sqlite", "1.0.0"))
+                // better-sqlite3: the de-facto synchronous SQLite for Node. https://github.com/WiseLibs/better-sqlite3
+                implementation(npm("better-sqlite3", "12.11.1"))
             }
         }
         val wasmJsTest by getting {

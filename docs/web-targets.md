@@ -41,8 +41,8 @@ Near-term targets (have real DB access today):
   engine over its C API, reusing `kormium-sqlite-dialect`. Persists to IndexedDB via
   `IDBBatchAtomicVFS` (`createSqliteWasmDatabase("name")`). Shown by `samples/wasm-todo`, a
   Compose Multiplatform todo app — `./gradlew :samples:wasm-todo:wasmJsBrowserDevelopmentRun`.
-  (Note: no Node test — wa-sqlite's async build loads its `.wasm` via `fetch()`, which Node
-  rejects for `file://`; it is verified in the browser.)
+  Tested under Node in CI by passing the `.wasm` as `wasmBinary` (wa-sqlite's async build would
+  otherwise `fetch()` it, which Node rejects for `file://`).
 - **Node — SQLite / Postgres / MySQL.** Kotlin compiled to JS/Wasm running under Node, against
   real databases via the `node:sqlite` / `node-postgres` / `mysql2` packages. Next up.
 

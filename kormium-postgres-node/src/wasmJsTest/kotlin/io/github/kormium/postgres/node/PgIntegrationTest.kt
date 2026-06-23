@@ -1,4 +1,4 @@
-package io.github.kormium.sqlite.wasm
+package io.github.kormium.postgres.node
 
 import io.github.kormium.Catalog
 import io.github.kormium.Column
@@ -17,37 +17,50 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
-// wa-sqlite's async build fetches its .wasm, which Node's fetch rejects for file://. Under Node we
-// read the wasm off disk and hand it to the factory as `wasmBinary`, bypassing fetch. (In the
-// browser this isn't needed — the factory fetches the asset over http.)
-private fun nodeWasmConfig(): JsAny =
-    js("(function(){ var fs = require('node:fs'); var p = require.resolve('wa-sqlite/dist/wa-sqlite-async.wasm'); return { wasmBinary: fs.readFileSync(p) }; })()")
+private fun env(name: String, fallback: String): String = js("process.env[name] || fallback")
 
 /**
- * End-to-end test of the wa-sqlite engine under Node: the same Table DSL the JDBC/native backends
- * use, driving an in-memory SQLite (`:memory:`) through suspendTransaction/suspendAutocommit.
+ * End-to-end test of the Node Postgres engine (node-postgres) against a real Postgres. Connection
+ * comes from KORMIUM_PG_* env vars (defaults target the docker container used in development);
+ * the test skips gracefully if no server is reachable — same pattern as the r2dbc tests.
  */
-class SqliteWasmIntegrationTest {
+class PgIntegrationTest {
+
+    private suspend fun open(): SuspendDatabase<WidgetCatalog>? =
+        try {
+            createNodePostgresDatabase(
+                host = env("KORMIUM_PG_HOST", "localhost"),
+                port = env("KORMIUM_PG_PORT", "5433").toInt(),
+                database = env("KORMIUM_PG_DB", "kormtest"),
+                user = env("KORMIUM_PG_USER", "postgres"),
+                password = env("KORMIUM_PG_PASSWORD", "korm"),
+            )
+        } catch (e: Throwable) {
+            println("Skipping PgIntegrationTest: no Postgres reachable (${e.message})")
+            null
+        }
 
     @Test
     fun crudRoundTrip() = runTest {
-        val db: SuspendDatabase<WidgetCatalog> = createSqliteWasmDatabase(moduleConfig = nodeWasmConfig())
+        val db = open() ?: return@runTest
         try {
+            db.suspendTransaction { Widgets.execSql(widgetsDdl) }
             val id = Uuid.random()
             db.suspendTransaction {
-                Widgets.execSql(widgetsDdl)
-                Widgets.insert(Widget().apply { this.id = id; this.name = "wasm-sqlite"; this.qty = 7 })
+                Widgets.insert(Widget().apply { this.id = id; this.name = "node-pg"; this.qty = 7 })
             }
 
             val found = db.suspendAutocommit { Widgets.findById(id) }
             assertEquals(id, found?.id)
-            assertEquals("wasm-sqlite", found?.name)
+            assertEquals("node-pg", found?.name)
             assertEquals(7, found?.qty)
 
-            val byName = db.suspendAutocommit { Widgets.find(Query(Widgets.name eq "wasm-sqlite")) }
+            val byName = db.suspendAutocommit { Widgets.find(Query(Widgets.name eq "node-pg")) }
             assertEquals(1, byName.size)
-
             assertTrue(db.suspendAutocommit { Widgets.count() } >= 1)
+
+            db.suspendTransaction { Widgets.deleteWhere { where { Widgets.id eq id } } }
+            assertNull(db.suspendAutocommit { Widgets.findById(id) })
         } finally {
             db.close()
         }
@@ -55,7 +68,7 @@ class SqliteWasmIntegrationTest {
 
     @Test
     fun transactionRollsBackOnThrow() = runTest {
-        val db: SuspendDatabase<WidgetCatalog> = createSqliteWasmDatabase(moduleConfig = nodeWasmConfig())
+        val db = open() ?: return@runTest
         try {
             db.suspendTransaction { Widgets.execSql(widgetsDdl) }
             val id = Uuid.random()
@@ -82,7 +95,7 @@ class Widget : Entity() {
     var qty by Widgets.qty
 }
 
-object Widgets : Table<WidgetCatalog, Widget>("widgets", ::Widget) {
+object Widgets : Table<WidgetCatalog, Widget>("pg_node_widgets", ::Widget) {
     val id by Column.UUID().primaryKey()
     val name by Column.Text()
     val qty by Column.Int()
@@ -91,4 +104,4 @@ object Widgets : Table<WidgetCatalog, Widget>("widgets", ::Widget) {
 }
 
 private val widgetsDdl =
-    """CREATE TABLE IF NOT EXISTS "widgets" ("id" text NOT NULL, "name" text NOT NULL, "qty" integer NOT NULL, PRIMARY KEY ("id"))"""
+    """CREATE TABLE IF NOT EXISTS "pg_node_widgets" ("id" uuid NOT NULL, "name" text NOT NULL, "qty" integer NOT NULL, PRIMARY KEY ("id"))"""

@@ -7,15 +7,13 @@ repositories {
 }
 
 kotlin {
-    // wa-sqlite is SQLite compiled to WASM, reached through JS interop, so this engine is
-    // Kotlin/Wasm (JS) only. nodejs() runs the tests against an in-memory database (`:memory:`);
-    // the browser uses the IndexedDB VFS for persistence (see the todo sample).
+    // A Postgres engine for Kotlin running on Node, over the async node-postgres (`pg`) package
+    // talking to a real Postgres server. Node only.
     compilerOptions {
         optIn.add("kotlin.js.ExperimentalWasmJsInterop")
     }
 
     wasmJs {
-        browser()
         nodejs()
     }
 
@@ -24,16 +22,15 @@ kotlin {
     sourceSets {
         val wasmJsMain by getting {
             dependencies {
-                // The suspend SPI from core; the public surface.
                 api(project(":kormium-core"))
-                // Reuse the shared, pure SqliteDialect (no duplication) — see ADR 0001.
-                implementation(project(":kormium-sqlite-dialect"))
+                // Reuse the shared, pure PostgresDialect — see ADR 0001.
+                implementation(project(":kormium-postgres-dialect"))
                 // Shared Wasm driver layer: named-param parser, text ResultSet, binding helper.
                 implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-                // wa-sqlite: SQLite in WASM with async VFS (IndexedDB-capable). https://github.com/rhashimoto/wa-sqlite
-                implementation(npm("wa-sqlite", "1.0.0"))
+                // node-postgres: pure-JS Postgres client. https://node-postgres.com
+                implementation(npm("pg", "8.13.1"))
             }
         }
         val wasmJsTest by getting {

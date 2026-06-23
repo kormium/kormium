@@ -115,6 +115,30 @@ jobs:
           :samples:r2dbc:jvmTest
           --console=plain
 
+      # Wasm/Node database engines, run under the Kotlin-managed Node: kormium-sqlite-wasm
+      # (wa-sqlite) and kormium-sqlite-node (better-sqlite3) use in-memory databases (no server);
+      # kormium-postgres-node and kormium-mysql-node connect to the Postgres/MariaDB services above
+      # via KORMIUM_PG_*/KORMIUM_MY_* (they skip if unset).
+      - name: Wasm/Node engine tests
+        env:
+          KORMIUM_PG_HOST: localhost
+          KORMIUM_PG_PORT: "5432"
+          KORMIUM_PG_DB: postgres
+          KORMIUM_PG_USER: postgres
+          KORMIUM_PG_PASSWORD: password
+          KORMIUM_MY_HOST: 127.0.0.1
+          KORMIUM_MY_PORT: "3306"
+          KORMIUM_MY_DB: kormium_test
+          KORMIUM_MY_USER: kormium
+          KORMIUM_MY_PASSWORD: kormium
+        run: >-
+          ./gradlew
+          :kormium-sqlite-wasm:wasmJsNodeTest
+          :kormium-sqlite-node:wasmJsNodeTest
+          :kormium-postgres-node:wasmJsNodeTest
+          :kormium-mysql-node:wasmJsNodeTest
+          --console=plain
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4

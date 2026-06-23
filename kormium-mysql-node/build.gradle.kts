@@ -7,15 +7,13 @@ repositories {
 }
 
 kotlin {
-    // wa-sqlite is SQLite compiled to WASM, reached through JS interop, so this engine is
-    // Kotlin/Wasm (JS) only. nodejs() runs the tests against an in-memory database (`:memory:`);
-    // the browser uses the IndexedDB VFS for persistence (see the todo sample).
+    // A MySQL/MariaDB engine for Kotlin running on Node, over the async mysql2 package talking to a
+    // real server. Node only.
     compilerOptions {
         optIn.add("kotlin.js.ExperimentalWasmJsInterop")
     }
 
     wasmJs {
-        browser()
         nodejs()
     }
 
@@ -24,16 +22,15 @@ kotlin {
     sourceSets {
         val wasmJsMain by getting {
             dependencies {
-                // The suspend SPI from core; the public surface.
                 api(project(":kormium-core"))
-                // Reuse the shared, pure SqliteDialect (no duplication) — see ADR 0001.
-                implementation(project(":kormium-sqlite-dialect"))
+                // Reuse the shared, pure MySqlDialect — see ADR 0001.
+                implementation(project(":kormium-mysql-dialect"))
                 // Shared Wasm driver layer: named-param parser, text ResultSet, binding helper.
                 implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-                // wa-sqlite: SQLite in WASM with async VFS (IndexedDB-capable). https://github.com/rhashimoto/wa-sqlite
-                implementation(npm("wa-sqlite", "1.0.0"))
+                // mysql2: pure-JS MySQL/MariaDB client with a promise API. https://sidorares.github.io/node-mysql2
+                implementation(npm("mysql2", "3.22.5"))
             }
         }
         val wasmJsTest by getting {

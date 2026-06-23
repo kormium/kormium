@@ -1,4 +1,4 @@
-package io.github.kormium.sqlite.wasm
+package io.github.kormium.wasm.driver
 
 import io.github.kormium.resultset.ResultSet
 import kotlinx.datetime.Instant
@@ -7,12 +7,13 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 
 /**
- * Adapts one wa-sqlite result row (a positional JS array) to korm's [ResultSet]. The executor
- * advances the cursor and constructs one of these per row, so [next] is always false. SQLite stores
- * korm's non-native types (UUID/BigDecimal/temporals) as TEXT, so every value is read through
- * [cellText] and parsed from text — the same path as the JDBC SQLite backend. Indexes are 0-based.
+ * A [ResultSet] over one positional JS result row, reading every value as text (via [cellText]) and
+ * parsing it. Shared by all Wasm engines: their drivers return JS-native values, and korm's
+ * non-native types (UUID/BigDecimal/temporals) are stored/sent as text anyway, so one text path
+ * covers them all. Each driver hands the engine a full row, so [next] is always false; column
+ * indexes are 0-based.
  */
-internal class WaSqliteResultSet(
+public class TextResultSet(
     private val row: JsArray<JsAny?>,
     override val columns: Array<String>,
 ) : ResultSet {
@@ -37,7 +38,7 @@ internal class WaSqliteResultSet(
     override fun getDouble(columnIndex: Int): Double? = text(columnIndex)?.toDouble()
 
     override fun getBytes(columnIndex: Int): ByteArray? =
-        throw UnsupportedOperationException("kormium-sqlite-wasm does not support blob reads yet")
+        throw UnsupportedOperationException("kormium Wasm engines do not support blob reads yet")
 
     override fun getDate(columnIndex: Int): LocalDate? =
         text(columnIndex)?.let { LocalDate.parse(it.substringBefore('T')) }
