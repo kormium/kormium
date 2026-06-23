@@ -7,6 +7,21 @@ All notable changes to Kormium are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Kotlin/JS + Kotlin/Wasm support.** The typed DSL now compiles and is tested on `js`, `wasmJs`
+  and `wasmWasi`; `kormium-core`, `kormium-migrate` and `kormium-observe` ship web artifacts.
+  Logging goes through an internal `KormiumLogger` facade so core no longer hard-depends on
+  kotlin-logging (which has no wasmWasi artifact).
+- **Standalone dialect modules** (`kormium-postgres-dialect` / `kormium-sqlite-dialect` /
+  `kormium-mysql-dialect`): the pure SQL dialect is split out of each driver so it can compile to
+  every target (incl. js/wasm). The driver modules re-export it via `api`, so existing imports are
+  unchanged. See [ADR 0001](docs/adr/0001-standalone-dialect-modules.md).
+- **Browser & Node database engines** (suspend-only, sharing `kormium-wasm-driver`):
+  `kormium-sqlite-wasm` (wa-sqlite, IndexedDB-persisted, with a Compose Multiplatform todo sample),
+  `kormium-sqlite-node` (better-sqlite3), `kormium-postgres-node` (node-postgres, pooled) and
+  `kormium-mysql-node` (mysql2, pooled). A separate
+  [kormium/pglite](https://github.com/kormium/pglite) repo runs full Postgres (PGlite) in the browser.
+- **`Column.Bytes()`** — a `ByteArray` column type, bound and read as native binary (`bytea`/`BLOB`,
+  JDBC `setObject`/`getBytes`, libpq bytea, and `Buffer`/`Uint8Array` on the Wasm/Node engines).
 - **Compile-time validation of `upsert` / `insertOrIgnore` conflict columns.** `onConflict` is now
   typed `Column<*, *, T>` (and `List<Column<*, *, T>>`), so a conflict column from another table is
   a compile error instead of rendering the wrong column into `ON CONFLICT`. Same-table targets,
