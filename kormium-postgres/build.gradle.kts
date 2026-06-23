@@ -82,13 +82,15 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                // Exposes createDatabase(...) plus the Postgres Dialect + PostgresDriver
-                // interface (formerly the :pg module). PostgresDriver is part of the public
-                // return type, so :kormium-core is an api dependency.
+                // Exposes createDatabase(...) plus the PostgresDriver interface (formerly the :pg
+                // module). PostgresDriver is part of the public return type, so :kormium-core is an
+                // api dependency.
                 api(project(":kormium-core"))
+                // PostgresDialect lives in the pure dialect module (split out so it can also
+                // compile to js/wasm). `api` keeps `io.github.kormium.PostgresDialect` visible to
+                // existing consumers exactly as before.
+                api(project(":kormium-postgres-dialect"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-                // PostgresDialect casts a JsonElement bind to ::jsonb (needed so the truly-typed
-                // r2dbc driver doesn't send it as text; harmless for the text-based JDBC/libpq paths).
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
                 implementation("io.github.oshai:kotlin-logging:7.0.3")
             }

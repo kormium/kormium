@@ -19,6 +19,11 @@ buildscript {
         // Android Gradle plugin for the modules that declare an androidTarget() (Compose
         // Multiplatform support). They apply id("com.android.library") without a version.
         classpath("com.android.tools.build:gradle:9.2.1")
+        // Compose Multiplatform for the wasmJs todo sample. The Compose gradle plugin (libs/DSL)
+        // plus the Kotlin Compose compiler plugin (decoupled from the gradle plugin since Kotlin
+        // 2.0, versioned with Kotlin). The sample applies both without a version.
+        classpath("org.jetbrains.compose:compose-gradle-plugin:1.11.1")
+        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.4.0")
     }
 }
 

@@ -1,9 +1,8 @@
 package io.github.kormium
 
 import io.github.kormium.resultset.ResultSet
-import io.github.oshai.kotlinlogging.KotlinLogging
 
-private val logger = KotlinLogging.logger {}
+private val logger = kormiumLogger()
 
 /**
  * A table definition: its SQL table name and columns, tagged with the catalog

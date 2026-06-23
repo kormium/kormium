@@ -89,7 +89,9 @@ After 1.0 the project should optimize for compatibility and ecosystem fit:
 These are useful but should not distract from core reliability:
 
 - Windows Native hardening — drop the experimental label after a stable release cycle;
-- Wasm and browser-adjacent storage stories;
+- Kotlin web stack (JS / Wasm-JS / Wasm-WASI) — the typed DSL already compiles and tests
+  green on all three; next are SQLite (browser) and Node (sqlite/pg/mysql) engines. A PGlite
+  engine (Postgres in the browser) lives in a separate repo. See [Web targets](web-targets.md);
 - more SQL dialects;
 - richer schema DSL;
 - generated entities or compiler plugin support;

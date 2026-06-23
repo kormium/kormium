@@ -37,6 +37,14 @@ kotlin {
     macosArm64()
     mingwX64()
 
+    // Kotlin/JS + Kotlin/Wasm web stack. nodejs() is enough to compile the klib and run
+    // tests; consumers can still use the artifact in the browser (the environment only
+    // affects test/run tasks, not the produced klib). browser() is added per-engine
+    // (e.g. kormium-pglite) where a browser demo is actually run.
+    js { nodejs() }
+    wasmJs { nodejs() }
+    wasmWasi { nodejs() }
+
     applyDefaultHierarchyTemplate()
 
     sourceSets {
@@ -49,7 +57,6 @@ kotlin {
                 implementation("com.ionspin.kotlin:bignum:0.3.10")
 
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-                implementation("io.github.oshai:kotlin-logging:7.0.3")
             }
         }
         val commonTest by getting {
@@ -58,7 +65,18 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
             }
         }
+        // Logging is reached through the internal KormiumLogger facade. Every target EXCEPT
+        // wasmWasi delegates to kotlin-logging, which has no wasmWasi artifact (7.0.3);
+        // wasmWasi gets a no-op actual. So kotlin-logging lives here, not in commonMain.
+        // See src/loggingMain/.../KormiumLogger.logging.kt and src/wasmWasiMain/.../KormiumLogger.wasmWasi.kt.
+        val loggingMain by creating {
+            dependsOn(commonMain)
+            dependencies {
+                implementation("io.github.oshai:kotlin-logging:7.0.3")
+            }
+        }
         val jvmMain by getting {
+            dependsOn(loggingMain)
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
                 // kotlin-logging delegates to SLF4J on the JVM; core needs the API on the
@@ -67,11 +85,17 @@ kotlin {
             }
         }
         val androidMain by getting {
+            dependsOn(loggingMain)
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
                 // Android is JVM-flavoured: kotlin-logging delegates to SLF4J here too.
                 implementation("org.slf4j:slf4j-api:2.0.16")
             }
         }
+        // Native + JS + Wasm/JS all have kotlin-logging artifacts -> share loggingMain.
+        // wasmWasiMain deliberately stays on commonMain only.
+        val nativeMain by getting { dependsOn(loggingMain) }
+        val jsMain by getting { dependsOn(loggingMain) }
+        val wasmJsMain by getting { dependsOn(loggingMain) }
     }
 }
