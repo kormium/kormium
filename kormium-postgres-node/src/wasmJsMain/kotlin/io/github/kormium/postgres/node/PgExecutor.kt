@@ -19,7 +19,7 @@ import kotlinx.coroutines.await
  * (`:name` → `$N`, values bound as text — the server infers the type, the libpq approach).
  */
 internal class PgExecutor(
-    private val client: Client,
+    private val client: PoolClient,
     override val dialect: Dialect,
     override val typeMapper: TypeMapper,
 ) : SuspendSqlExecutor {

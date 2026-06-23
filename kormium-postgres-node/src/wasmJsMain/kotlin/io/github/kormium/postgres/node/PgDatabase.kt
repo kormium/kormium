@@ -10,28 +10,24 @@ import io.github.kormium.WriteListeners
 import io.github.kormium.database.SuspendDatabase
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.await
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
- * An async Postgres [SuspendDatabase] for Node, backed by one node-postgres [Client]. It implements
- * only the suspend hierarchy (no blocking on a JS event loop). One client is one connection, so a
- * [Mutex] serialises [useConnection] to keep a transaction's BEGIN…COMMIT from interleaving.
+ * An async Postgres [SuspendDatabase] for Node, backed by a node-postgres connection [Pool]. Each
+ * [useConnection] borrows a [PoolClient] for the duration of the block and returns it afterwards, so
+ * independent calls run on independent connections — real concurrency, no Mutex. Suspend-only (a JS
+ * event loop can't be blocked).
  */
 class PgDatabase internal constructor(
-    private val client: Client,
+    private val pool: Pool,
     override val config: KormiumConfig,
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
 
-    private val lifecycle = DatabaseLifecycle { client.end() }
-    private val connectionLock = Mutex()
+    private val lifecycle = DatabaseLifecycle { pool.end() }
 
     override val isClosed: Boolean get() = lifecycle.isClosed
-
-    private val executor = PgExecutor(client, PostgresDialect, StandardTypeMapper)
 
     override suspend fun <R> useConnection(
         transactional: Boolean,
@@ -40,17 +36,22 @@ class PgDatabase internal constructor(
         block: suspend (SuspendSqlExecutor) -> R,
     ): R {
         lifecycle.checkOpen()
-        return connectionLock.withLock {
-            if (!transactional) return@withLock block(executor)
-            executor.execute("BEGIN")
-            isolation?.let { executor.execute("SET TRANSACTION ISOLATION LEVEL ${it.sql}") }
-            if (readOnly) executor.execute("SET TRANSACTION READ ONLY")
-            try {
-                block(executor).also { executor.execute("COMMIT") }
+        val client = pool.connect().await<PoolClient>()
+        val exec = PgExecutor(client, PostgresDialect, StandardTypeMapper)
+        try {
+            if (transactional) {
+                exec.execute("BEGIN")
+                isolation?.let { exec.execute("SET TRANSACTION ISOLATION LEVEL ${it.sql}") }
+                if (readOnly) exec.execute("SET TRANSACTION READ ONLY")
+            }
+            return try {
+                block(exec).also { if (transactional) exec.execute("COMMIT") }
             } catch (e: Throwable) {
-                withContext(NonCancellable) { runCatching { executor.execute("ROLLBACK") } }
+                if (transactional) withContext(NonCancellable) { runCatching { exec.execute("ROLLBACK") } }
                 throw e
             }
+        } finally {
+            client.release()
         }
     }
 
@@ -66,18 +67,15 @@ private val TransactionIsolation.sql: String
     }
 
 /**
- * Opens a Postgres database over node-postgres. Returns the handle tagged [Nothing], so by
- * covariance it pins to any `SuspendDatabase<MyCatalog>` at the call site.
+ * Opens a Postgres database over a node-postgres connection pool of [poolSize] connections. Returns
+ * the handle tagged [Nothing], so by covariance it pins to any `SuspendDatabase<MyCatalog>`.
  */
-suspend fun createNodePostgresDatabase(
+fun createNodePostgresDatabase(
     host: String,
     port: Int = 5432,
     database: String,
     user: String,
     password: String,
+    poolSize: Int = 10,
     config: KormiumConfig = KormiumConfig(),
-): PgDatabase {
-    val client = Client(pgClientConfig(host, port, database, user, password))
-    client.connect().await<JsAny?>()
-    return PgDatabase(client, config)
-}
+): PgDatabase = PgDatabase(newPgPool(host, port, database, user, password, poolSize), config)

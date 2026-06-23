@@ -19,7 +19,7 @@ import kotlinx.coroutines.await
  * (`:name` → `?`, values bound as text).
  */
 internal class MySqlExecutor(
-    private val connection: MySqlConnection,
+    private val connection: PoolConnection,
     override val dialect: Dialect,
     override val typeMapper: TypeMapper,
 ) : SuspendSqlExecutor {
