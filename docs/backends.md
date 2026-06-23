@@ -32,7 +32,14 @@ identical regardless of which engine you open. Adding a driver is a new row belo
 engines (r2dbc and every Wasm/Node one) implement only `SuspendDatabase` — a JS event loop can't be
 blocked, and `SuspendDatabase` is a *sibling* of `Database`, not a subtype, exactly for this case.
 The Wasm/Node engines bind values as text and bridge the driver's `Promise` to suspend with
-`await()`; the JS-interop ones (PGlite, wa-sqlite) run a database compiled to WASM in the page.
+`await()`; the JS-interop ones (PGlite, wa-sqlite) run a database compiled to WASM in the page. They
+share the named-parameter parser, the text `ResultSet` and the binding helper from
+`kormium-wasm-driver`, so only the driver bindings differ per engine.
+
+> **Supply chain:** `kormium-sqlite-node` uses a native npm package (better-sqlite3), so the build
+> re-enables npm install scripts for the Wasm/Node toolchain (see the root `build.gradle.kts`). npm
+> versions are pinned and the resolved tree is committed in `kotlin-js-store/*yarn.lock`; review
+> lockfile changes when bumping these engines' dependencies.
 
 ## PostgreSQL
 

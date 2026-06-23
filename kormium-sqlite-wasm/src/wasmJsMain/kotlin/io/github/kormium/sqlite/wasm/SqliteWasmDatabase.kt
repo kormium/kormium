@@ -73,8 +73,12 @@ class SqliteWasmDatabase internal constructor(
 suspend fun createSqliteWasmDatabase(
     dataDir: String? = null,
     config: KormiumConfig = KormiumConfig(),
+    // Advanced/Node: Emscripten module overrides passed to the wa-sqlite factory. In the browser the
+    // factory fetches its `.wasm` itself; under Node (where fetch can't read file://) pass
+    // `{ wasmBinary: <bytes> }` here so it loads the module without fetching.
+    moduleConfig: JsAny? = null,
 ): SqliteWasmDatabase {
-    val module = SQLiteESMFactory().await<JsAny>()
+    val module = (if (moduleConfig == null) SQLiteESMFactory() else SQLiteESMFactory(moduleConfig)).await<JsAny>()
     val api = Factory(module)
     val flags = SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE
     val db = when (dataDir) {

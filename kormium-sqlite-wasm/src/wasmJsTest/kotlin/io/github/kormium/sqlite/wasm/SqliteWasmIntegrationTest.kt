@@ -11,28 +11,27 @@ import io.github.kormium.eq
 import io.github.kormium.suspendAutocommit
 import io.github.kormium.suspendTransaction
 import kotlinx.coroutines.test.runTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
+// wa-sqlite's async build fetches its .wasm, which Node's fetch rejects for file://. Under Node we
+// read the wasm off disk and hand it to the factory as `wasmBinary`, bypassing fetch. (In the
+// browser this isn't needed — the factory fetches the asset over http.)
+private fun nodeWasmConfig(): JsAny =
+    js("(function(){ var fs = require('node:fs'); var p = require.resolve('wa-sqlite/dist/wa-sqlite-async.wasm'); return { wasmBinary: fs.readFileSync(p) }; })()")
+
 /**
- * End-to-end test of the wa-sqlite engine: the same Table DSL the JDBC/native backends use,
- * driving an in-memory SQLite (`:memory:`) through suspendTransaction/suspendAutocommit.
- *
- * Ignored under Node: wa-sqlite's async build loads its `.wasm` via `fetch()`, and Node's fetch
- * (undici) rejects `file://` URLs, so the module can't initialise in the Node test runner. The
- * engine is browser-targeted and is exercised in the browser via the wasm-todo sample. Re-enable
- * if/when the wasm is supplied as a `wasmBinary` for Node.
+ * End-to-end test of the wa-sqlite engine under Node: the same Table DSL the JDBC/native backends
+ * use, driving an in-memory SQLite (`:memory:`) through suspendTransaction/suspendAutocommit.
  */
-@Ignore
 class SqliteWasmIntegrationTest {
 
     @Test
     fun crudRoundTrip() = runTest {
-        val db: SuspendDatabase<WidgetCatalog> = createSqliteWasmDatabase()
+        val db: SuspendDatabase<WidgetCatalog> = createSqliteWasmDatabase(moduleConfig = nodeWasmConfig())
         try {
             val id = Uuid.random()
             db.suspendTransaction {
@@ -56,7 +55,7 @@ class SqliteWasmIntegrationTest {
 
     @Test
     fun transactionRollsBackOnThrow() = runTest {
-        val db: SuspendDatabase<WidgetCatalog> = createSqliteWasmDatabase()
+        val db: SuspendDatabase<WidgetCatalog> = createSqliteWasmDatabase(moduleConfig = nodeWasmConfig())
         try {
             db.suspendTransaction { Widgets.execSql(widgetsDdl) }
             val id = Uuid.random()
