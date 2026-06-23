@@ -28,6 +28,8 @@ kotlin {
                 api(project(":kormium-core"))
                 // Reuse the shared, pure SqliteDialect (no duplication) — see ADR 0001.
                 implementation(project(":kormium-sqlite-dialect"))
+                // Shared Wasm driver layer: named-param parser, text ResultSet, binding helper.
+                implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
                 // wa-sqlite: SQLite in WASM with async VFS (IndexedDB-capable). https://github.com/rhashimoto/wa-sqlite

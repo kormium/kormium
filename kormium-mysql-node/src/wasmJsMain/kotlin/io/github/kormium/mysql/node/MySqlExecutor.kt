@@ -6,12 +6,17 @@ import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TypeMapper
 import io.github.kormium.resultset.ResultSet
 import io.github.kormium.sqlException
+import io.github.kormium.wasm.driver.QuestionMarker
+import io.github.kormium.wasm.driver.TextResultSet
+import io.github.kormium.wasm.driver.bindTextParams
+import io.github.kormium.wasm.driver.parseNamedParams
 import kotlinx.coroutines.await
 
 /**
  * A [SuspendSqlExecutor] bound to one mysql2 [MySqlConnection]. Drives the async driver and bridges
  * its `Promise` to suspend via `await()`. SQL rendering ([Dialect]) and value conversion
- * ([TypeMapper]) are the shared core seams; `:name` is rewritten to `?` and values bound as text.
+ * ([TypeMapper]) are the shared core seams; parsing/binding/reads come from `kormium-wasm-driver`
+ * (`:name` → `?`, values bound as text).
  */
 internal class MySqlExecutor(
     private val connection: MySqlConnection,
@@ -20,13 +25,8 @@ internal class MySqlExecutor(
 ) : SuspendSqlExecutor {
 
     private suspend fun run(sql: String, namedParameters: Map<String, Any?>): JsArray<JsAny?> {
-        val parsed = parseNamedParams(sql)
-        val params = newJsArray()
-        for (name in parsed.names) {
-            require(namedParameters.containsKey(name)) { "No value supplied for parameter \"$name\"" }
-            val mapped = typeMapper.toParameter(namedParameters[name])
-            pushParam(params, mapped?.toString()?.toJsString())
-        }
+        val parsed = parseNamedParams(sql, QuestionMarker)
+        val params = bindTextParams(parsed.names, namedParameters, typeMapper)
         return try {
             connection.query(mysqlQueryConfig(parsed.sql, params)).await<JsArray<JsAny?>>()
         } catch (e: Throwable) {
@@ -39,7 +39,7 @@ internal class MySqlExecutor(
         val fields = mysqlFields(result)
         val columns = Array(fields.length) { fields[it]!!.name }
         val rows = mysqlRows(result)
-        return List(rows.length) { handler(MySqlResultSet(rows[it]!!, columns)) }
+        return List(rows.length) { handler(TextResultSet(rows[it]!!, columns)) }
     }
 
     override suspend fun <T> execute(sql: String, paramSource: SqlParameterSource, handler: (ResultSet) -> T): List<T> =

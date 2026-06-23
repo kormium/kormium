@@ -11,7 +11,7 @@ plugins {
 }
 
 rootProject.name = "kormium"
-include("kormium-core", "kormium-postgres", "kormium-postgres-dialect", "kormium-mysql", "kormium-mysql-dialect", "kormium-jdbc", "kormium-sqlite", "kormium-sqlite-dialect", "kormium-sqlite-wasm", "kormium-sqlite-node", "kormium-postgres-node", "kormium-mysql-node", "kormium-r2dbc", "benchmarks")
+include("kormium-core", "kormium-postgres", "kormium-postgres-dialect", "kormium-mysql", "kormium-mysql-dialect", "kormium-jdbc", "kormium-sqlite", "kormium-sqlite-dialect", "kormium-wasm-driver", "kormium-sqlite-wasm", "kormium-sqlite-node", "kormium-postgres-node", "kormium-mysql-node", "kormium-r2dbc", "benchmarks")
 include("kormium-observe")
 include("kormium-migrate")
 include("kormium-ktor", "kormium-ktor-di", "kormium-ktor-koin")

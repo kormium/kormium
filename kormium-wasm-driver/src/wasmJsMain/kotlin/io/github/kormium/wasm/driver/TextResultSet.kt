@@ -1,4 +1,4 @@
-package io.github.kormium.postgres.node
+package io.github.kormium.wasm.driver
 
 import io.github.kormium.resultset.ResultSet
 import kotlinx.datetime.Instant
@@ -7,11 +7,13 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 
 /**
- * Adapts one node-postgres result row (a positional JS array) to korm's [ResultSet]. The executor
- * builds one per row, so [next] is always false. Values are read through [cellText] and parsed from
- * text — the same path the libpq/JDBC backends use. Column indexes are 0-based.
+ * A [ResultSet] over one positional JS result row, reading every value as text (via [cellText]) and
+ * parsing it. Shared by all Wasm engines: their drivers return JS-native values, and korm's
+ * non-native types (UUID/BigDecimal/temporals) are stored/sent as text anyway, so one text path
+ * covers them all. Each driver hands the engine a full row, so [next] is always false; column
+ * indexes are 0-based.
  */
-internal class PgResultSet(
+public class TextResultSet(
     private val row: JsArray<JsAny?>,
     override val columns: Array<String>,
 ) : ResultSet {
@@ -36,7 +38,7 @@ internal class PgResultSet(
     override fun getDouble(columnIndex: Int): Double? = text(columnIndex)?.toDouble()
 
     override fun getBytes(columnIndex: Int): ByteArray? =
-        throw UnsupportedOperationException("kormium-postgres-node does not support bytea reads yet")
+        throw UnsupportedOperationException("kormium Wasm engines do not support blob reads yet")
 
     override fun getDate(columnIndex: Int): LocalDate? =
         text(columnIndex)?.let { LocalDate.parse(it.substringBefore('T')) }

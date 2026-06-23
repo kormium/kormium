@@ -25,6 +25,8 @@ kotlin {
                 api(project(":kormium-core"))
                 // Reuse the shared, pure MySqlDialect — see ADR 0001.
                 implementation(project(":kormium-mysql-dialect"))
+                // Shared Wasm driver layer: named-param parser, text ResultSet, binding helper.
+                implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
                 // mysql2: pure-JS MySQL/MariaDB client with a promise API. https://sidorares.github.io/node-mysql2

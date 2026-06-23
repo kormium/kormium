@@ -28,18 +28,3 @@ internal fun mysqlFields(result: JsArray<JsAny?>): JsArray<MySqlField> = js("res
 
 /** Affected-row count from a write's ResultSetHeader (the first tuple element for non-SELECT). */
 internal fun mysqlAffected(result: JsArray<JsAny?>): Double = js("Number(result[0] && result[0].affectedRows || 0)")
-
-/** A fresh empty JS array to fill with bound parameters. */
-internal fun newJsArray(): JsArray<JsAny?> = js("[]")
-
-/** Appends one parameter (already reduced to text, or null) to a JS array. */
-internal fun pushParam(array: JsArray<JsAny?>, value: JsString?) {
-    js("array.push(value == null ? null : value)")
-}
-
-/**
- * Normalises a result cell to text: `Date` → ISO-8601, objects (json) → JSON, else `String(...)`.
- * SQL `NULL` stays `null`.
- */
-internal fun cellText(value: JsAny?): String? =
-    js("value == null ? null : (value instanceof Date ? value.toISOString() : (typeof value === 'object' ? JSON.stringify(value) : String(value)))")
