@@ -37,8 +37,7 @@ public class TextResultSet(
 
     override fun getDouble(columnIndex: Int): Double? = text(columnIndex)?.toDouble()
 
-    override fun getBytes(columnIndex: Int): ByteArray? =
-        throw UnsupportedOperationException("kormium Wasm engines do not support blob reads yet")
+    override fun getBytes(columnIndex: Int): ByteArray? = jsToByteArray(row[columnIndex])
 
     override fun getDate(columnIndex: Int): LocalDate? =
         text(columnIndex)?.let { LocalDate.parse(it.substringBefore('T')) }

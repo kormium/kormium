@@ -74,6 +74,7 @@ Supported column types:
 | `Column.LocalTime` | `kotlinx.datetime.LocalTime` |
 | `Column.LocalDateTime` | `kotlinx.datetime.LocalDateTime` |
 | `Column.Json` | `kotlinx.serialization.json.JsonElement` |
+| `Column.Bytes` | `ByteArray` (bound/read as native binary — `bytea`/`BLOB`) |
 
 These are the built-ins; the type list is open — see [Custom column types](#custom-column-types)
 for enums, JSON-mapped values and your own types.

@@ -163,4 +163,5 @@ sealed class Column<Z, T: Table<*, N>, N: Entity>(
     class LocalDate(name: String? = null) : Spec<kotlinx.datetime.LocalDate>(name, LocalDateColumnType)
     class LocalTime(name: String? = null) : Spec<kotlinx.datetime.LocalTime>(name, LocalTimeColumnType)
     class LocalDateTime(name: String? = null) : Spec<kotlinx.datetime.LocalDateTime>(name, LocalDateTimeColumnType)
+    class Bytes(name: String? = null) : Spec<kotlin.ByteArray>(name, BytesColumnType)
 }

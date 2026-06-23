@@ -12,6 +12,7 @@ import io.github.kormium.suspendAutocommit
 import io.github.kormium.suspendTransaction
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -42,6 +43,23 @@ class NodeSqliteIntegrationTest {
             assertEquals(1, byName.size)
 
             assertTrue(db.suspendAutocommit { Widgets.count() } >= 1)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun bytesRoundTrip() = runTest {
+        val db: SuspendDatabase<WidgetCatalog> = createNodeSqliteDatabase()
+        try {
+            val id = Uuid.random()
+            val payload = byteArrayOf(0, 1, 2, 42, 127, -1, -128, 99)
+            db.suspendTransaction {
+                Blobs.execSql(blobsDdl)
+                Blobs.insert(BlobRow().apply { this.id = id; this.data = payload })
+            }
+            val found = db.suspendAutocommit { Blobs.findById(id) }
+            assertContentEquals(payload, found?.data)
         } finally {
             db.close()
         }
@@ -86,3 +104,18 @@ object Widgets : Table<WidgetCatalog, Widget>("widgets", ::Widget) {
 
 private val widgetsDdl =
     """CREATE TABLE IF NOT EXISTS "widgets" ("id" text NOT NULL, "name" text NOT NULL, "qty" integer NOT NULL, PRIMARY KEY ("id"))"""
+
+class BlobRow : Entity() {
+    var id by Blobs.id
+    var data by Blobs.data
+}
+
+object Blobs : Table<WidgetCatalog, BlobRow>("blobs", ::BlobRow) {
+    val id by Column.UUID().primaryKey()
+    val data by Column.Bytes()
+
+    init { id; data }
+}
+
+private val blobsDdl =
+    """CREATE TABLE IF NOT EXISTS "blobs" ("id" text NOT NULL, "data" blob NOT NULL, PRIMARY KEY ("id"))"""

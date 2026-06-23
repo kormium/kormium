@@ -250,6 +250,10 @@ Kormium's common column types map through backend-specific SQL types:
 | `BigDecimal` | numeric | `TEXT` |
 | `Instant` and local date/time types | temporal/text depending on backend mapper | `TEXT` |
 | `Json` | JSON/JSONB-compatible binding | `TEXT` |
+| `Bytes` | `bytea` | `BLOB` |
+
+`Bytes` (`ByteArray`) is bound and read as native binary, not text: JDBC `setObject`/`getBytes`,
+libpq's `bytea` (OID 17), and a `Buffer`/`Uint8Array` on the Wasm/Node engines (verified there).
 
 The public API presents Kotlin values consistently even when storage differs.
 
