@@ -10,6 +10,7 @@ import io.github.kormium.autocommit
 import io.github.kormium.count
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.Database
+import io.github.kormium.entity
 import io.github.kormium.eq
 import io.github.kormium.gtEq
 import io.github.kormium.inList
@@ -407,6 +408,43 @@ class SqliteIntegrationTest {
             Authors.deleteWhere(Query(Authors.id inList listOf(withBook, withoutBook)))
         }
     }
+
+    /** A three-table join reads every side as a whole entity via select() + row.entity(table). */
+    @Test
+    fun testThreeTableJoinHydratesEntities() {
+        val authorId = Uuid.random()
+        val bookId = Uuid.random()
+        val reviewId = Uuid.random()
+        db.transaction {
+            Authors.execSql(authorsDdl)
+            Books.execSql(booksDdl)
+            Reviews.execSql(reviewsDdl)
+            Authors.insert(Author().apply { id = authorId; name = "Ada" })
+            Books.insert(Book().apply { id = bookId; this.authorId = authorId; title = "Notes" })
+            Reviews.insert(Review().apply { id = reviewId; this.bookId = bookId; stars = 5 })
+        }
+
+        val triples: List<Triple<Author, Book, Review>> = db.autocommit {
+            (Authors innerJoin Books on (Authors.id eq Books.authorId)
+                     innerJoin Reviews on (Books.id eq Reviews.bookId))
+                .select()
+                .map { Triple(it.entity(Authors), it.entity(Books), it.entity(Reviews)) }
+        }
+
+        assertEquals(1, triples.size)
+        val (author, book, review) = triples.single()
+        assertEquals("Ada", author.name)
+        assertEquals("Notes", book.title)
+        assertEquals(authorId, book.authorId)
+        assertEquals(5, review.stars)
+        assertEquals(bookId, review.bookId)
+
+        db.transaction {
+            Reviews.deleteWhere(Query(Reviews.id eq reviewId))
+            Books.deleteWhere(Query(Books.id eq bookId))
+            Authors.deleteWhere(Query(Authors.id eq authorId))
+        }
+    }
 }
 
 object SqCatalog : Catalog
@@ -457,6 +495,20 @@ object Books : Table<SqCatalog, Book>("books", ::Book) {
     init { id; authorId; title }
 }
 
+class Review : Entity() {
+    var id by Reviews.id
+    var bookId by Reviews.bookId
+    var stars by Reviews.stars
+}
+
+object Reviews : Table<SqCatalog, Review>("reviews", ::Review) {
+    val id by Column.UUID().primaryKey()
+    val bookId by Column.UUID()
+    val stars by Column.Int()
+
+    init { id; bookId; stars }
+}
+
 class AllTypesEntity : Entity() {
     var id by AllTypes.id
     var anInt by AllTypes.anInt
@@ -501,4 +553,5 @@ object AllTypes : Table<SqCatalog, AllTypesEntity>("all_types", ::AllTypesEntity
 internal val productsDdl = """CREATE TABLE IF NOT EXISTS "products" ("id" TEXT NOT NULL, "price" TEXT NOT NULL, "qty" INTEGER NOT NULL, "displayName" TEXT NOT NULL, "note" TEXT, "rank" INTEGER, PRIMARY KEY ("id"))"""
 internal val authorsDdl = """CREATE TABLE IF NOT EXISTS "authors" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, PRIMARY KEY ("id"))"""
 internal val booksDdl = """CREATE TABLE IF NOT EXISTS "books" ("id" TEXT NOT NULL, "authorId" TEXT NOT NULL, "title" TEXT NOT NULL, PRIMARY KEY ("id"))"""
+internal val reviewsDdl = """CREATE TABLE IF NOT EXISTS "reviews" ("id" TEXT NOT NULL, "bookId" TEXT NOT NULL, "stars" INTEGER NOT NULL, PRIMARY KEY ("id"))"""
 internal val allTypesDdl = """CREATE TABLE IF NOT EXISTS "all_types" ("id" TEXT NOT NULL, "anInt" INTEGER NOT NULL, "aDouble" REAL NOT NULL, "aBool" INTEGER NOT NULL, "aText" TEXT NOT NULL, "aDecimal" TEXT NOT NULL, "anInstant" TEXT NOT NULL, "aJson" TEXT NOT NULL, "aLong" INTEGER NOT NULL, "aFloat" REAL NOT NULL, "aShort" INTEGER NOT NULL, "aDate" TEXT NOT NULL, "aTime" TEXT NOT NULL, "aDateTime" TEXT NOT NULL, PRIMARY KEY ("id"))"""

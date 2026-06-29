@@ -183,8 +183,22 @@ rows.forEach { row ->
 }
 ```
 
-Joining a third table keeps the `select(...)` projection forms. The two-entity `Pair`
-mapping is intentionally limited to two-table joins.
+For three or more tables, read each side as a whole entity with `row.entity(table)` over a
+plain `select()`:
+
+```kotlin
+val triples: List<Triple<User, Order, Item>> = db.autocommit {
+    (Users innerJoin Orders on (Users.id eq Orders.userId)
+           innerJoin Items  on (Orders.id eq Items.orderId))
+        .select()
+        .map { Triple(it.entity(Users), it.entity(Orders), it.entity(Items)) }
+}
+```
+
+`entity(table)` rebuilds any joined table's entity from the row, so it scales to any number of
+tables. The two-entity `Pair` mapping of `find()` is the two-table convenience over it; for a
+`LEFT` join, `entity()` still hydrates the right side (its columns are NULL), so detect an
+unmatched row yourself with `row.getOrNull(Right.id) == null`.
 
 ## Aggregations
 
