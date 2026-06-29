@@ -6,10 +6,11 @@ import kotlin.jvm.JvmName
 // Aggregates are Selectable (appear in SELECT and are read from a ResultRow) and, since
 // Selectable is an Expression, can also appear in `having(...)` (e.g. `total gt Value(100)`).
 
-/** `COUNT(*)` — the number of rows in the group. Hold the result in a `val` to read it. */
+/** `COUNT(*)` — the number of rows in the group. */
 fun count(): Selectable<Long> = object : Selectable<Long> {
     override fun toSql(builder: ParamBuilder) = "COUNT(*)"
     override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Long? = rs.getLong(index)
+    override fun resultKey() = "COUNT(*)"
 }
 
 /** `COUNT(column)` — the non-null values of the column in the group. */
@@ -18,6 +19,7 @@ fun Column<*, *, *>.count(): Selectable<Long> {
     return object : Selectable<Long> {
         override fun toSql(builder: ParamBuilder) = "COUNT(${column.toSql(builder)})"
         override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Long? = rs.getLong(index)
+        override fun resultKey() = "COUNT(${column.resultKey()})"
     }
 }
 
@@ -49,12 +51,14 @@ fun Column<kotlin.Long, *, *>.sum(): Selectable<Long> = LongAggregate(this)
 private class ColumnAggregate<Z>(private val fn: String, private val column: Column<Z, *, *>) : Selectable<Z> {
     override fun toSql(builder: ParamBuilder) = "$fn(${column.toSql(builder)})"
     override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Z? = column.read(rs, index, typeMapper)
+    override fun resultKey() = "$fn(${column.resultKey()})"
 }
 
 // SUM(column) read as a Long (the server-side bigint width), regardless of the column's own type.
 private class LongAggregate(private val column: Column<*, *, *>) : Selectable<Long> {
     override fun toSql(builder: ParamBuilder) = "SUM(${column.toSql(builder)})"
     override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Long? = rs.getLong(index)
+    override fun resultKey() = "SUM(${column.resultKey()})"
 }
 
 /** `AVG(column)` as a Double. */
@@ -63,5 +67,6 @@ fun Column<*, *, *>.avg(): Selectable<Double> {
     return object : Selectable<Double> {
         override fun toSql(builder: ParamBuilder) = "AVG(${column.toSql(builder)})"
         override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Double? = rs.getDouble(index)
+        override fun resultKey() = "AVG(${column.resultKey()})"
     }
 }

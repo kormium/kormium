@@ -11,6 +11,14 @@ import io.github.kormium.resultset.ResultSet
 interface Selectable<Z> : Expression {
     /** Reads this field's value from the result row at [index]. */
     fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z?
+
+    /**
+     * A stable, structural key identifying this field in a [ResultRow] — independent of the
+     * instance and the dialect. Two selectables that select the same thing share a key, so a row
+     * can be read with a freshly built field (`row[Orders.total.sum()]`) without hoisting it into
+     * a `val`. Columns key by `table.name`; aggregates by their function over their target's key.
+     */
+    fun resultKey(): Any
 }
 
 internal enum class JoinType(val sql: String) { INNER("INNER JOIN"), LEFT("LEFT JOIN") }
@@ -169,11 +177,10 @@ class ResultRow internal constructor(private val values: Map<Any, Any?>) {
     internal fun getByKey(key: Any): Any? = values[key]
 }
 
-// Identifies a selected field. A Column's property delegate yields a fresh instance on each
-// access, so instance identity can't be used — key columns by table+name instead; aggregates
-// (held by the caller in a val) are keyed by instance.
-internal fun fieldKey(field: Selectable<*>): Any =
-    if (field is Column<*, *, *>) "${field.tableRef.tableName}.${field.name}" else field
+// Identifies a selected field by its structural key, so a row reads back regardless of which
+// instance is used — both a Column's property delegate and an aggregate factory yield a fresh
+// instance on each access, so instance identity can't be used.
+internal fun fieldKey(field: Selectable<*>): Any = field.resultKey()
 
 // Qualifies a table reference.
 internal fun Table<*, *>.qualifiedName(dialect: Dialect): String {

@@ -140,8 +140,9 @@ three or more tables use the `select(...)` projection forms.
 
 ## Aggregates
 
-Keep aggregate expressions in `val`s and read rows with the **same** `val` — aggregates are
-keyed by expression identity.
+Aggregates are keyed structurally, so you read a row with the same expression you selected —
+a freshly built one works (`row[Orders.total.sum()]`). A `val` is handy for reuse (in
+`having(...)` and when reading), not required.
 
 ```kotlin
 val orders = count()

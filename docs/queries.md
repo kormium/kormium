@@ -188,8 +188,10 @@ mapping is intentionally limited to two-table joins.
 
 ## Aggregations
 
-Keep aggregate expressions in `val`s and reuse those values when reading rows. Aggregates
-are keyed by expression identity.
+Aggregates are keyed structurally (by the function over their target), so you read a row back
+with the same expression you selected — a freshly built one works, e.g. `row[Orders.total.sum()]`.
+A `val` is handy when you reuse the expression (in `having(...)` and again when reading), but it
+is no longer required.
 
 ```kotlin
 val orders = count()
