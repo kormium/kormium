@@ -252,6 +252,32 @@ class SqliteIntegrationTest {
         db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
 
+    /**
+     * Aggregates are keyed structurally, so a row reads back with a freshly built aggregate
+     * instance — no need to hoist it into a `val` shared between select and read.
+     */
+    @Test
+    fun testAggregateReadsWithFreshInstance() {
+        val tag = "fresh-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insertAll(List(3) {
+                Product().apply {
+                    this.id = Uuid.random(); this.price = BigDecimal.fromInt(0); this.qty = 10
+                    this.displayName = tag; this.note = null; this.rank = null
+                }
+            })
+        }
+        val row = db.autocommit {
+            // Selected with one aggregate instance...
+            Products.query().where(Products.displayName eq tag).select(count(), Products.qty.sum()).single()
+        }
+        // ...read back with brand-new, separate instances.
+        assertEquals(3L, row[count()])
+        assertEquals(30L, row[Products.qty.sum()])
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
     /** An exception out of a transaction block rolls back every statement in it. */
     @Test
     fun testTransactionRollsBackOnException() {
