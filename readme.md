@@ -64,6 +64,26 @@ val adults = db.autocommit {
   tables it reads change — for Compose Multiplatform and Android UIs.
 - **Server integration.** Ktor helpers are split into DI-agnostic, Ktor DI and Koin
   artifacts.
+- **AI-agent friendly.** The typed DSL turns "wrong column / wrong type / unbound value"
+  from runtime SQL bugs into compile errors an agent can fix in its own loop — and there is
+  no session or lazy-loading state to reason about. See [Built for AI coding agents](#built-for-ai-coding-agents).
+
+## Built for AI coding agents
+
+Kormium is designed to be cheap and correct to write *with* a coding agent, not just by hand.
+
+- **The compiler is the agent's guardrail.** Queries are typed expressions, so the mistakes
+  a model would otherwise ship as runtime SQL — a misspelled column, `'18'` instead of `18`,
+  a type that doesn't match — fail at compile time, inside the generate→compile→fix loop the
+  agent already runs.
+- **No hidden state to hallucinate.** There is no persistence context, dirty checking, flush
+  order or lazy proxy. What the code says is what runs, so the model reasons locally instead
+  of guessing at session behavior.
+- **Guessable, consistent API.** `find` / `insert` / `insertAll` / `update` / `deleteWhere`
+  read like the SQL they emit, and the Exposed-style DSL is close to forms models already know.
+- **Drop-in context for the model.** [`AGENTS.md`](AGENTS.md) is a canonical, copy-ready
+  snippet reference, and [`llms.txt`](llms.txt) indexes the docs for ingestion — point your
+  agent at them so it leads with the idiomatic path instead of low-level escape hatches.
 
 ## Status
 

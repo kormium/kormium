@@ -1,0 +1,44 @@
+# Kormium
+
+> Type-safe ORM and SQL DSL for Kotlin Multiplatform. Tables, entities, typed predicates,
+> transactions, joins, aggregations and migrations, with compile-time database↔table safety.
+> No session, no dirty-checking, no lazy loading — the DSL renders to predictable,
+> parameterized SQL you can reason about locally. Backends: PostgreSQL (JDBC + native libpq),
+> MySQL/MariaDB (JDBC + native libmariadb), SQLite, async r2dbc (PostgreSQL + MySQL), plus
+> Ktor integration. Targets: JVM (JDK 21+), Kotlin/Native, and web (Kotlin/JS + Wasm).
+> Package `io.github.kormium`.
+
+Why this matters for an AI agent: Kormium is built to be cheap and correct to write *with*
+a coding agent. Queries are typed expressions, so mistakes the model would otherwise ship as
+runtime SQL bugs (wrong column, wrong type, `'18'` vs `18`) become compile errors the agent
+can see and fix in its own loop. There is no hidden persistence context to reason about —
+what is in the code is what runs. Lead with the idiomatic forms in `AGENTS.md`; prefer them
+over any API you might infer.
+
+All queries run inside `db.transaction { }` or `db.autocommit { }` (suspend mirrors:
+`db.suspendTransaction { }` / `db.suspendAutocommit { }`). Table operations (`find`, `insert`,
+`update`, joins, ...) are scope extensions that only exist inside that block — not global
+methods on the table.
+
+## Start here
+
+- [AGENTS.md](AGENTS.md): canonical, copy-ready snippets for every common task (read this first)
+- [Quick start](docs/quick-start.md): minimal end-to-end setup
+- [Tables and entities](docs/tables-and-entities.md): columns, nullability, primary keys, update semantics
+
+## Reference
+
+- [Queries, joins and aggregations](docs/queries.md): `find { where { } }`, joins, aggregates, supported/unsupported SQL
+- [Transactions, suspend API and migrations](docs/transactions-and-migrations.md): scopes, savepoints, `db.migrate(...)`
+- [Backends and platform support](docs/backends.md): PostgreSQL / MySQL / SQLite / r2dbc driver setup, JVM / Native / web targets
+- [Ktor integration](docs/ktor.md): per-DI-framework artifacts and request-scoped helpers
+- [Installation](docs/installation.md): Gradle, BOM, native system libraries
+- [API ergonomics](docs/api-ergonomics.md): the public API direction and naming rules
+- [API cookbook](docs/api-cookbook.md): task-oriented recipes
+- [Observability](docs/observability.md): logging and metrics hooks
+- [Production guide](docs/production-guide.md): pooling, isolation, operational guidance
+- [Compatibility policy](docs/compatibility.md): SemVer and pre-1.0 breaking-change policy
+
+## Examples
+
+- [samples/](samples/README.md): runnable projects (CRUD, Ktor DI/Koin, sharding, read-through cache, r2dbc, Wasm web)
