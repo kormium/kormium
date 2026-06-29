@@ -132,11 +132,20 @@ val pairs: List<Pair<User, Order>> = db.autocommit {
 val left: List<Pair<User, Order?>> = db.autocommit {
     (Users leftJoin Orders on (Users.id eq Orders.userId)).find()
 }
+
+// 3+ tables -> select() + row.entity(table), each side a whole entity:
+val triples: List<Triple<User, Order, Item>> = db.autocommit {
+    (Users innerJoin Orders on (Users.id eq Orders.userId)
+           innerJoin Items  on (Orders.id eq Items.orderId))
+        .select()
+        .map { Triple(it.entity(Users), it.entity(Orders), it.entity(Items)) }
+}
 ```
 
 Read nullable right-side fields in `select(...)` with `row.getOrNull(col)`; `row[col]` throws
-on NULL/absent. The entity-`Pair` mapping is intentionally limited to two-table joins — for
-three or more tables use the `select(...)` projection forms.
+on NULL/absent. `find()`'s entity-`Pair` is the two-table convenience over `entity()`; for a
+LEFT join, `entity()` still hydrates the right side (NULL columns), so detect unmatched rows
+with `row.getOrNull(Right.id) == null`.
 
 ## Aggregates
 
@@ -188,7 +197,7 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 | Reusable / prebuilt query | `Table.find(Query(...))` |
 | Two-table join as entities | `(A innerJoin B on ...).find()` |
 | Columns / aggregates from a join | `.select(...)` + `row[col]` / `row[agg]` |
-| 3+ table join | `.select(...)` projection forms |
+| 3+ table join as entities | `.select()` + `row.entity(table)` |
 | Single-table grouping | `Table.query().groupBy(...).select(...)` |
 | Upsert / ignore-on-conflict | `Table.upsert(...)` / `Table.insertOrIgnore(...)` |
 

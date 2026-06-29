@@ -177,6 +177,18 @@ class ResultRow internal constructor(private val values: Map<Any, Any?>) {
     internal fun getByKey(key: Any): Any? = values[key]
 }
 
+/**
+ * Reconstructs [table]'s entity from this row. Works for any number of joined tables, so a
+ * three-or-more-table join reads as whole entities — `select()` (all columns), then
+ * `map { Triple(it.entity(A), it.entity(B), it.entity(C)) }`. Columns the projection didn't
+ * select read back as absent.
+ *
+ * For a `LEFT JOIN`, a row with no match still hydrates the right table here (its columns are
+ * NULL); detect the unmatched case yourself, e.g. `row.getOrNull(Right.id) == null`. The
+ * two-table `find()` does this for you and returns `Pair<A, B?>`.
+ */
+fun <T : Entity> ResultRow.entity(table: Table<*, T>): T = table.hydrateFrom(this)
+
 // Identifies a selected field by its structural key, so a row reads back regardless of which
 // instance is used — both a Column's property delegate and an aggregate factory yield a fresh
 // instance on each access, so instance identity can't be used.
