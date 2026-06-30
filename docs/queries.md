@@ -83,6 +83,30 @@ val lowered: List<String> = db.autocommit {
 `LOWER(col)` cannot use a plain index on `col` — add a functional index on `LOWER(col)` if you
 match on it often.
 
+## Null Fallback (`COALESCE`)
+
+`column.coalesce(default)` renders `COALESCE("column", default)` — the column's value, or the
+fallback when it is `NULL`. It reads back from a `select(...)` projection and composes with the
+predicates, comparing a literal through the column's converter:
+
+```kotlin
+// Read a nullable column with a fallback (non-null, so row[...] is safe):
+val names: List<String> = db.autocommit {
+    val name = Users.nickname.coalesce("anonymous")
+    Users.query().select(name).map { it[name] }
+}
+
+// Treat a NULL as the fallback in a predicate:
+Users.find { where { Users.rank.coalesce(0) gt 5 } }   // COALESCE("rank", 0) > 5
+
+// First non-null of two columns:
+Users.find { where { Users.nickname.coalesce(Users.name) eq "Ada" } }
+```
+
+The default binds through the column's converter, so an enum/`Instant`/`BigDecimal` fallback maps
+the same way a comparison literal does. When the fallback is non-null the result is non-null —
+read it with `row[...]`; for a `coalesce` of two nullable columns, use `getOrNull`.
+
 ## Ordering, Limit and Offset
 
 ```kotlin
@@ -318,7 +342,7 @@ Not modeled by the typed DSL today:
 - **Pattern-match variants.** `like` only; no `ILIKE` operator (lower both sides for a
   case-insensitive match — see [String Functions](#string-functions)), `SIMILAR TO`, or regex.
 - **Computed expressions.** No arithmetic (`+`, `-`, `*`, `/`), string concatenation, `CASE`,
-  `COALESCE`, casts, or scalar functions other than the string functions `lower` / `upper` /
+  casts, or scalar functions other than the string functions `lower` / `upper` /
   `trim` / `ltrim` / `rtrim` (see [String Functions](#string-functions)) in `SELECT`/`WHERE`/`HAVING`.
 - **Expression / aggregate ordering and null placement.** `ORDER BY` takes plain columns with
   `ASC` / `DESC` only — no ordering by an aggregate or expression, and no `NULLS FIRST` /

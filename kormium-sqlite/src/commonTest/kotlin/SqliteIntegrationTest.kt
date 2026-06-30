@@ -9,11 +9,13 @@ import io.github.kormium.UniqueViolationException
 import io.github.kormium.and
 import io.github.kormium.autocommit
 import io.github.kormium.between
+import io.github.kormium.coalesce
 import io.github.kormium.count
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.Database
 import io.github.kormium.entity
 import io.github.kormium.eq
+import io.github.kormium.gt
 import io.github.kormium.gtEq
 import io.github.kormium.inList
 import io.github.kormium.innerJoin
@@ -545,6 +547,35 @@ class SqliteIntegrationTest {
         assertEquals("ada", lowered)
 
         db.transaction { Labels.deleteWhere(Query(Labels.id inList listOf(l1, l2, l3, l4))) }
+    }
+
+    /**
+     * `coalesce` fills a null column with a fallback — read back from a projection (the default
+     * makes it non-null) and used in a predicate (a null is treated as the fallback).
+     */
+    @Test
+    fun testCoalesce() {
+        val tag = "coalesce-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 1; displayName = tag; note = null; rank = null })
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 1; displayName = tag; note = "set"; rank = 7 })
+        }
+
+        // SELECT: the null note reads back as the fallback.
+        val notes = db.autocommit {
+            val n = Products.note.coalesce("none")
+            Products.query().where(Products.displayName eq tag).select(n).map { it[n] }.sorted()
+        }
+        assertEquals(listOf("none", "set"), notes)
+
+        // WHERE: a null rank coalesces to 0, so only the rank=7 row passes `> 5`.
+        val highRank = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.rank.coalesce(0) gt 5) } }
+        }
+        assertEquals(listOf(7), highRank.map { it.rank })
+
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
 
     /**
