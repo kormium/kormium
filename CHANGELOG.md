@@ -28,6 +28,11 @@ All notable changes to Kormium are documented here. The format is based on
   including `onConflict = Table.primaryKey`, are unchanged. A runtime backstop still rejects an
   empty target — and the rare same-entity-other-table case — with a clear `IllegalArgumentException`
   naming the column and tables (#32).
+- **`ConcurrencyConflictException`** — a typed signal for a transient serialization failure / deadlock
+  (SQLSTATE `40001` / `40P01`), so a caller can catch one portable type instead of matching SQLSTATE
+  strings to know a transaction is safe to retry. Kormium ships the exception, not a retry loop (the
+  policy is the application's) — see the retry recipe in `AGENTS.md` and
+  [ADR 0007](docs/adr/0007-concurrency-conflict-exception.md).
 
 ### Changed
 - `Table.primaryKey` is now `List<Column<*, *, T>>` (was `List<Column<*, *, *>>`) and the table's
