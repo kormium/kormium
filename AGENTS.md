@@ -83,6 +83,13 @@ Predicates: `eq`, `neq`, `gt`, `gtEq`, `less`, `lessEq`, `between (lo..hi)`, `li
 as parameters. `between` takes an inclusive Kotlin range (`Users.age between 18..65`); an empty
 range and an empty `inList` both render to `FALSE` (match no rows), never invalid SQL.
 
+String functions: a `String` column has `lower()`, `upper()`, `trim()`, `ltrim()`, `rtrim()`,
+each returning a `StringExpr` that chains (`name.trim().lower()`), composes with the predicates
+above (`name.lower() eq "ada"`, `a.lower() eq b.lower()`), and is readable in `select(...)`.
+Plain string comparison (`eq` / `like` / `<`) follows the **engine collation** — case- and
+accent-sensitivity differ across PostgreSQL/MySQL/SQLite. Kormium does not inject a collation;
+for deterministic case-insensitive matching, lower **both sides**: `name.lower() eq "ada"`.
+
 For a reusable query, build a `Query` value instead of a block:
 `Users.find(Query(Users.age gtEq 18))`. Every `find` / `count` / `update` / `deleteWhere`
 accepts either form.
@@ -211,5 +218,6 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 - Predicate names are `less` / `lessEq` (not `lt` / `ltEq`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.
 - Not modeled by the typed DSL: subqueries, `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
-  `CROSS`/self-joins, `ILIKE`/regex, `CASE`/`COALESCE`, arithmetic in `SELECT` projections,
-  `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.
+  `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, `CASE`/`COALESCE`, scalar functions
+  beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`, arithmetic in `SELECT` projections, `RETURNING` on
+  `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.

@@ -1,5 +1,7 @@
 package io.github.kormium
 
+import io.github.kormium.resultset.ResultSet
+
 /**
  * Collects bind values while an [Expression] or [Query] is rendered to SQL.
  * Instead of inlining values into the SQL string (which is open to SQL
@@ -259,6 +261,55 @@ infix fun <Z> NumericExpr<Z>.less(value: Z): Expression = LessOp(this, columnTyp
 infix fun <Z> NumericExpr<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
 infix fun <Z> NumericExpr<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
 infix fun <Z> NumericExpr<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
+
+/**
+ * A typed string-valued SQL expression. A string [Column] yields one via the scalar functions
+ * below (`lower()`, `upper()`, `trim()`, `ltrim()`, `rtrim()`), and each returns another
+ * [StringExpr], so they chain (`name.trim().lower()`). Being a [Selectable] it can also be read
+ * back from a row in `select(...)`. Compare it with `eq` / `neq` / `like` / `gt` / `gtEq` /
+ * `less` / `lessEq` against a `String` literal, or — through the generic expression operators —
+ * against another [StringExpr] (`a.lower() eq b.lower()`).
+ */
+interface StringExpr : Selectable<String>
+
+/**
+ * A scalar SQL function rendered as `FN(arg, ...)`. The string-returning ones are [StringExpr],
+ * so they compose with the string predicates and chain. The result key is structural (the
+ * function over its arguments' keys), so a projected function reads back with a fresh instance.
+ */
+class StringFunction(private val fn: String, private val args: List<Expression>) : StringExpr {
+    override fun toSql(builder: ParamBuilder): String = "$fn(${args.joinToString(", ") { it.toSql(builder) }})"
+    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): String? = rs.getString(index)
+    override fun resultKey(): Any =
+        "$fn(${args.joinToString(", ") { ((it as? Selectable<*>)?.resultKey() ?: it).toString() }})"
+}
+
+// Scalar string functions, defined on both Column<String> and StringExpr so they chain like the
+// arithmetic operators do. LOWER/UPPER/TRIM/LTRIM/RTRIM are standard and render identically on
+// PostgreSQL, MySQL and SQLite, so no dialect hook is needed.
+fun Column<String, *, *>.lower(): StringExpr = StringFunction("LOWER", listOf(this))
+fun StringExpr.lower(): StringExpr = StringFunction("LOWER", listOf(this))
+fun Column<String, *, *>.upper(): StringExpr = StringFunction("UPPER", listOf(this))
+fun StringExpr.upper(): StringExpr = StringFunction("UPPER", listOf(this))
+fun Column<String, *, *>.trim(): StringExpr = StringFunction("TRIM", listOf(this))
+fun StringExpr.trim(): StringExpr = StringFunction("TRIM", listOf(this))
+fun Column<String, *, *>.ltrim(): StringExpr = StringFunction("LTRIM", listOf(this))
+fun StringExpr.ltrim(): StringExpr = StringFunction("LTRIM", listOf(this))
+fun Column<String, *, *>.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
+fun StringExpr.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
+
+// Comparing a StringExpr to a String literal. (StringExpr-to-StringExpr comparison already works
+// through the generic `Expression` operators above.) `like` has no generic form, so both its
+// literal and StringExpr forms are provided here. Note: a bare string comparison follows the
+// engine's collation (see docs) — wrap both sides in `lower()` for deterministic case folding.
+infix fun StringExpr.like(pattern: String): Expression = LikeOp(this, Value(pattern))
+infix fun StringExpr.like(other: StringExpr): Expression = LikeOp(this, other)
+infix fun StringExpr.eq(value: String): Expression = EqOp(this, Value(value))
+infix fun StringExpr.neq(value: String): Expression = NeqOp(this, Value(value))
+infix fun StringExpr.less(value: String): Expression = LessOp(this, Value(value))
+infix fun StringExpr.lessEq(value: String): Expression = LessEqOp(this, Value(value))
+infix fun StringExpr.gt(value: String): Expression = GreaterOp(this, Value(value))
+infix fun StringExpr.gtEq(value: String): Expression = GreaterEqOp(this, Value(value))
 
 /** Groups an expression in parentheses so it composes safely with surrounding `AND`/`OR`. */
 class ParenExpression(private val expr: Expression) : Expression {

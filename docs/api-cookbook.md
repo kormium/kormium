@@ -160,6 +160,43 @@ fun usersAfter(cursor: User?): List<User> = db.autocommit {
 
 Each `where { }` is ANDed with the others; multiple `orderBy` calls keep their order.
 
+## Case-Insensitive Match (instead of `ILIKE`)
+
+Kormium has no `ilike` operator. Plain `like` / `eq` follow the engine's **collation**, so their
+case behavior differs across PostgreSQL, MySQL and SQLite. For a result that is identical on every
+backend, lower **both sides** explicitly with the `lower()` scalar function:
+
+```kotlin
+// Case-insensitive equality — matches "Ada", "ADA", "ada" on every engine.
+val ada = db.autocommit {
+    Users.find { where { Users.name.lower() eq "ada" } }            // LOWER("name") = 'ada'
+}
+
+// Case-insensitive LIKE — the pattern is already lowercase, since the left side is lowered.
+val examples = db.autocommit {
+    Users.find { where { Users.email.lower() like "%@example.com" } }
+}
+```
+
+`lower()` chains, and the right side can be another lowered column:
+
+```kotlin
+Users.find { where { Users.name.trim().lower() eq "ada" } }
+Users.find { where { Users.name.lower() eq Users.email.lower() } }
+```
+
+`LOWER("name")` cannot use a plain index on `name`. If you match on it often, add a functional
+index so the lookup stays fast:
+
+```kotlin
+db.transaction {
+    executeUpdate("""CREATE INDEX IF NOT EXISTS users_name_lower_idx ON "users" (LOWER("name"))""")
+}
+```
+
+`lower()` settles only the case dimension; locale ordering and accents still follow the collation.
+See [ADR 0002](adr/0002-no-ilike-explicit-lower.md) for the full rationale.
+
 ## Count Rows
 
 ```kotlin
