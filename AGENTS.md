@@ -110,7 +110,8 @@ for deterministic case-insensitive matching, lower **both sides**: `name.lower()
 
 Null fallback: `column.coalesce(default)` → `COALESCE("column", default)` — the value or the
 fallback when NULL. Readable in `select(...)` and comparable to a literal (`Users.rank.coalesce(0)
-gt 5`), or to another column (`a.coalesce(b)`). A non-null fallback makes the result non-null.
+gt 5`). N-ary: `a.coalesce(b, c)` (more columns), `a.coalesce(b).coalesce("default")` (trailing
+literal). A non-null fallback makes the result non-null.
 
 Conditional value: `case { whenever(cond) then v; …; otherwise(d) }` → searched `CASE`. A `Selectable`
 (readable in `select(...)`) — **hold it in a `val`** to read it back. The result type is inferred for

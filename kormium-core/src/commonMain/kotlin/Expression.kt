@@ -374,7 +374,7 @@ infix fun StringExpr.gtEq(value: String): Expression = GreaterEqOp(this, Value(v
  * otherwise read it with `getOrNull`.
  */
 class CoalesceOp<Z> internal constructor(
-    private val args: List<Expression>,
+    internal val args: List<Expression>,
     internal val columnType: ColumnType<Z>,
 ) : Selectable<Z> {
     override fun toSql(builder: ParamBuilder): String = "COALESCE(${args.joinToString(", ") { it.toSql(builder) }})"
@@ -385,8 +385,17 @@ class CoalesceOp<Z> internal constructor(
 /** `COALESCE("col", default)` — read a nullable column with a fallback; the default binds through the column's converter. */
 fun <Z> Column<Z, *, *>.coalesce(default: Z): CoalesceOp<Z> = CoalesceOp(listOf(this, Value(bindParam(default))), columnType)
 
-/** `COALESCE("col", "other")` — the first non-null of two same-typed columns. */
-fun <Z> Column<Z, *, *>.coalesce(other: Column<Z, *, *>): CoalesceOp<Z> = CoalesceOp(listOf(this, other), columnType)
+/** `COALESCE("col", "c2", "c3", ...)` — the first non-null of this column and the [others], in order. */
+fun <Z> Column<Z, *, *>.coalesce(vararg others: Column<Z, *, *>): CoalesceOp<Z> =
+    CoalesceOp(listOf(this, *others), columnType)
+
+/** Extends a `COALESCE` with more columns: `a.coalesce(b).coalesce(c, d)` → `COALESCE(a, b, c, d)`. */
+fun <Z> CoalesceOp<Z>.coalesce(vararg others: Column<Z, *, *>): CoalesceOp<Z> =
+    CoalesceOp(args + others, columnType)
+
+/** Appends a literal fallback to a `COALESCE`, typically last: `a.coalesce(b).coalesce("default")`. */
+fun <Z> CoalesceOp<Z>.coalesce(default: Z): CoalesceOp<Z> =
+    CoalesceOp(args + columnType.lit(default), columnType)
 
 // Comparing a COALESCE to a typed literal binds it through the source column's converter.
 // (COALESCE-to-expression comparison already works through the generic operators above.)

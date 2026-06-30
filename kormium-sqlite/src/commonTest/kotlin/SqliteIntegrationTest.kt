@@ -775,6 +775,27 @@ class SqliteIntegrationTest {
 
         db.transaction { Products.deleteWhere(Query(Products.id inList scope)) }
     }
+
+    /** N-ary `coalesce`: more columns via vararg, plus a trailing literal fallback. */
+    @Test
+    fun testCoalesceVararg() {
+        val idA = Uuid.random()
+        val idB = Uuid.random()
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = idA; price = BigDecimal.fromInt(1); qty = 1; displayName = "A"; note = null; rank = null })
+            Products.insert(Product().apply { id = idB; price = BigDecimal.fromInt(1); qty = 1; displayName = "x"; note = "B"; rank = null })
+        }
+
+        // COALESCE("note", "displayName", 'Z'): A's note is NULL -> "A"; B's note -> "B".
+        val values = db.autocommit {
+            val c = Products.note.coalesce(Products.displayName).coalesce("Z")
+            Products.query().where(Products.id inList listOf(idA, idB)).select(c).map { it[c] }.sorted()
+        }
+        assertEquals(listOf("A", "B"), values)
+
+        db.transaction { Products.deleteWhere(Query(Products.id inList listOf(idA, idB))) }
+    }
 }
 
 object SqCatalog : Catalog

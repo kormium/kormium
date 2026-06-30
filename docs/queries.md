@@ -104,8 +104,9 @@ val names: List<String> = db.autocommit {
 // Treat a NULL as the fallback in a predicate:
 Users.find { where { Users.rank.coalesce(0) gt 5 } }   // COALESCE("rank", 0) > 5
 
-// First non-null of two columns:
-Users.find { where { Users.nickname.coalesce(Users.name) eq "Ada" } }
+// First non-null of several columns, then a literal fallback:
+Users.find { where { Users.nickname.coalesce(Users.handle, Users.name) eq "Ada" } }
+select(Users.nickname.coalesce(Users.handle, Users.name).coalesce("anonymous")) // COALESCE(nick, handle, name, 'anonymous')
 ```
 
 The default binds through the column's converter, so an enum/`Instant`/`BigDecimal` fallback maps
