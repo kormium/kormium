@@ -30,6 +30,7 @@ class SqliteWasmDatabase internal constructor(
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
+    override val dialect = SqliteDialect
 
     private val lifecycle = DatabaseLifecycle { api.close(db) }
     private val connectionLock = Mutex()

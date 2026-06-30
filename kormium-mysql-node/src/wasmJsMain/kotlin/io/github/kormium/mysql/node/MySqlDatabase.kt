@@ -23,6 +23,7 @@ class MySqlDatabase internal constructor(
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
+    override val dialect = MySqlDialect
 
     private val lifecycle = DatabaseLifecycle { pool.end() }
 
