@@ -21,4 +21,7 @@ interface PostgresDriver : Database<Nothing>, SuspendDatabase<Nothing>, AutoClos
 
     // Resolves the isClosed default inherited from both interfaces; concrete drivers track it.
     override val isClosed: Boolean
+
+    // Resolves the dialect default inherited from both interfaces; concrete drivers supply PostgresDialect.
+    override val dialect: Dialect
 }

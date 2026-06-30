@@ -204,7 +204,7 @@ internal fun Join<*>.allColumns(): List<Column<*, *, *>> =
 
 // Builds the SELECT SQL + params (columns are emitted qualified, e.g. "users"."id",
 // so colliding names don't clash). Pure — no I/O; the runners below execute it.
-private fun buildSelect(
+internal fun buildSelect(
     join: Join<*>,
     fields: List<Selectable<*>>,
     dialect: Dialect,

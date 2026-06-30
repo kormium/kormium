@@ -1,8 +1,10 @@
 package io.github.kormium.database
 
 import io.github.kormium.Catalog
+import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.SqlExecutor
+import io.github.kormium.StandardDialect
 import io.github.kormium.TransactionIsolation
 import io.github.kormium.WriteListeners
 
@@ -21,6 +23,14 @@ import io.github.kormium.WriteListeners
 interface Database<out G : Catalog> : AutoCloseable {
     /** Per-database configuration; defaults to [KormiumConfig] defaults unless a backend overrides it. */
     val config: KormiumConfig get() = KormiumConfig()
+
+    /**
+     * The SQL dialect this database renders to (placeholder style, identifier quoting, LIMIT/OFFSET,
+     * upsert tail, …). Backends override it with their concrete dialect; the neutral
+     * [StandardDialect] default keeps custom/test implementations compiling. Exposed so a query can
+     * be rendered to its SQL without a connection — see [io.github.kormium.renderSql].
+     */
+    val dialect: Dialect get() = StandardDialect
 
     /**
      * The write-notification registry for this database. The default [WriteListeners.Disabled]

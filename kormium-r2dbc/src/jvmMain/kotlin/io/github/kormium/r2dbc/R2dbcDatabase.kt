@@ -33,7 +33,7 @@ import kotlinx.coroutines.withContext
  */
 class R2dbcDatabase internal constructor(
     private val pool: ConnectionPool,
-    private val dialect: Dialect,
+    override val dialect: Dialect,
     private val typeMapper: TypeMapper,
     // The driver's positional bind marker ($N for postgres, ? for mysql). Defaults to postgres so
     // existing call sites are unchanged.

@@ -59,6 +59,19 @@ val db: Database<App> = createDatabase(
 // Async MySQL (kormium-r2dbc):       createMySqlR2dbcDatabase(...)
 ```
 
+## Inspect the SQL without running it
+
+`renderSql { }` returns the SQL a query would run (string + bound params) with no connection — the
+block reads like a `transaction { }` body but each operation returns a `RenderedSql`. Use it to
+self-check a query before executing.
+
+```kotlin
+val r = renderSql(App, PostgresDialect) { Users.find { where { Users.age gtEq 18 } } }
+r.sql     // SELECT "id", ... FROM "users" WHERE "age" >= :p0 ...
+r.params  // {p0=18}
+db.renderSql { Users.count { where { Users.age gtEq 18 } } }   // uses the db's own dialect
+```
+
 ## Read — the canonical single-table form
 
 ```kotlin
