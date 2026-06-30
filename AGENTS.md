@@ -245,6 +245,83 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 | Single-table grouping | `Table.query().groupBy(...).select(...)` |
 | Upsert / ignore-on-conflict | `Table.upsert(...)` / `Table.insertOrIgnore(...)` |
 
+## Recipes
+
+Copy-ready patterns for common tasks. They use only the forms above — no raw SQL.
+
+**Dynamic / optional filters.** `where { }` blocks AND together, so add a filter only when its
+argument is present — no string building:
+
+```kotlin
+fun search(name: String?, minAge: Int?) = db.autocommit {
+    Users.find {
+        if (name != null)   where { Users.name like "$name%" }
+        if (minAge != null) where { Users.age gtEq minAge }
+        orderBy ASC Users.name
+        limit = 50
+    }
+}
+```
+
+**Keyset (seek) pagination.** Stabler than `offset` on deep pages — the cursor is the last value
+of an ordered, unique key:
+
+```kotlin
+fun page(after: Instant?, size: Int = 50) = db.autocommit {
+    Users.find {
+        if (after != null) where { Users.createdAt less after }
+        orderBy DESC Users.createdAt
+        limit = size
+    }
+}
+```
+
+`limit`/`offset` works too (`offset = page * size`), but on deep pages it is slower and can skip or
+repeat rows under concurrent writes. If the key is not unique, add a tiebreaker
+(`… or ((Users.createdAt eq c) and (Users.id gt lastId))`).
+
+**Soft-delete.** Kormium has no implicit filters — a "delete" is an `UPDATE` of a marker column, and
+every read **explicitly** excludes the marked rows (no hidden state to forget):
+
+```kotlin
+val deletedAt by Column.Instant().nullable()   // null = live row
+
+db.transaction {
+    Users.update(User().apply { deletedAt = Clock.System.now() }) { where { Users.id eq id } }
+}
+db.autocommit { Users.find { where { Users.deletedAt eq null } } }   // add the predicate on each read
+```
+
+**Optimistic locking.** `update { }` returns the affected-row count, so check the version matched;
+bump it atomically with `set (col + 1)`:
+
+```kotlin
+val applied = db.transaction {
+    Docs.update {
+        Docs.body    set newBody
+        Docs.version set (Docs.version + 1)
+        where { (Docs.id eq id) and (Docs.version eq expected) }
+    } == 1L
+}
+if (!applied) error("stale write — reload and retry")
+```
+
+**Batch insert, input order preserved.** `insertAll` batches by row shape; with `returning = true` it
+backfills DB-generated values and keeps the input order:
+
+```kotlin
+val saved = db.transaction { Users.insertAll(newUsers, returning = true) }
+```
+
+**Find-or-create.** Insert if absent, then read the row back — new or pre-existing:
+
+```kotlin
+val user = db.transaction {
+    Users.insertOrIgnore(newUser, onConflict = Users.id)   // 1 = inserted, 0 = already there
+    Users.findById(newUser.id)!!                           // the row either way
+}
+```
+
 ## Gotchas
 
 - Operations are scope extensions — they don't compile outside `db.transaction { }` /
