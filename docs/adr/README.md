@@ -5,3 +5,4 @@ and its consequences. One file per decision, numbered and append-only — supers
 rewrite.
 
 - [0001 — Concrete dialects live in standalone modules](0001-standalone-dialect-modules.md)
+- [0002 — No `ilike`; case-insensitive matching is explicit via `lower()`](0002-no-ilike-explicit-lower.md)

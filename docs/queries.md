@@ -77,7 +77,8 @@ val lowered: List<String> = db.autocommit {
 > not inject a collation for you (that would be hidden, and would change which index the query
 > can use). For deterministic, case-insensitive matching, lower **both sides** explicitly:
 > `Users.name.lower() eq "ada"`. `lower()` settles the case dimension; locale ordering and
-> accents still follow the collation.
+> accents still follow the collation. For why Kormium has no `ilike` operator, see
+> [ADR 0002](adr/0002-no-ilike-explicit-lower.md).
 
 `LOWER(col)` cannot use a plain index on `col` — add a functional index on `LOWER(col)` if you
 match on it often.
