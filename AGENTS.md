@@ -85,7 +85,7 @@ val adults: List<User> = db.autocommit {
     }
 }
 
-val ada: User? = db.autocommit { Users.findById(uuid) }   // targets the primary key
+val ada: User? = db.autocommit { Users.findOne { where { Users.id eq uuid } } }   // one row or null
 val all: List<User> = db.autocommit { Users.all() }
 val n: Long       = db.autocommit { Users.count { where { Users.age gtEq 18 } } }
 ```
@@ -237,7 +237,7 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 | Task | Use |
 |------|-----|
 | Filtered read, one table | `Table.find { where { } orderBy limit }` |
-| By primary key | `Table.findById(id)` |
+| One row by id / unique column | `Table.findOne { where { col eq v } }` (→ `T?`) |
 | Reusable / prebuilt query | `Table.find(Query(...))` |
 | Two-table join as entities | `(A innerJoin B on ...).find()` |
 | Columns / aggregates from a join | `.select(...)` + `row[col]` / `row[agg]` |
@@ -325,9 +325,18 @@ val user = db.transaction {
 ## Gotchas
 
 - Operations are scope extensions — they don't compile outside `db.transaction { }` /
-  `db.autocommit { }` (or the `suspend*` variants).
-- A `Table<G, _>` can only be used in a `Database<G>` scope; mixing catalogs is a compile error.
-- `findById` targets the primary key and throws on a composite key — use `find(Query(col eq v))`.
+  `db.autocommit { }` (or the `suspend*` variants). Symptom of being outside one: `find` / `insert`
+  resolve to a Kotlin stdlib function (`kotlin.collections.find`) or `where` is "unresolved".
+- A `Table<G, _>` can only be used in a `Database<G>` scope; mixing catalogs is a compile error
+  ("receiver type mismatch" naming `Table<ThatCatalog, _>`).
+- One row by primary key (or any unique column): `findOne { where { col eq v } }` → `T?` (`LIMIT 1`).
+  There is no `findById` — naming the column keeps the id **type-checked**.
+- Value comparisons are typed: `Users.age eq "18"` won't compile (pass `18`; the error names the
+  expected type). Column-to-column comparisons are NOT cross-checked — `intCol eq uuidCol` compiles,
+  so match the types yourself.
+- `eq null` / `neq null` (→ `IS [NOT] NULL`) work only on **nullable** columns; on a non-null column
+  they don't compile (it can never be NULL).
+- `orderBy` needs a direction — `orderBy ASC col` / `orderBy DESC col`; bare `orderBy col` is a syntax error.
 - Predicate names are `less` / `lessEq` (not `lt` / `ltEq`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.
 - Not modeled by the typed DSL: subqueries other than correlated `EXISTS` (use `any`/`none`; scalar →

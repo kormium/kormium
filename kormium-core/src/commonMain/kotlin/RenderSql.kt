@@ -24,7 +24,8 @@ class RenderScope<G : Catalog> internal constructor(val dialect: Dialect, val ty
     // ---- reads ----
     fun <T : Entity> Table<G, T>.find(query: Query): RenderedSql = RenderedSql(selectSql(query, dialect, typeMapper))
     fun <T : Entity> Table<G, T>.find(block: QueryBuilder.() -> Unit): RenderedSql = find(QueryBuilder().apply(block).build())
-    fun <T : Entity> Table<G, T>.findById(id: Any): RenderedSql = RenderedSql(selectByIdSql(id, dialect, typeMapper))
+    fun <T : Entity> Table<G, T>.findOne(query: Query): RenderedSql = RenderedSql(selectSql(query.copy(limit = 1u), dialect, typeMapper))
+    fun <T : Entity> Table<G, T>.findOne(block: QueryBuilder.() -> Unit): RenderedSql = findOne(QueryBuilder().apply(block).build())
     fun <T : Entity> Table<G, T>.all(): RenderedSql = RenderedSql(selectAllSql(dialect) to emptyMap())
     fun <T : Entity> Table<G, T>.count(query: Query = Query()): RenderedSql = RenderedSql(countSql(query, dialect, typeMapper))
     fun <T : Entity> Table<G, T>.count(block: QueryBuilder.() -> Unit): RenderedSql = count(QueryBuilder().apply(block).build())

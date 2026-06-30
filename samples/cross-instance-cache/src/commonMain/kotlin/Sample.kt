@@ -86,7 +86,7 @@ class ProductCache(private val db: Database<Shop>) {
             return byId[id]
         }
         println("cache MISS $id -> read Postgres")
-        val name = db.autocommit { Products.findById(id)?.name }
+        val name = db.autocommit { Products.findOne { where { Products.id eq id } }?.name }
         byId[id] = name
         return name
     }

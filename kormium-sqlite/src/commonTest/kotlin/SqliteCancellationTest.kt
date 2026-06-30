@@ -47,7 +47,7 @@ class SqliteCancellationTest {
         }
 
         // The insert must have been rolled back, and the single connection must be back in the pool.
-        val found = withTimeout(5_000) { db.suspendAutocommit { CxlItems.findById(id) } }
+        val found = withTimeout(5_000) { db.suspendAutocommit { CxlItems.findOne { where { CxlItems.id eq id } } } }
         assertNull(found)
     }
 
@@ -66,7 +66,7 @@ class SqliteCancellationTest {
 
         // No transaction to roll back; the contract is that the connection is released. With a
         // single connection, this query proves it (it would block forever if the conn leaked).
-        withTimeout(5_000) { db.suspendAutocommit { CxlItems.findById(Uuid.random()) } }
+        withTimeout(5_000) { db.suspendAutocommit { CxlItems.findOne { where { CxlItems.id eq Uuid.random() } } } }
         Unit
     }
 }

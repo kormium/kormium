@@ -55,7 +55,7 @@ class MySqlIntegrationTest {
                 Widgets.insert(Widget().apply { this.id = id; this.name = "node-mysql"; this.qty = 7 })
             }
 
-            val found = db.suspendAutocommit { Widgets.findById(id) }
+            val found = db.suspendAutocommit { Widgets.findOne { where { Widgets.id eq id } } }
             assertEquals(id, found?.id)
             assertEquals("node-mysql", found?.name)
             assertEquals(7, found?.qty)
@@ -65,7 +65,7 @@ class MySqlIntegrationTest {
             assertTrue(db.suspendAutocommit { Widgets.count() } >= 1)
 
             db.suspendTransaction { Widgets.deleteWhere { where { Widgets.id eq id } } }
-            assertNull(db.suspendAutocommit { Widgets.findById(id) })
+            assertNull(db.suspendAutocommit { Widgets.findOne { where { Widgets.id eq id } } })
         } finally {
             db.close()
         }
@@ -79,7 +79,7 @@ class MySqlIntegrationTest {
             val id = Uuid.random()
             val payload = byteArrayOf(0, 1, 2, 42, 127, -1, -128, 99)
             db.suspendTransaction { Blobs.insert(BlobRow().apply { this.id = id; this.data = payload }) }
-            val found = db.suspendAutocommit { Blobs.findById(id) }
+            val found = db.suspendAutocommit { Blobs.findOne { where { Blobs.id eq id } } }
             assertContentEquals(payload, found?.data)
         } finally {
             db.close()
@@ -100,7 +100,7 @@ class MySqlIntegrationTest {
             } catch (_: IllegalStateException) {
                 // expected
             }
-            assertNull(db.suspendAutocommit { Widgets.findById(id) })
+            assertNull(db.suspendAutocommit { Widgets.findOne { where { Widgets.id eq id } } })
         } finally {
             db.close()
         }

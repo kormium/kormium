@@ -228,9 +228,12 @@ fun Column<*, *, *>.isNotNull(): Expression = IsNullOp(this, true)
 
 // `column eq null` / `column neq null` render as IS [NOT] NULL. The `Nothing?` parameter
 // makes the null literal bind here instead of the typed `eq(value: Z)` overload, so the
-// comparison vocabulary stays uniform (`note eq null` reads like `age gtEq 18`).
-infix fun Column<*, *, *>.eq(value: Nothing?): Expression = IsNullOp(this, false)
-infix fun Column<*, *, *>.neq(value: Nothing?): Expression = IsNullOp(this, true)
+// comparison vocabulary stays uniform (`note eq null` reads like `age gtEq 18`). Restricted to a
+// NULLABLE column: a non-null column is never NULL, so `eq null` on one is a bug — and keeping this
+// overload off non-null columns means a typed mismatch (`age eq "x"`) reports against the real
+// `eq(value: Z)` candidate ("Int expected") instead of this one ("Nothing? expected").
+infix fun Column.NullableColumn<*, *, *>.eq(value: Nothing?): Expression = IsNullOp(this, false)
+infix fun Column.NullableColumn<*, *, *>.neq(value: Nothing?): Expression = IsNullOp(this, true)
 
 /**
  * A typed numeric operand: a [Column] participates via the operators below, and every arithmetic

@@ -40,7 +40,7 @@ class SqliteWasmIntegrationTest {
                 Widgets.insert(Widget().apply { this.id = id; this.name = "wasm-sqlite"; this.qty = 7 })
             }
 
-            val found = db.suspendAutocommit { Widgets.findById(id) }
+            val found = db.suspendAutocommit { Widgets.findOne { where { Widgets.id eq id } } }
             assertEquals(id, found?.id)
             assertEquals("wasm-sqlite", found?.name)
             assertEquals(7, found?.qty)
@@ -64,7 +64,7 @@ class SqliteWasmIntegrationTest {
                 Blobs.execSql(blobsDdl)
                 Blobs.insert(BlobRow().apply { this.id = id; this.data = payload })
             }
-            val found = db.suspendAutocommit { Blobs.findById(id) }
+            val found = db.suspendAutocommit { Blobs.findOne { where { Blobs.id eq id } } }
             assertContentEquals(payload, found?.data)
         } finally {
             db.close()
@@ -85,7 +85,7 @@ class SqliteWasmIntegrationTest {
             } catch (_: IllegalStateException) {
                 // expected
             }
-            assertNull(db.suspendAutocommit { Widgets.findById(id) })
+            assertNull(db.suspendAutocommit { Widgets.findOne { where { Widgets.id eq id } } })
         } finally {
             db.close()
         }

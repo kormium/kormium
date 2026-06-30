@@ -105,7 +105,7 @@ open class KormiumBenchmark {
     }
 
     @Benchmark
-    fun findById(): Any? = db.autocommit { BenchTable.findById(seededId) }
+    fun findById(): Any? = db.autocommit { BenchTable.findOne { where { BenchTable.id eq seededId } } }
 
     @Benchmark
     fun selectWhere(): Any? = db.autocommit { BenchTable.find(Query(BenchTable.name eq "seed")) }

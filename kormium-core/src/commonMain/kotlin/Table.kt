@@ -114,18 +114,6 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
 
     // ---- pure SQL builders (no I/O) — shared by the blocking and suspend runners ----
 
-    internal fun selectByIdSql(id: Any, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
-        val pk = primaryKey.singleOrNull()
-            ?: throw IllegalStateException(
-                "findById requires a single-column primary key on $tableName; " +
-                    "use find(...) for composite (or missing) keys",
-            )
-        val builder = paramBuilder(dialect, typeMapper)
-        val idPlaceholder = builder.bind(id)
-        val sql = "SELECT ${getColumnNames(dialect).joinToString(", ")} FROM ${qualifiedTableName(dialect)} WHERE ${dialect.quoteIdentifier(pk.name)} = $idPlaceholder"
-        return sql.trimIndent() to builder.params
-    }
-
     // Re-selects a just-written row by its primary key, for backends without RETURNING (MySQL):
     // the insert/upsert runs first, then this reads the stored row back (DB defaults applied).
     private fun selectByPkSql(entity: T, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
@@ -355,11 +343,6 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         exec.execute(sql = sql.trimIndent())
     }
 
-    internal fun selectById(id: Any, exec: SqlExecutor): T? {
-        val (sql, params) = selectByIdSql(id, exec.dialect, exec.typeMapper)
-        return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
-    }
-
     internal fun select(query: Query, exec: SqlExecutor): List<T> {
         val (sql, params) = selectSql(query, exec.dialect, exec.typeMapper)
         return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }
@@ -449,11 +432,6 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
 
     internal suspend fun runRaw(sql: String, exec: SuspendSqlExecutor) {
         exec.execute(sql = sql.trimIndent())
-    }
-
-    internal suspend fun selectById(id: Any, exec: SuspendSqlExecutor): T? {
-        val (sql, params) = selectByIdSql(id, exec.dialect, exec.typeMapper)
-        return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
     }
 
     internal suspend fun select(query: Query, exec: SuspendSqlExecutor): List<T> {

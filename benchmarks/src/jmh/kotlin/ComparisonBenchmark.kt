@@ -200,7 +200,7 @@ open class ComparisonBenchmark {
 
     // --- kormium ---
     @Benchmark
-    fun kormiumFindById(): Any? = kormiumDb.autocommit { CmpTable.findById(seededKormiumId) }
+    fun kormiumFindById(): Any? = kormiumDb.autocommit { CmpTable.findOne { where { CmpTable.id eq seededKormiumId } } }
 
     @Benchmark
     fun kormiumSelectWhere(): Any? = kormiumDb.autocommit { CmpTable.find(Query(CmpTable.name eq "seed")) }

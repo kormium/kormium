@@ -581,10 +581,10 @@ class TableTest {
     }
 
     @Test
-    fun testFindById() {
+    fun testFindOneByPrimaryKey() {
         val uuid = Uuid.random()
-        val expectedResult = """SELECT "id", "price", "position", "text", "nullableTest" FROM "products" WHERE "id" = :p0"""
-        db.transaction { TestTable.findById(uuid) }
+        val expectedResult = """SELECT "id", "price", "position", "text", "nullableTest" FROM "products" WHERE "id" = :p0 LIMIT 1"""
+        db.transaction { TestTable.findOne { where { TestTable.id eq uuid } } }
         assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
         assertEquals(mapOf("p0" to uuid.toString()), databaseMockObj.internalParams)
     }
@@ -781,17 +781,12 @@ class TableTest {
     }
 
     @Test
-    fun testFindByIdUsesMarkedPrimaryKeyColumn() {
-        db.autocommit { Coded.findById("abc") }
-        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains("""WHERE"code"=:p0"""))
+    fun testFindOneRendersPredicateAndLimitsToOne() {
+        db.autocommit { Coded.findOne { where { Coded.code eq "abc" } } }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains("""WHERE"code"=:p0"""), sql)
+        assertTrue(sql.contains("LIMIT1"), sql)
         assertEquals(mapOf("p0" to "abc"), databaseMockObj.internalParams)
-    }
-
-    @Test
-    fun testFindByIdFailsForCompositeKey() {
-        assertFailsWith<IllegalStateException> {
-            db.autocommit { CompositeKey.findById(Uuid.random()) }
-        }
     }
 
     companion object {

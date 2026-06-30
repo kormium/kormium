@@ -70,7 +70,7 @@ class SqliteIntegrationTest {
             })
         }
 
-        val found = db.autocommit { Products.findById(id) }
+        val found = db.autocommit { Products.findOne { where { Products.id eq id } } }
         assertEquals(id, found?.id)
         assertEquals(5, found?.qty)
         assertEquals("widget", found?.displayName)
@@ -100,7 +100,7 @@ class SqliteIntegrationTest {
             Products.update(Product().apply { this.qty = 9 }) { where { Products.id eq id } }
         }
         assertEquals(1L, updated)
-        assertEquals(9, db.autocommit { Products.findById(id) }?.qty)
+        assertEquals(9, db.autocommit { Products.findOne { where { Products.id eq id } } }?.qty)
         // No row matches → 0 affected.
         assertEquals(0L, db.transaction {
             Products.update(Product().apply { this.qty = 1 }) { where { Products.id eq Uuid.random() } }
@@ -108,7 +108,22 @@ class SqliteIntegrationTest {
 
         val deleted = db.transaction { Products.deleteWhere { where { Products.id eq id } } }
         assertEquals(1L, deleted)
-        assertNull(db.autocommit { Products.findById(id) })
+        assertNull(db.autocommit { Products.findOne { where { Products.id eq id } } })
+    }
+
+    /** `findOne` reads a single row by any column (not just the PK) and returns null on no match. */
+    @Test
+    fun testFindOneByNonPrimaryKeyColumnAndMiss() {
+        val tag = "one-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 7; displayName = tag; note = null; rank = null })
+        }
+        val hit = db.autocommit { Products.findOne { where { Products.displayName eq tag } } }
+        assertEquals(7, hit?.qty)
+        val miss = db.autocommit { Products.findOne { where { Products.displayName eq "nope-$tag" } } }
+        assertNull(miss)
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
 
     @Test
@@ -124,7 +139,7 @@ class SqliteIntegrationTest {
                 update = Product().apply { qty = 2 },
             )
         }
-        assertEquals(1, db.autocommit { Products.findById(id) }?.qty)
+        assertEquals(1, db.autocommit { Products.findOne { where { Products.id eq id } } }?.qty)
 
         // upsert again on the same id → DO UPDATE applies the patch.
         db.transaction {
@@ -134,7 +149,7 @@ class SqliteIntegrationTest {
                 update = Product().apply { qty = 2 },
             )
         }
-        assertEquals(2, db.autocommit { Products.findById(id) }?.qty)
+        assertEquals(2, db.autocommit { Products.findOne { where { Products.id eq id } } }?.qty)
 
         // insertOrIgnore: existing id → 0 affected, new id → 1 affected.
         assertEquals(0L, db.transaction {
@@ -177,7 +192,7 @@ class SqliteIntegrationTest {
                 this.displayName = tricky; this.note = null; this.rank = null
             })
         }
-        assertEquals(tricky, db.autocommit { Products.findById(id) }?.displayName)
+        assertEquals(tricky, db.autocommit { Products.findOne { where { Products.id eq id } } }?.displayName)
         db.transaction { Products.deleteWhere(Query(Products.id eq id)) }
     }
 
@@ -209,7 +224,7 @@ class SqliteIntegrationTest {
                 this.aDateTime = dateTime
             })
         }
-        val row = db.autocommit { AllTypes.findById(id) }!!
+        val row = db.autocommit { AllTypes.findOne { where { AllTypes.id eq id } } }!!
         assertEquals(42, row.anInt)
         assertEquals(2.5, row.aDouble)
         assertEquals(true, row.aBool)
@@ -356,7 +371,7 @@ class SqliteIntegrationTest {
                 throw RuntimeException("boom")
             }
         }
-        assertNull(db.autocommit { Products.findById(id) })
+        assertNull(db.autocommit { Products.findOne { where { Products.id eq id } } })
     }
 
     /** A duplicate primary key surfaces as a typed UniqueViolationException. */

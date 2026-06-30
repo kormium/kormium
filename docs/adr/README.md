@@ -8,3 +8,4 @@ rewrite.
 - [0002 — No `ilike`; case-insensitive matching is explicit via `lower()`](0002-no-ilike-explicit-lower.md)
 - [0003 — `dialect` is a public member of `Database` / `SuspendDatabase`](0003-public-dialect-on-database.md)
 - [0004 — Subqueries: correlated `EXISTS` via `any` / `none`, not a subquery-as-value](0004-correlated-exists-any-none.md)
+- [0005 — No untyped `findById`; single-row reads via typed `findOne`](0005-no-untyped-findbyid.md)
