@@ -24,6 +24,7 @@ class PgDatabase internal constructor(
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
+    override val dialect = PostgresDialect
 
     private val lifecycle = DatabaseLifecycle { pool.end() }
 

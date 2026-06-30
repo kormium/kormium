@@ -26,6 +26,7 @@ class NodeSqliteDatabase internal constructor(
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
+    override val dialect = SqliteDialect
 
     private val lifecycle = DatabaseLifecycle { db.close() }
     private val connectionLock = Mutex()
