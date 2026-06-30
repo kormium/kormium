@@ -77,10 +77,11 @@ val all: List<User> = db.autocommit { Users.all() }
 val n: Long       = db.autocommit { Users.count { where { Users.age gtEq 18 } } }
 ```
 
-Predicates: `eq`, `neq`, `gt`, `gtEq`, `less`, `lessEq`, `like`, `inList(...)`,
-`eq null` / `neq null` (render as `IS [NOT] NULL`), combined with `and` / `or` / `not(...)`.
-Values are typed (`Users.age eq 18`, not `"18"`) and always bound as parameters. An empty
-`inList` renders to `FALSE` (matches no rows), never invalid SQL.
+Predicates: `eq`, `neq`, `gt`, `gtEq`, `less`, `lessEq`, `between (lo..hi)`, `like`,
+`inList(...)`, `eq null` / `neq null` (render as `IS [NOT] NULL`), combined with
+`and` / `or` / `not(...)`. Values are typed (`Users.age eq 18`, not `"18"`) and always bound
+as parameters. `between` takes an inclusive Kotlin range (`Users.age between 18..65`); an empty
+range and an empty `inList` both render to `FALSE` (match no rows), never invalid SQL.
 
 For a reusable query, build a `Query` value instead of a block:
 `Users.find(Query(Users.age gtEq 18))`. Every `find` / `count` / `update` / `deleteWhere`
@@ -210,5 +211,5 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 - Predicate names are `less` / `lessEq` (not `lt` / `ltEq`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.
 - Not modeled by the typed DSL: subqueries, `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
-  `CROSS`/self-joins, `BETWEEN`, `ILIKE`/regex, arithmetic/`CASE`/`COALESCE`, `RETURNING` on
-  `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.
+  `CROSS`/self-joins, `ILIKE`/regex, `CASE`/`COALESCE`, arithmetic in `SELECT` projections,
+  `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.

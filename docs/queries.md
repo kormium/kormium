@@ -27,6 +27,7 @@ val adults: List<User> = db.autocommit {
 Users.find { where { Users.id eq id } }
 Users.find { where { Users.age gt 18 } }
 Users.find { where { Users.age lessEq 65 } }
+Users.find { where { Users.age between 18..65 } }     // inclusive both ends
 Users.find { where { Users.name like "A%" } }
 Users.find { where { Users.id inList listOf(id1, id2) } }
 Users.find { where { Users.note eq null } }
@@ -284,7 +285,6 @@ Not modeled by the typed DSL today:
   are available, and a table cannot be aliased to join it to itself.
 - **`DISTINCT ON`.** Only plain `DISTINCT` is supported.
 - **`EXISTS` / `NOT EXISTS`.**
-- **`BETWEEN`.** Express it as two comparisons (`col gtEq lo` and `col lessEq hi`).
 - **Pattern-match variants.** `like` only; no `ILIKE`, `SIMILAR TO`, or regex operators.
 - **Computed expressions.** No arithmetic (`+`, `-`, `*`, `/`), string concatenation, `CASE`,
   `COALESCE`, casts, or scalar functions in `SELECT`/`WHERE`/`HAVING`.
@@ -298,8 +298,9 @@ Not modeled by the typed DSL today:
   (`INSERT ... ON CONFLICT` *is* available — see `upsert` and `insertOrIgnore`.)
 
 The supported `WHERE` / `HAVING` predicates are exactly: `eq`, `neq`, `less`, `lessEq`, `gt`,
-`gtEq`, `like`, `inList`, `eq null` / `neq null` (rendered as `IS [NOT] NULL`), and the
-`and` / `or` / `not(...)` combinators.
+`gtEq`, `between` (an inclusive `lo..hi` range; an empty range matches nothing), `like`,
+`inList`, `eq null` / `neq null` (rendered as `IS [NOT] NULL`), and the `and` / `or` / `not(...)`
+combinators.
 
 ## Observing Changes
 
