@@ -21,12 +21,15 @@ import io.github.kormium.gt
 import io.github.kormium.gtEq
 import io.github.kormium.inList
 import io.github.kormium.innerJoin
+import io.github.kormium.isNotNull
+import io.github.kormium.isNull
 import io.github.kormium.leftJoin
 import io.github.kormium.length
 import io.github.kormium.lower
 import io.github.kormium.ltrim
 import io.github.kormium.none
 import io.github.kormium.not
+import io.github.kormium.plus
 import io.github.kormium.rtrim
 import io.github.kormium.trim
 import io.github.kormium.upper
@@ -169,6 +172,27 @@ class SqliteIntegrationTest {
         }
         assertEquals(1, grouped.size)
 
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /** `isNull()` / `isNotNull()` now work on any operand — here a computed (arithmetic) expression. */
+    @Test
+    fun testIsNullOnComputedExpression() {
+        val tag = "isnull-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 1; displayName = tag; note = null; rank = 5 })
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 2; displayName = tag; note = null; rank = null })
+        }
+        // `rank + 1` is NULL exactly when rank is — .isNull() on the computed expression finds it.
+        val nullRank = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.rank + 1).isNull() } }
+        }
+        assertEquals(listOf(2), nullRank.map { it.qty })
+        val hasRank = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.rank + 1).isNotNull() } }
+        }
+        assertEquals(listOf(1), hasRank.map { it.qty })
         db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
 
