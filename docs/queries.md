@@ -164,6 +164,28 @@ val lineTotals: List<Int> = db.autocommit {
 The result reads through the column's type and is `NULL` when any operand is — use `getOrNull`
 for an expression that can be null.
 
+## Existence (`any` / `none`)
+
+`Table.any { predicate }` renders a correlated `EXISTS (SELECT 1 FROM table WHERE predicate)`;
+`Table.none { }` renders `NOT EXISTS`. Read like Kotlin's `any`/`none`. The predicate is an ordinary
+boolean expression and references the outer query's columns to correlate — columns on both sides
+render qualified (`orders.userId = users.id`) so they don't collide:
+
+```kotlin
+// Users who have at least one order over 100:
+Users.find { where { Orders.any { (Orders.userId eq Users.id) and (Orders.total gt 100) } } }
+
+// Users with no orders at all:
+Users.find { where { Orders.none { Orders.userId eq Users.id } } }
+```
+
+This is also how to write an `IN (SELECT ...)`: `id IN (SELECT userId FROM orders WHERE …)` is the
+same as `Orders.any { (Orders.userId eq Users.id) and … }`. A **scalar** subquery (comparing to a
+single value) is not modeled — write it as a typed comparison against a `RawExpression`:
+`Products.find { where { Products.price gt RawExpression("""(SELECT AVG("price") FROM "products")""") } }`.
+For why subqueries are modeled this way (and not as an embeddable value), see
+[ADR 0004](adr/0004-correlated-exists-any-none.md).
+
 ## Ordering, Limit and Offset
 
 ```kotlin
@@ -386,8 +408,11 @@ slice runs through raw SQL — either a `RawExpression` inside the DSL or `execu
 
 Not modeled by the typed DSL today:
 
-- **Subqueries.** No subqueries in any position (`SELECT`, `FROM`, `WHERE`, `IN (SELECT ...)`,
-  scalar or correlated). `inList` takes an in-memory `List`, not a query.
+- **Subqueries** other than `EXISTS`. Correlated `EXISTS` / `NOT EXISTS` is modeled by `any` / `none`
+  (see [Existence](#existence-any--none)); subqueries in `SELECT` / `FROM`, `IN (SELECT ...)` and
+  scalar subqueries are not — express a scalar one as a typed comparison against a `RawExpression`
+  (`Products.price gt RawExpression("(SELECT AVG(\"price\") FROM \"products\")")`). `inList` takes an
+  in-memory `List`, not a query.
 - **`UNION` / `INTERSECT` / `EXCEPT`.** No set-operation combinators.
 - **CTEs and recursive queries.** No `WITH` / `WITH RECURSIVE`.
 - **Window functions.** No `OVER (...)`, `PARTITION BY`, or ranking functions. Aggregates are
@@ -395,7 +420,6 @@ Not modeled by the typed DSL today:
 - **`RIGHT` / `FULL OUTER` / `CROSS` joins and self-joins.** Only `innerJoin` and `leftJoin`
   are available, and a table cannot be aliased to join it to itself.
 - **`DISTINCT ON`.** Only plain `DISTINCT` is supported.
-- **`EXISTS` / `NOT EXISTS`.**
 - **Pattern-match variants.** `like` only; no `ILIKE` operator (lower both sides for a
   case-insensitive match — see [String Functions](#string-functions)), `SIMILAR TO`, or regex.
 - **Computed expressions.** No string concatenation, casts, or scalar functions other than
