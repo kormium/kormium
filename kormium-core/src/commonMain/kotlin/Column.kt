@@ -34,8 +34,8 @@ sealed class Column<Z, T: Table<*, N>, N: Entity>(
     /** Rendered SQL column identifier. Equals [fieldKey] unless a custom name was supplied. */
     val name: String,
     val nullable: kotlin.Boolean,
-    val columnType: ColumnType<Z>,
-) : Expression, Selectable<Z> {
+    override val columnType: ColumnType<Z>,
+) : Expression, Operand<Z> {
 
     open fun init() {
         logger.trace { "init column $fieldKey (sql: $name)" }
@@ -54,10 +54,6 @@ sealed class Column<Z, T: Table<*, N>, N: Entity>(
 
     /** Whether this column is part of the table's primary key. */
     internal var isPrimaryKey: kotlin.Boolean = false
-
-    // As a selectable, read its value via its column type (its toSql is the SELECT SQL).
-    override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Z? =
-        columnType.read(rs, index)
 
     // The property delegate yields a fresh Column per access, so identity can't key a result row;
     // table+SQL-name is the stable, dialect-independent key (aggregates embed this for their target).
