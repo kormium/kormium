@@ -38,7 +38,7 @@ class Scope<G : Catalog> internal constructor(
      * path). Pass `returning = true` to fetch the stored row back via SQL `RETURNING`, e.g. to
      * read database-generated columns; then it returns that row (or null if none).
      */
-    fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T? {
+    fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T {
         markWritten()
         return insert(entity, exec, returning)
     }
@@ -61,13 +61,13 @@ class Scope<G : Catalog> internal constructor(
      * and on conflict with [onConflict] updates with [update]'s present fields. Pass
      * `returning = true` to fetch the resulting row.
      */
-    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T? {
+    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, listOf(onConflict), update, exec, returning)
     }
 
     /** Insert-or-update on a composite (multi-column) conflict target; see the single-column overload. */
-    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T? {
+    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, onConflict, update, exec, returning)
     }

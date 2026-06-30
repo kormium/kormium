@@ -31,7 +31,7 @@ class SuspendScope<G : Catalog> internal constructor(
     }
 
     /** Inserts [entity]; see [Scope.insert]. */
-    suspend fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T? {
+    suspend fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T {
         markWritten()
         return insert(entity, exec, returning)
     }
@@ -47,13 +47,13 @@ class SuspendScope<G : Catalog> internal constructor(
     }
 
     /** Insert-or-update on a single-column conflict target; see [Scope.upsert]. */
-    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T? {
+    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, listOf(onConflict), update, exec, returning)
     }
 
     /** Insert-or-update on a composite conflict target; see [Scope.upsert]. */
-    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T? {
+    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, onConflict, update, exec, returning)
     }

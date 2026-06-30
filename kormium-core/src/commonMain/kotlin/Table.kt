@@ -351,18 +351,20 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
     internal fun selectAll(exec: SqlExecutor): List<T> =
         exec.execute(selectAllSql(exec.dialect)) { rs -> mapToDao(rs, exec.typeMapper) }
 
-    internal fun insert(entity: T, exec: SqlExecutor, returning: Boolean): T? {
+    internal fun insert(entity: T, exec: SqlExecutor, returning: Boolean): T {
         val dialect = exec.dialect
         val emitReturning = returning && dialect.supportsReturning
         val (sql, params) = insertSql(entity, dialect, exec.typeMapper, emitReturning)
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+                ?: error("INSERT ... RETURNING returned no row in $tableName")
         }
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
         // No RETURNING (MySQL): re-select the stored row by primary key.
         val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+            ?: error("inserted row not found re-selecting by primary key in $tableName")
     }
 
     internal fun insertAll(entities: List<T>, exec: SqlExecutor, returning: Boolean, mode: BatchInsertMode): List<T> {
@@ -389,18 +391,20 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         }
     }
 
-    internal fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SqlExecutor, returning: Boolean): T? {
+    internal fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SqlExecutor, returning: Boolean): T {
         val dialect = exec.dialect
         val emitReturning = returning && dialect.supportsReturning
         val (sql, params) = upsertSql(entity, conflict, update, dialect, exec.typeMapper, emitReturning)
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+                ?: error("INSERT ... ON CONFLICT ... RETURNING returned no row in $tableName")
         }
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
         // No RETURNING (MySQL): re-select the upserted row by primary key.
         val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+            ?: error("upserted row not found re-selecting by primary key in $tableName")
     }
 
     internal fun insertOrIgnore(entity: T, conflict: List<Column<*, *, *>>, exec: SqlExecutor): Long {
@@ -442,17 +446,19 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
     internal suspend fun selectAll(exec: SuspendSqlExecutor): List<T> =
         exec.execute(selectAllSql(exec.dialect)) { rs -> mapToDao(rs, exec.typeMapper) }
 
-    internal suspend fun insert(entity: T, exec: SuspendSqlExecutor, returning: Boolean): T? {
+    internal suspend fun insert(entity: T, exec: SuspendSqlExecutor, returning: Boolean): T {
         val dialect = exec.dialect
         val emitReturning = returning && dialect.supportsReturning
         val (sql, params) = insertSql(entity, dialect, exec.typeMapper, emitReturning)
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+                ?: error("INSERT ... RETURNING returned no row in $tableName")
         }
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
         val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+            ?: error("inserted row not found re-selecting by primary key in $tableName")
     }
 
     internal suspend fun insertAll(entities: List<T>, exec: SuspendSqlExecutor, returning: Boolean, mode: BatchInsertMode): List<T> {
@@ -478,17 +484,19 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         }
     }
 
-    internal suspend fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SuspendSqlExecutor, returning: Boolean): T? {
+    internal suspend fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SuspendSqlExecutor, returning: Boolean): T {
         val dialect = exec.dialect
         val emitReturning = returning && dialect.supportsReturning
         val (sql, params) = upsertSql(entity, conflict, update, dialect, exec.typeMapper, emitReturning)
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+                ?: error("INSERT ... ON CONFLICT ... RETURNING returned no row in $tableName")
         }
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
         val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+            ?: error("upserted row not found re-selecting by primary key in $tableName")
     }
 
     internal suspend fun insertOrIgnore(entity: T, conflict: List<Column<*, *, *>>, exec: SuspendSqlExecutor): Long {
