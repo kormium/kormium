@@ -103,6 +103,10 @@ Plain string comparison (`eq` / `like` / `<`) follows the **engine collation** �
 accent-sensitivity differ across PostgreSQL/MySQL/SQLite. Kormium does not inject a collation;
 for deterministic case-insensitive matching, lower **both sides**: `name.lower() eq "ada"`.
 
+Null fallback: `column.coalesce(default)` → `COALESCE("column", default)` — the value or the
+fallback when NULL. Readable in `select(...)` and comparable to a literal (`Users.rank.coalesce(0)
+gt 5`), or to another column (`a.coalesce(b)`). A non-null fallback makes the result non-null.
+
 For a reusable query, build a `Query` value instead of a block:
 `Users.find(Query(Users.age gtEq 18))`. Every `find` / `count` / `update` / `deleteWhere`
 accepts either form.
@@ -231,6 +235,6 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 - Predicate names are `less` / `lessEq` (not `lt` / `ltEq`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.
 - Not modeled by the typed DSL: subqueries, `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
-  `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, `CASE`/`COALESCE`, scalar functions
+  `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, `CASE` (use `coalesce` for null fallback), scalar functions
   beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`, arithmetic in `SELECT` projections, `RETURNING` on
   `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.

@@ -311,6 +311,38 @@ infix fun StringExpr.lessEq(value: String): Expression = LessEqOp(this, Value(va
 infix fun StringExpr.gt(value: String): Expression = GreaterOp(this, Value(value))
 infix fun StringExpr.gtEq(value: String): Expression = GreaterEqOp(this, Value(value))
 
+/**
+ * `COALESCE(a, b, ...)` — the first non-null argument. It is a [Selectable] (readable from a
+ * `select(...)` projection) and carries the [columnType] of its source column, both to read the
+ * result back and to bind a compared literal through the right converter. Compare it with a typed
+ * literal via the operators below, or with another expression through the generic operators. The
+ * value is non-null when the last argument is (e.g. a literal default), so `row[...]` is safe then;
+ * otherwise read it with `getOrNull`.
+ */
+class CoalesceOp<Z> internal constructor(
+    private val args: List<Expression>,
+    internal val columnType: ColumnType<Z>,
+) : Selectable<Z> {
+    override fun toSql(builder: ParamBuilder): String = "COALESCE(${args.joinToString(", ") { it.toSql(builder) }})"
+    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
+    override fun resultKey(): Any = "COALESCE(${args.joinToString(", ") { ((it as? Selectable<*>)?.resultKey() ?: it).toString() }})"
+}
+
+/** `COALESCE("col", default)` — read a nullable column with a fallback; the default binds through the column's converter. */
+fun <Z> Column<Z, *, *>.coalesce(default: Z): CoalesceOp<Z> = CoalesceOp(listOf(this, Value(bindParam(default))), columnType)
+
+/** `COALESCE("col", "other")` — the first non-null of two same-typed columns. */
+fun <Z> Column<Z, *, *>.coalesce(other: Column<Z, *, *>): CoalesceOp<Z> = CoalesceOp(listOf(this, other), columnType)
+
+// Comparing a COALESCE to a typed literal binds it through the source column's converter.
+// (COALESCE-to-expression comparison already works through the generic operators above.)
+infix fun <Z> CoalesceOp<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
+infix fun <Z> CoalesceOp<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
+infix fun <Z> CoalesceOp<Z>.less(value: Z): Expression = LessOp(this, columnType.lit(value))
+infix fun <Z> CoalesceOp<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
+infix fun <Z> CoalesceOp<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
+infix fun <Z> CoalesceOp<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
+
 /** Groups an expression in parentheses so it composes safely with surrounding `AND`/`OR`. */
 class ParenExpression(private val expr: Expression) : Expression {
     override fun toSql(builder: ParamBuilder): String = "(${expr.toSql(builder)})"
