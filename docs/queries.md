@@ -144,8 +144,9 @@ val status = case(StatusColumnType) {
 }
 ```
 
-A `CASE`'s identity is the expression you built, so **hold it in a `val`** to read it back from a row
-(`val tier = case { }; row[tier]`). Only searched `CASE` is modeled (no `CASE expr WHEN value`).
+A `CASE` is keyed structurally (by its conditions and branch values), like the other computed
+expressions — a freshly built, identical `case { }` reads back from a row, so a `val` is for reuse,
+not required. Only searched `CASE` is modeled (no `CASE expr WHEN value`).
 
 ## Arithmetic
 
