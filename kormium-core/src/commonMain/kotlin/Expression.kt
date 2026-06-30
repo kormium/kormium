@@ -156,12 +156,12 @@ infix fun <T : Expression, T2 : Expression> T.neq(other: T2): Expression = NeqOp
 /** Checks that the left operand is less than the right. */
 class LessOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<")
 
-infix fun <T : Expression, T2 : Expression> T.less(other: T2): Expression = LessOp(this, other)
+infix fun <T : Expression, T2 : Expression> T.lt(other: T2): Expression = LessOp(this, other)
 
 /** Checks that the left operand is less than or equal to the right. */
 class LessEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<=")
 
-infix fun <T : Expression, T2 : Expression> T.lessEq(other: T2): Expression = LessEqOp(this, other)
+infix fun <T : Expression, T2 : Expression> T.ltEq(other: T2): Expression = LessEqOp(this, other)
 
 /** Checks that the left operand is greater than the right. */
 class GreaterOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, ">")
@@ -180,8 +180,8 @@ infix fun <T : Expression, T2 : Expression> T.gtEq(other: T2): Expression = Grea
 // column-to-column comparisons go through the generic `Expression` operators above.
 infix fun <Z> Operand<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
 infix fun <Z> Operand<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
-infix fun <Z> Operand<Z>.less(value: Z): Expression = LessOp(this, columnType.lit(value))
-infix fun <Z> Operand<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
+infix fun <Z> Operand<Z>.lt(value: Z): Expression = LessOp(this, columnType.lit(value))
+infix fun <Z> Operand<Z>.ltEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
 infix fun <Z> Operand<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
 infix fun <Z> Operand<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
 
@@ -327,7 +327,7 @@ operator fun <Z> NumericExpr<Z>.rem(other: NumericExpr<Z>): NumericExpr<Z> = Ari
  * below (`lower()`, `upper()`, `trim()`, `ltrim()`, `rtrim()`), and each returns another
  * [StringExpr], so they chain (`name.trim().lower()`). Being a [Selectable] it can also be read
  * back from a row in `select(...)`. Compare it with `eq` / `neq` / `like` / `gt` / `gtEq` /
- * `less` / `lessEq` against a `String` literal, or — through the generic expression operators —
+ * `lt` / `ltEq` against a `String` literal, or — through the generic expression operators —
  * against another [StringExpr] (`a.lower() eq b.lower()`).
  */
 interface StringExpr : Operand<String> {

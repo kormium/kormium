@@ -26,7 +26,7 @@ val adults: List<User> = db.autocommit {
 ```kotlin
 Users.find { where { Users.id eq id } }
 Users.find { where { Users.age gt 18 } }
-Users.find { where { Users.age lessEq 65 } }
+Users.find { where { Users.age ltEq 65 } }
 Users.find { where { Users.age between 18..65 } }     // inclusive both ends
 Users.find { where { Users.name like "A%" } }
 Users.find { where { Users.id inList listOf(id1, id2) } }
@@ -448,7 +448,7 @@ Not modeled by the typed DSL today:
   on `UPDATE` / `DELETE`, no `LOCK` / `FOR UPDATE` clauses, and no DDL through the query DSL.
   (`INSERT ... ON CONFLICT` *is* available — see `upsert` and `insertOrIgnore`.)
 
-The supported `WHERE` / `HAVING` predicates are exactly: `eq`, `neq`, `less`, `lessEq`, `gt`,
+The supported `WHERE` / `HAVING` predicates are exactly: `eq`, `neq`, `lt`, `ltEq`, `gt`,
 `gtEq`, `between` (an inclusive `lo..hi` range; an empty range matches nothing), `like`,
 `inList`, `eq null` / `neq null` (rendered as `IS [NOT] NULL`), and the `and` / `or` / `not(...)`
 combinators.

@@ -90,7 +90,7 @@ val all: List<User> = db.autocommit { Users.all() }
 val n: Long       = db.autocommit { Users.count { where { Users.age gtEq 18 } } }
 ```
 
-Predicates: `eq`, `neq`, `gt`, `gtEq`, `less`, `lessEq`, `between (lo..hi)`, `like`,
+Predicates: `eq`, `neq`, `gt`, `gtEq`, `lt`, `ltEq`, `between (lo..hi)`, `like`,
 `inList(...)`, `eq null` / `neq null` (render as `IS [NOT] NULL`), combined with
 `and` / `or` / `not(...)`. Values are typed (`Users.age eq 18`, not `"18"`) and always bound
 as parameters. `between` takes an inclusive Kotlin range (`Users.age between 18..65`); an empty
@@ -269,7 +269,7 @@ of an ordered, unique key:
 ```kotlin
 fun page(after: Instant?, size: Int = 50) = db.autocommit {
     Users.find {
-        if (after != null) where { Users.createdAt less after }
+        if (after != null) where { Users.createdAt lt after }
         orderBy DESC Users.createdAt
         limit = size
     }
@@ -360,7 +360,7 @@ retrying {
 - `eq null` / `neq null` (→ `IS [NOT] NULL`) work only on **nullable** columns; on a non-null column
   they don't compile (it can never be NULL).
 - `orderBy` needs a direction — `orderBy ASC col` / `orderBy DESC col`; bare `orderBy col` is a syntax error.
-- Predicate names are `less` / `lessEq` (not `lt` / `ltEq`) and `neq` (not `ne`).
+- Predicate names are `lt` / `ltEq` (not `less` / `lessEq` or `<`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.
 - Not modeled by the typed DSL: subqueries other than correlated `EXISTS` (use `any`/`none`; scalar →
   compare against a `RawExpression`), `UNION`, CTEs, window functions, `RIGHT`/`FULL`/

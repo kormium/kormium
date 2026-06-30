@@ -49,13 +49,16 @@ All notable changes to Kormium are documented here. The format is based on
   This also makes a wrong-typed value comparison (`age eq "x"`) report against the real
   `eq(value)` candidate ("Int expected") instead of the null overload ("Nothing? expected").
 - **Comparison / membership operators unified onto `Operand<Z>`.** The typed-literal forms of `eq`,
-  `neq`, `less`, `lessEq`, `gt`, `gtEq`, `inList`, `between` and `like` were declared separately on
+  `neq`, `lt`, `ltEq`, `gt`, `gtEq`, `inList`, `between` and `like` were declared separately on
   `Column` / `NumericExpr` / `StringExpr` / `CoalesceOp` / `CaseOp` (≈30 overloads, with gaps), and
   aggregates had none. They are now defined once over a new `Operand<Z>` interface (a `Selectable`
   that carries its `ColumnType`) that every typed expression implements. Existing code compiles
   unchanged and renders identical SQL; the change is additive — the gaps close, so e.g. `case { … }
   inList listOf(…)`, `col.coalesce(0) between 1..10` and `total.sum() gt 100` (no `Value(…)` wrapper)
   now work uniformly. A new expression type composes for free.
+- **Predicates renamed `less` → `lt`, `lessEq` → `ltEq`.** The comparison operators are now symmetric
+  (`lt` / `ltEq` paired with `gt` / `gtEq`, instead of the abbreviated `gt` against the spelled-out
+  `less`), matching the common `lt`/`gt` convention. `eq` / `neq` / `gt` / `gtEq` are unchanged.
 
 ## [0.8.0] — Cross-instance notifications, Windows async, expression UPDATE
 
