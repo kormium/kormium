@@ -724,6 +724,28 @@ class SqliteIntegrationTest {
             Authors.deleteWhere(Query(Authors.id inList scope))
         }
     }
+
+    /** `orderBy` accepts a computed expression — case-insensitive sort via `lower(name)`. */
+    @Test
+    fun testOrderByExpression() {
+        val rows = listOf("Zara", "alice", "bob").map { Uuid.random() to it }
+        db.transaction {
+            Authors.execSql(authorsDdl)
+            rows.forEach { (id, n) -> Authors.insert(Author().apply { this.id = id; name = n }) }
+        }
+        val scope = rows.map { it.first }
+
+        // Binary order would put "Zara" first (uppercase Z < lowercase a); lower(name) sorts properly.
+        val byLower = db.autocommit {
+            Authors.find {
+                where { Authors.id inList scope }
+                orderBy ASC Authors.name.lower()
+            }
+        }
+        assertEquals(listOf("alice", "bob", "Zara"), byLower.map { it.name })
+
+        db.transaction { Authors.deleteWhere(Query(Authors.id inList scope)) }
+    }
 }
 
 object SqCatalog : Catalog

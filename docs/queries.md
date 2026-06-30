@@ -197,6 +197,11 @@ Users.find {
 }
 ```
 
+`orderBy` takes a column or a **computed expression** — `orderBy ASC Users.name.lower()` for a
+case-insensitive sort, or `orderBy DESC (Users.qty * Users.price)`. Multiple `orderBy` calls keep
+their order. (Ordering by an aggregate belongs to the grouped `Table.query()` path, and
+`NULLS FIRST` / `LAST` is not modeled.)
+
 ## Reusable Queries with `Query`
 
 The `find { ... }` / `count { ... }` block is a thin ergonomic layer over `Query`, the value
@@ -427,9 +432,9 @@ Not modeled by the typed DSL today:
   (see [String Functions](#string-functions)) in `SELECT`/`WHERE`/`HAVING`. Arithmetic
   (`+` `-` `*` `/` `%`) over numeric columns *is* supported — see [Arithmetic](#arithmetic);
   conditional values via searched `case { }` — see [Conditional Values](#conditional-values-case).
-- **Expression / aggregate ordering and null placement.** `ORDER BY` takes plain columns with
-  `ASC` / `DESC` only — no ordering by an aggregate or expression, and no `NULLS FIRST` /
-  `NULLS LAST`.
+- **Aggregate ordering and null placement.** `ORDER BY` takes a column or a computed expression
+  (`lower(name)`, arithmetic) with `ASC` / `DESC`, but not an aggregate (that is the grouped
+  `Table.query()` path), and no `NULLS FIRST` / `NULLS LAST`.
 - **Grouping in the `find { }` block.** `groupBy` / `having` / `distinct` live on the join /
   `Table.query()` path, not the entity-returning `find { }` builder.
 - **Statement-level extras.** No `ORDER BY` / `LIMIT` on `UPDATE` / `DELETE`, no `RETURNING`
