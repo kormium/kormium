@@ -317,8 +317,31 @@ val saved = db.transaction { Users.insertAll(newUsers, returning = true) }
 
 ```kotlin
 val user = db.transaction {
-    Users.insertOrIgnore(newUser, onConflict = Users.id)   // 1 = inserted, 0 = already there
-    Users.findById(newUser.id)!!                           // the row either way
+    Users.insertOrIgnore(newUser, onConflict = Users.id)        // 1 = inserted, 0 = already there
+    Users.findOne { where { Users.id eq newUser.id } }!!        // the row either way
+}
+```
+
+**Retry a transaction on a transient conflict.** Under `SERIALIZABLE` / `REPEATABLE READ`, or on a
+deadlock, the database aborts one transaction with a `ConcurrencyConflictException` (SQLSTATE
+`40001` / `40P01`) — it is **safe to retry the whole transaction**. Kormium ships the typed
+exception, not a retry loop: the policy (attempts, backoff) is yours, and the block must be
+idempotent outside the DB since it re-runs.
+
+```kotlin
+fun <R> retrying(max: Int = 3, block: () -> R): R {
+    repeat(max - 1) {
+        try { return block() } catch (_: ConcurrencyConflictException) { /* transient: retry */ }
+    }
+    return block()   // last attempt: let it throw
+}
+
+retrying {
+    db.transaction(isolation = TransactionIsolation.SERIALIZABLE) {
+        val item = Items.findOne { where { Items.id eq id } } ?: error("no item")
+        require(item.stock > 0) { "out of stock" }
+        Items.update(Item().apply { stock = item.stock - 1 }) { where { Items.id eq id } }
+    }
 }
 ```
 
