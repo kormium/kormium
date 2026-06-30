@@ -83,6 +83,11 @@ val lowered: List<String> = db.autocommit {
 `LOWER(col)` cannot use a plain index on `col` — add a functional index on `LOWER(col)` if you
 match on it often.
 
+`length()` returns the **character** count as a number (`NumericExpr<Int>`, so it compares and does
+arithmetic): `Users.find { where { Users.name.length() gtEq 3 } }`. It renders the dialect's
+character-length function (`LENGTH` on PostgreSQL/SQLite, `CHAR_LENGTH` on MySQL, whose `LENGTH`
+counts bytes), so a multibyte string counts the same on every backend.
+
 ## Null Fallback (`COALESCE`)
 
 `column.coalesce(default)` renders `COALESCE("column", default)` — the column's value, or the
@@ -429,7 +434,7 @@ Not modeled by the typed DSL today:
 - **Pattern-match variants.** `like` only; no `ILIKE` operator (lower both sides for a
   case-insensitive match — see [String Functions](#string-functions)), `SIMILAR TO`, or regex.
 - **Computed expressions.** No string concatenation, casts, or scalar functions other than
-  the string functions `lower` / `upper` / `trim` / `ltrim` / `rtrim`
+  the string functions `lower` / `upper` / `trim` / `ltrim` / `rtrim` / `length`
   (see [String Functions](#string-functions)) in `SELECT`/`WHERE`/`HAVING`. Arithmetic
   (`+` `-` `*` `/` `%`) over numeric columns *is* supported — see [Arithmetic](#arithmetic);
   conditional values via searched `case { }` — see [Conditional Values](#conditional-values-case).

@@ -22,6 +22,7 @@ import io.github.kormium.gtEq
 import io.github.kormium.inList
 import io.github.kormium.innerJoin
 import io.github.kormium.leftJoin
+import io.github.kormium.length
 import io.github.kormium.lower
 import io.github.kormium.ltrim
 import io.github.kormium.none
@@ -745,6 +746,34 @@ class SqliteIntegrationTest {
         assertEquals(listOf("alice", "bob", "Zara"), byLower.map { it.name })
 
         db.transaction { Authors.deleteWhere(Query(Authors.id inList scope)) }
+    }
+
+    /** `length()` counts characters (read back, and used in a predicate). */
+    @Test
+    fun testLength() {
+        val idA = Uuid.random()
+        val idB = Uuid.random()
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = idA; price = BigDecimal.fromInt(1); qty = 1; displayName = "café"; note = null; rank = null }) // 4 chars
+            Products.insert(Product().apply { id = idB; price = BigDecimal.fromInt(1); qty = 1; displayName = "hi"; note = null; rank = null })   // 2 chars
+        }
+        val scope = listOf(idA, idB)
+
+        // Read the character count back from a projection.
+        val lengths = db.autocommit {
+            val len = Products.displayName.length()
+            Products.query().where(Products.id inList scope).select(len).map { it[len] }.sorted()
+        }
+        assertEquals(listOf(2, 4), lengths)
+
+        // Filter by length — `length()` is a NumericExpr, so it compares like a number.
+        val long = db.autocommit {
+            Products.find { where { (Products.id inList scope) and (Products.displayName.length() gtEq 3) } }
+        }
+        assertEquals(listOf("café"), long.map { it.displayName })
+
+        db.transaction { Products.deleteWhere(Query(Products.id inList scope)) }
     }
 
     /** N-ary `coalesce`: more columns via vararg, plus a trailing literal fallback. */

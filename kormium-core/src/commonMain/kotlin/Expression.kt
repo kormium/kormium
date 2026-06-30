@@ -337,6 +337,21 @@ fun StringExpr.ltrim(): StringExpr = StringFunction("LTRIM", listOf(this))
 fun Column<String, *, *>.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
 fun StringExpr.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
 
+/**
+ * The number of **characters** in a string, as an `Int` (a [NumericExpr], so it compares, does
+ * arithmetic, and reads from a `select(...)` projection). Renders the dialect's character-length
+ * function — `LENGTH` on PostgreSQL/SQLite, `CHAR_LENGTH` on MySQL (whose `LENGTH` counts bytes).
+ */
+class LengthOp(private val arg: Expression) : NumericExpr<Int> {
+    override val columnType: ColumnType<Int> = IntColumnType
+    override fun toSql(builder: ParamBuilder): String = builder.dialect.renderCharLength(arg.toSql(builder))
+    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Int? = columnType.read(rs, index)
+    override fun resultKey(): Any = "CHAR_LENGTH(${structuralKey(arg)})"
+}
+
+fun Column<String, *, *>.length(): NumericExpr<Int> = LengthOp(this)
+fun StringExpr.length(): NumericExpr<Int> = LengthOp(this)
+
 // Comparing a StringExpr to a String literal. (StringExpr-to-StringExpr comparison already works
 // through the generic `Expression` operators above.) `like` has no generic form, so both its
 // literal and StringExpr forms are provided here. Note: a bare string comparison follows the
