@@ -96,6 +96,9 @@ Predicates: `eq`, `neq`, `gt`, `gtEq`, `less`, `lessEq`, `between (lo..hi)`, `li
 as parameters. `between` takes an inclusive Kotlin range (`Users.age between 18..65`); an empty
 range and an empty `inList` both render to `FALSE` (match no rows), never invalid SQL.
 
+`orderBy` takes a column or a computed expression: `orderBy ASC Users.name.lower()` (case-insensitive),
+`orderBy DESC (Users.qty * Users.price)`.
+
 String functions: a `String` column has `lower()`, `upper()`, `trim()`, `ltrim()`, `rtrim()`,
 each returning a `StringExpr` that chains (`name.trim().lower()`), composes with the predicates
 above (`name.lower() eq "ada"`, `a.lower() eq b.lower()`), and is readable in `select(...)`.
