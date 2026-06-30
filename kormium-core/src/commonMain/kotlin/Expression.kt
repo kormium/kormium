@@ -16,11 +16,16 @@ import kotlin.uuid.Uuid
  * quoting and placeholder rendering are delegated to [dialect]; value conversion
  * to [typeMapper].
  */
-class ParamBuilder(
+class ParamBuilder private constructor(
     val dialect: Dialect,
-    private val typeMapper: TypeMapper,
-    qualifyColumns: Boolean = false,
+    private val typeMapper: TypeMapper?,
+    private val keyMode: Boolean,
+    qualifyColumns: Boolean,
 ) {
+    /** The normal builder: binds values as real parameters through [typeMapper]. */
+    constructor(dialect: Dialect, typeMapper: TypeMapper, qualifyColumns: Boolean = false) :
+        this(dialect, typeMapper, keyMode = false, qualifyColumns = qualifyColumns)
+
     /** When true, a [Column] renders as `"table"."col"` (needed to disambiguate joins / subqueries). */
     var qualifyColumns: Boolean = qualifyColumns
         private set
@@ -33,8 +38,11 @@ class ParamBuilder(
 
     /** Registers [value] as a bind parameter and returns the placeholder to embed in the SQL. */
     fun bind(value: Any?): String {
+        // Key mode inlines the literal instead of binding it (and never touches the type mapper),
+        // so an expression can render a stable structural key that distinguishes its literals.
+        if (keyMode) return "lit($value)"
         val name = "p${counter++}"
-        collected[name] = typeMapper.toParameter(value)
+        collected[name] = typeMapper!!.toParameter(value)
         return dialect.renderBind(name, value)
     }
 
@@ -51,6 +59,14 @@ class ParamBuilder(
         } finally {
             qualifyColumns = previous
         }
+    }
+
+    companion object {
+        // A builder that inlines literals instead of binding them, used to derive an expression's
+        // structural result key (see CaseOp) — never executed, so the dialect only needs to be
+        // deterministic (any fixed one), and no type mapper is required.
+        internal fun forKey(): ParamBuilder =
+            ParamBuilder(StandardDialect, typeMapper = null, keyMode = true, qualifyColumns = false)
     }
 }
 
@@ -385,9 +401,9 @@ infix fun <Z> CoalesceOp<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, colum
 /**
  * A searched `CASE WHEN cond THEN value ... ELSE default END`. It is a [Selectable] (readable from
  * a `select(...)` projection) carrying the [columnType] that reads the result back and binds each
- * branch value. Because its identity is the built expression, hold it in a `val` to read it back
- * from a row (`val tier = case { … }; row[tier]`). Compare it to a typed literal with the operators
- * below, or to another expression through the generic operators.
+ * branch value. Like the other computed expressions it is keyed structurally, so a freshly built,
+ * identical `case { … }` reads back from a row — a `val` is handy for reuse, not required. Compare
+ * it to a typed literal with the operators below, or to another expression through the generic ones.
  */
 class CaseOp<Z> internal constructor(
     private val branches: List<Pair<Expression, Expression>>,
@@ -402,9 +418,10 @@ class CaseOp<Z> internal constructor(
 
     override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
 
-    // A CASE's value depends on its branch literals, which render as placeholders — so two CASEs
-    // can share a rendered SQL string. Key by instance instead; hold the CASE in a val to read it.
-    override fun resultKey(): Any = this
+    // Key off the CASE rendered with its branch literals inlined (key-mode builder): that captures
+    // the conditions and values — including literals that normally render as placeholders — so two
+    // CASEs differ by content, and a freshly built identical one reads back from a row.
+    override fun resultKey(): Any = toSql(ParamBuilder.forKey())
 }
 
 /** Builds the branches of a [case]. `whenever(cond) then value` adds a branch; `otherwise(value)` sets the ELSE. */

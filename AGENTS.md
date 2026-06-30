@@ -111,8 +111,9 @@ fallback when NULL. Readable in `select(...)` and comparable to a literal (`User
 gt 5`), or to another column (`a.coalesce(b)`). A non-null fallback makes the result non-null.
 
 Conditional value: `case { whenever(cond) then v; …; otherwise(d) }` → searched `CASE`. A `Selectable`
-(readable in `select(...)`) — **hold it in a `val`** to read it back. The result type is inferred for
-built-in types; for an enum/custom type pass the ColumnType: `case(MyColumnType) { … }`.
+(readable in `select(...)`) keyed structurally, so a freshly built identical `case { }` reads back —
+a `val` is handy for reuse, not required. The result type is inferred for built-in types; for an
+enum/custom type pass the ColumnType: `case(MyColumnType) { … }`.
 
 Arithmetic: numeric columns support `+ - * / %` (`Posts.likes - Posts.dislikes`, `Posts.views + 1`)
 — in `where { }`, in an `update { }` `set`, and as a `select(...)` projection that reads back.

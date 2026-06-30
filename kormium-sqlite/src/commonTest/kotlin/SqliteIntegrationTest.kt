@@ -593,14 +593,16 @@ class SqliteIntegrationTest {
             }
         }
 
-        // SELECT: bucket qty into a label and read it back (held in a val).
-        val bucket = case {
+        // SELECT: bucket qty into a label. Selected and read back with *separate, freshly built*
+        // case { } instances — no val — proving CASE is keyed structurally like the other computed
+        // expressions (the conditions and branch literals are part of the key).
+        fun bucket() = case {
             whenever(Products.qty gtEq 100) then "big"
             whenever(Products.qty gtEq 10) then "mid"
             otherwise("small")
         }
         val labels = db.autocommit {
-            Products.query().where(Products.displayName eq tag).select(bucket).map { it[bucket] }.sorted()
+            Products.query().where(Products.displayName eq tag).select(bucket()).map { it[bucket()] }.sorted()
         }
         assertEquals(listOf("big", "mid", "small"), labels)
 
