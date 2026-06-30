@@ -141,6 +141,29 @@ val status = case(StatusColumnType) {
 A `CASE`'s identity is the expression you built, so **hold it in a `val`** to read it back from a row
 (`val tier = case { }; row[tier]`). Only searched `CASE` is modeled (no `CASE expr WHEN value`).
 
+## Arithmetic
+
+Numeric columns support `+`, `-`, `*`, `/`, `%`. The operands are a same-typed column, another
+arithmetic expression, or a literal (bound through the column's converter); the result is the same
+type and nests, so it chains. It works in a `where { }`, in an `update { }` `set`, and as a
+`select(...)` projection that reads back:
+
+```kotlin
+// In a predicate:
+Posts.find { where { (Posts.likes - Posts.dislikes) gtEq 100 } }
+
+// Atomic self-referential update:
+Posts.update { Posts.views set (Posts.views + 1); where { Posts.id eq id } }
+
+// As a projection, read back (a literal is part of the key, so no `val` is needed):
+val lineTotals: List<Int> = db.autocommit {
+    Orders.query().select(Orders.qty * Orders.unitPrice).map { it[Orders.qty * Orders.unitPrice] }
+}
+```
+
+The result reads through the column's type and is `NULL` when any operand is — use `getOrNull`
+for an expression that can be null.
+
 ## Ordering, Limit and Offset
 
 ```kotlin
@@ -375,9 +398,11 @@ Not modeled by the typed DSL today:
 - **`EXISTS` / `NOT EXISTS`.**
 - **Pattern-match variants.** `like` only; no `ILIKE` operator (lower both sides for a
   case-insensitive match — see [String Functions](#string-functions)), `SIMILAR TO`, or regex.
-- **Computed expressions.** No arithmetic (`+`, `-`, `*`, `/`), string concatenation,
-  casts, or scalar functions other than the string functions `lower` / `upper` /
-  `trim` / `ltrim` / `rtrim` (see [String Functions](#string-functions)) in `SELECT`/`WHERE`/`HAVING`.
+- **Computed expressions.** No string concatenation, casts, or scalar functions other than
+  the string functions `lower` / `upper` / `trim` / `ltrim` / `rtrim`
+  (see [String Functions](#string-functions)) in `SELECT`/`WHERE`/`HAVING`. Arithmetic
+  (`+` `-` `*` `/` `%`) over numeric columns *is* supported — see [Arithmetic](#arithmetic);
+  conditional values via searched `case { }` — see [Conditional Values](#conditional-values-case).
 - **Expression / aggregate ordering and null placement.** `ORDER BY` takes plain columns with
   `ASC` / `DESC` only — no ordering by an aggregate or expression, and no `NULLS FIRST` /
   `NULLS LAST`.

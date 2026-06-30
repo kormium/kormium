@@ -111,6 +111,9 @@ Conditional value: `case { whenever(cond) then v; …; otherwise(d) }` → searc
 (readable in `select(...)`) — **hold it in a `val`** to read it back. The result type is inferred for
 built-in types; for an enum/custom type pass the ColumnType: `case(MyColumnType) { … }`.
 
+Arithmetic: numeric columns support `+ - * / %` (`Posts.likes - Posts.dislikes`, `Posts.views + 1`)
+— in `where { }`, in an `update { }` `set`, and as a `select(...)` projection that reads back.
+
 For a reusable query, build a `Query` value instead of a block:
 `Users.find(Query(Users.age gtEq 18))`. Every `find` / `count` / `update` / `deleteWhere`
 accepts either form.
@@ -239,6 +242,6 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 - Predicate names are `less` / `lessEq` (not `lt` / `ltEq`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.
 - Not modeled by the typed DSL: subqueries, `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
-  `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, simple `CASE expr WHEN` (searched `case { }` is supported), scalar functions
-  beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`, arithmetic in `SELECT` projections, `RETURNING` on
-  `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.
+  `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, simple `CASE expr WHEN` (searched
+  `case { }` is supported), scalar functions beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`,
+  `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.

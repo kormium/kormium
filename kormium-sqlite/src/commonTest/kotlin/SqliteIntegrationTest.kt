@@ -30,6 +30,7 @@ import io.github.kormium.upper
 import io.github.kormium.query
 import io.github.kormium.renderSql
 import io.github.kormium.sum
+import io.github.kormium.times
 import io.github.kormium.transaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -611,6 +612,41 @@ class SqliteIntegrationTest {
             Products.find { where { (Products.displayName eq tag) and (b eq "mid") } }
         }
         assertEquals(listOf(30), mids.map { it.qty })
+
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /**
+     * Arithmetic reads back from a `select(...)` projection — with a *fresh* expression instance,
+     * proving the structural result key (the literal is part of the key, so different literals in
+     * one query don't collide). COALESCE with a literal now reads back fresh too.
+     */
+    @Test
+    fun testArithmeticInProjection() {
+        val tag = "arith-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 10; displayName = tag; note = null; rank = 5 })
+        }
+
+        // Selected and read back with brand-new `* 2` instances — no val needed.
+        val doubled = db.autocommit {
+            Products.query().where(Products.displayName eq tag).select(Products.qty * 2).single()[Products.qty * 2]
+        }
+        assertEquals(20, doubled)
+
+        // Two different literals in one projection don't share a key.
+        val pair = db.autocommit {
+            val row = Products.query().where(Products.displayName eq tag).select(Products.qty * 2, Products.qty * 3).single()
+            row[Products.qty * 2] to row[Products.qty * 3]
+        }
+        assertEquals(20 to 30, pair)
+
+        // COALESCE(rank, 0) with a literal default also reads back with a fresh instance.
+        val coalesced = db.autocommit {
+            Products.query().where(Products.displayName eq tag).select(Products.rank.coalesce(0)).single()[Products.rank.coalesce(0)]
+        }
+        assertEquals(5, coalesced)
 
         db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }

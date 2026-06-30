@@ -40,8 +40,18 @@ interface Expression {
     fun toSql(builder: ParamBuilder): String
 }
 
-class Value(private val value: Any?) : Expression {
+class Value(internal val value: Any?) : Expression {
     override fun toSql(builder: ParamBuilder): String = builder.bind(value)
+}
+
+// A stable, structural key for an operand of a computed [Selectable] (COALESCE, arithmetic): a
+// nested selectable contributes its own key, a literal its (bound) value — so two computed
+// expressions differ by their literals, not only their shape, and a projection reads back with a
+// fresh instance. A non-selectable, non-literal operand falls back to identity (rare).
+internal fun structuralKey(expr: Expression): Any = when (expr) {
+    is Selectable<*> -> expr.resultKey()
+    is Value -> "lit(${expr.value})"
+    else -> expr
 }
 
 /**
@@ -194,14 +204,15 @@ infix fun Column<*, *, *>.neq(value: Nothing?): Expression = IsNullOp(this, true
  * staying type-checked (`(base + bonus) * 2`). Carrying [columnType] lets a literal on either side
  * bind through the originating column's converter rather than a guessed mapping.
  */
-interface NumericExpr<Z> : Expression {
+interface NumericExpr<Z> : Selectable<Z> {
     val columnType: ColumnType<Z>
 }
 
 /**
  * Arithmetic node: renders `left op right`, binding any literal as a parameter. A nested
  * [ArithmeticOp] operand is parenthesized so SQL precedence matches the Kotlin expression that
- * built it (`(a + b) * c`, not `a + b * c`).
+ * built it (`(a + b) * c`, not `a + b * c`). As a [Selectable] it can be read from a `select(...)`
+ * projection; the result is read through [columnType] and is null when any operand is.
  */
 class ArithmeticOp<Z>(
     private val left: Expression,
@@ -210,6 +221,10 @@ class ArithmeticOp<Z>(
     override val columnType: ColumnType<Z>,
 ) : NumericExpr<Z> {
     override fun toSql(builder: ParamBuilder): String = "${render(left, builder)} $opSign ${render(right, builder)}"
+
+    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
+
+    override fun resultKey(): Any = "(${structuralKey(left)} $opSign ${structuralKey(right)})"
 
     private fun render(expr: Expression, builder: ParamBuilder): String {
         val sql = expr.toSql(builder)
@@ -287,7 +302,7 @@ class StringFunction(private val fn: String, private val args: List<Expression>)
     override fun toSql(builder: ParamBuilder): String = "$fn(${args.joinToString(", ") { it.toSql(builder) }})"
     override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): String? = rs.getString(index)
     override fun resultKey(): Any =
-        "$fn(${args.joinToString(", ") { ((it as? Selectable<*>)?.resultKey() ?: it).toString() }})"
+        "$fn(${args.joinToString(", ") { structuralKey(it).toString() }})"
 }
 
 // Scalar string functions, defined on both Column<String> and StringExpr so they chain like the
@@ -331,7 +346,7 @@ class CoalesceOp<Z> internal constructor(
 ) : Selectable<Z> {
     override fun toSql(builder: ParamBuilder): String = "COALESCE(${args.joinToString(", ") { it.toSql(builder) }})"
     override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
-    override fun resultKey(): Any = "COALESCE(${args.joinToString(", ") { ((it as? Selectable<*>)?.resultKey() ?: it).toString() }})"
+    override fun resultKey(): Any = "COALESCE(${args.joinToString(", ") { structuralKey(it).toString() }})"
 }
 
 /** `COALESCE("col", default)` — read a nullable column with a fallback; the default binds through the column's converter. */
