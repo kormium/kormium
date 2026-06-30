@@ -101,7 +101,9 @@ range and an empty `inList` both render to `FALSE` (match no rows), never invali
 
 String functions: a `String` column has `lower()`, `upper()`, `trim()`, `ltrim()`, `rtrim()`,
 each returning a `StringExpr` that chains (`name.trim().lower()`), composes with the predicates
-above (`name.lower() eq "ada"`, `a.lower() eq b.lower()`), and is readable in `select(...)`.
+above (`name.lower() eq "ada"`, `a.lower() eq b.lower()`), and is readable in `select(...)`. Also
+`length()` → character count as a `NumericExpr<Int>` (`name.length() gtEq 3`; portable — `CHAR_LENGTH`
+on MySQL).
 Plain string comparison (`eq` / `like` / `<`) follows the **engine collation** — case- and
 accent-sensitivity differ across PostgreSQL/MySQL/SQLite. Kormium does not inject a collation;
 for deterministic case-insensitive matching, lower **both sides**: `name.lower() eq "ada"`.
@@ -252,5 +254,5 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 - Not modeled by the typed DSL: subqueries other than correlated `EXISTS` (use `any`/`none`; scalar →
   compare against a `RawExpression`), `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
   `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, simple `CASE expr WHEN` (searched
-  `case { }` is supported), scalar functions beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`,
+  `case { }` is supported), scalar functions beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`/`length`,
   `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.

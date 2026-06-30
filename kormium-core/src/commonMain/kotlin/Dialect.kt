@@ -70,6 +70,13 @@ interface Dialect {
     fun renderInsertOrIgnoreSuffix(conflictColumns: List<String>): String =
         "ON CONFLICT (${conflictColumns.joinToString(", ")}) DO NOTHING"
 
+    /**
+     * The function that counts **characters** of a string. Standard `LENGTH(...)` counts characters
+     * on PostgreSQL and SQLite, but **bytes** on MySQL — so MySQL overrides this with `CHAR_LENGTH`
+     * to keep `length()` portable (a multibyte string counts the same everywhere).
+     */
+    fun renderCharLength(arg: String): String = "LENGTH($arg)"
+
     // ---- transaction options (isolation / read-only); see [TransactionIsolation] ----
 
     /**
