@@ -11,3 +11,4 @@ rewrite.
 - [0005 — No untyped `findById`; single-row reads via typed `findOne`](0005-no-untyped-findbyid.md)
 - [0006 — No idiomatic-path nudge (no `@RequiresOptIn` marker, no detekt rule)](0006-no-idiomatic-path-nudge.md)
 - [0007 — `ConcurrencyConflictException` as a typed signal, not a retry helper](0007-concurrency-conflict-exception.md)
+- [0008 — No `RETURNING` on `UPDATE` / `DELETE`](0008-no-returning-on-update-delete.md)
