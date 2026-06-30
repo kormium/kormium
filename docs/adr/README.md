@@ -6,3 +6,4 @@ rewrite.
 
 - [0001 — Concrete dialects live in standalone modules](0001-standalone-dialect-modules.md)
 - [0002 — No `ilike`; case-insensitive matching is explicit via `lower()`](0002-no-ilike-explicit-lower.md)
+- [0003 — `dialect` is a public member of `Database` / `SuspendDatabase`](0003-public-dialect-on-database.md)

@@ -52,7 +52,7 @@ open class JdbcDatabase(
     username: String? = null,
     password: String? = null,
     poolSize: Int,
-    private val dialect: Dialect,
+    override val dialect: Dialect,
     private val typeMapper: TypeMapper,
     private val wrap: ResultSetWrapper,
     private val translate: SqlExceptionTranslator = StandardSqlExceptionTranslator,

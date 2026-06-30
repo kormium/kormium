@@ -96,6 +96,7 @@ internal class MySqlNativeDriver(
     }
 
     override val writeListeners: WriteListeners = WriteListeners()
+    override val dialect = MySqlDialect
 
     // A MySQL connection handle is single-threaded: one command at a time. We keep a fixed pool and
     // hand each connection to exactly one caller at a time through a Channel that doubles as the

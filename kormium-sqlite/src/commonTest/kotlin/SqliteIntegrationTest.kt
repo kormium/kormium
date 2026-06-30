@@ -25,12 +25,14 @@ import io.github.kormium.rtrim
 import io.github.kormium.trim
 import io.github.kormium.upper
 import io.github.kormium.query
+import io.github.kormium.renderSql
 import io.github.kormium.sum
 import io.github.kormium.transaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 /**
@@ -543,6 +545,36 @@ class SqliteIntegrationTest {
         assertEquals("ada", lowered)
 
         db.transaction { Labels.deleteWhere(Query(Labels.id inList listOf(l1, l2, l3, l4))) }
+    }
+
+    /**
+     * `renderSql` produces the SQL a query would run, with its bound params, without a connection —
+     * for reads, writes and joins — and `db.renderSql` does the same using the database's dialect.
+     */
+    @Test
+    fun testRenderSqlWithoutExecuting() {
+        val id = Uuid.random()
+
+        // Offline render (no connection): the predicate value is bound, not inlined.
+        val find = renderSql(SqCatalog) { Products.find { where { Products.qty gtEq 10 } } }
+        assertTrue(find.sql.startsWith("SELECT"), find.sql)
+        assertTrue(find.sql.contains("WHERE"), find.sql)
+        assertEquals(listOf<Any?>(10), find.params.values.toList())
+
+        // Reads, writes and joins all render.
+        assertTrue(renderSql(SqCatalog) { Products.count { where { Products.qty gtEq 10 } } }.sql.trim().startsWith("SELECT COUNT(*)"))
+        assertTrue(renderSql(SqCatalog) { Products.update(Product().apply { qty = 1 }) { where { Products.id eq id } } }.sql.trim().startsWith("UPDATE"))
+        assertTrue(renderSql(SqCatalog) { Products.deleteWhere { where { Products.id eq id } } }.sql.trim().startsWith("DELETE"))
+        assertTrue(
+            renderSql(SqCatalog) {
+                (Authors innerJoin Books on (Authors.id eq Books.authorId)).select(Authors.name, Books.title)
+            }.sql.contains("INNER JOIN"),
+        )
+
+        // db.renderSql renders with the database's own dialect; same query → same SQL here.
+        val viaDb = db.renderSql { Products.find { where { Products.qty gtEq 10 } } }
+        assertEquals(find.sql, viaDb.sql)
+        assertEquals(find.params, viaDb.params)
     }
 }
 

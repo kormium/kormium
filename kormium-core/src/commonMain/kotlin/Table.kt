@@ -114,7 +114,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
 
     // ---- pure SQL builders (no I/O) — shared by the blocking and suspend runners ----
 
-    private fun selectByIdSql(id: Any, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun selectByIdSql(id: Any, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val pk = primaryKey.singleOrNull()
             ?: throw IllegalStateException(
                 "findById requires a single-column primary key on $tableName; " +
@@ -146,17 +146,17 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql.trimIndent() to builder.params
     }
 
-    private fun selectSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun selectSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         val queryStr = query.toSql(builder)
         val sql = "SELECT ${getColumnNames(dialect).joinToString(", ")} FROM ${qualifiedTableName(dialect)} $queryStr"
         return sql.trimIndent() to builder.params
     }
 
-    private fun selectAllSql(dialect: Dialect): String =
+    internal fun selectAllSql(dialect: Dialect): String =
         "SELECT ${getColumnNames(dialect).joinToString(", ")} FROM ${qualifiedTableName(dialect)}".trimIndent()
 
-    private fun insertSql(entity: T, dialect: Dialect, typeMapper: TypeMapper, returning: Boolean): Pair<String, Map<String, Any?>> {
+    internal fun insertSql(entity: T, dialect: Dialect, typeMapper: TypeMapper, returning: Boolean): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         // Only the present fields go into the INSERT: an absent field is omitted (so the
         // database can apply its default / generated value), an explicit null is bound as NULL.
@@ -204,9 +204,9 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
 
     // One executable statement of a batch: SQL, its params, and the original input indices it
     // covers (so RETURNING results can be scattered back into input order).
-    private class BatchStatement(val sql: String, val params: Map<String, Any?>, val indices: List<Int>)
+    internal class BatchStatement(val sql: String, val params: Map<String, Any?>, val indices: List<Int>)
 
-    private fun buildBatchStatements(
+    internal fun buildBatchStatements(
         entities: List<T>,
         mode: BatchInsertMode,
         dialect: Dialect,
@@ -256,7 +256,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         }
     }
 
-    private fun upsertSql(
+    internal fun upsertSql(
         entity: T,
         conflict: List<Column<*, *, *>>,
         update: T,
@@ -280,7 +280,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql to builder.params
     }
 
-    private fun insertOrIgnoreSql(
+    internal fun insertOrIgnoreSql(
         entity: T,
         conflict: List<Column<*, *, *>>,
         dialect: Dialect,
@@ -297,7 +297,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
             dialect.renderInsertOrIgnoreSuffix(conflictCols) to builder.params
     }
 
-    private fun countSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun countSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         // Count the rows matching the predicate only: ORDER BY / LIMIT / OFFSET must not apply
         // to an aggregate (an OFFSET would skip the single COUNT row and read as 0).
@@ -306,7 +306,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql.trimIndent() to builder.params
     }
 
-    private fun updateSql(query: Query, entity: T, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun updateSql(query: Query, entity: T, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         val updateFields = generatePresentFields(entity)
         require(updateFields.isNotEmpty()) {
@@ -324,7 +324,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql.trimIndent() to builder.params
     }
 
-    private fun updateSql(query: Query, assignments: Map<Column<*, *, *>, Expression>, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun updateSql(query: Query, assignments: Map<Column<*, *, *>, Expression>, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         // Order matters: render SET (collecting binds) before WHERE so placeholders are numbered
         // left-to-right as they appear in the statement.
@@ -341,7 +341,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql.trimIndent() to builder.params
     }
 
-    private fun deleteSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun deleteSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         // WHERE only: a plain DELETE doesn't take ORDER BY / LIMIT / OFFSET (invalid in Postgres).
         val queryStr = query.toWhereSql(builder)
