@@ -35,7 +35,7 @@ class CrudSqliteTest {
                 db.autocommit { Users.find(Query(Users.age gt 28)) }.mapNotNull { it.name },
             )
 
-            db.transaction { Users.update(Query(Users.id eq 2), user(2, "Bob", 26)) }
+            db.transaction { Users.update(user(2, "Bob", 26), Query(Users.id eq 2)) }
             db.transaction { Users.deleteWhere(Query(Users.id eq 1)) }
 
             val remaining = db.autocommit { Users.all() }.map { "${it.name}:${it.age}" }.sorted()

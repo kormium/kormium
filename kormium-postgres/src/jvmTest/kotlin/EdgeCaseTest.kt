@@ -126,7 +126,7 @@ class EdgeCaseTest {
     fun updateMatchingNoRowsIsNoOp() {
         // Must not throw, and must change nothing.
         ItDatabase.transaction {
-            EdgeTable.update(Query(EdgeTable.id eq Uuid.random()), EdgeRow().apply { num = 5 })
+            EdgeTable.update(EdgeRow().apply { num = 5 }, Query(EdgeTable.id eq Uuid.random()))
         }
     }
 
