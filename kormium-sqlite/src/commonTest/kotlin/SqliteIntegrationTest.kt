@@ -6,7 +6,9 @@ import io.github.kormium.ForeignKeyViolationException
 import io.github.kormium.Query
 import io.github.kormium.Table
 import io.github.kormium.UniqueViolationException
+import io.github.kormium.and
 import io.github.kormium.autocommit
+import io.github.kormium.between
 import io.github.kormium.count
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.Database
@@ -16,6 +18,7 @@ import io.github.kormium.gtEq
 import io.github.kormium.inList
 import io.github.kormium.innerJoin
 import io.github.kormium.leftJoin
+import io.github.kormium.not
 import io.github.kormium.query
 import io.github.kormium.sum
 import io.github.kormium.transaction
@@ -250,6 +253,52 @@ class SqliteIntegrationTest {
             Products.query().where(Products.displayName eq tag).select(total).single()[total]
         }
         assertEquals(4_000_000_000L, sum)
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /**
+     * `between` is inclusive on both ends, composes with `not`, and an empty/reversed range
+     * (lo > hi) matches nothing — over an Int column and a BigDecimal column.
+     */
+    @Test
+    fun testBetweenInclusiveAndEmptyRange() {
+        val tag = "between-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            listOf(5, 10, 20, 25).forEach { q ->
+                Products.insert(Product().apply {
+                    id = Uuid.random(); price = BigDecimal.fromInt(q); qty = q
+                    displayName = tag; note = null; rank = null
+                })
+            }
+        }
+
+        // Inclusive both ends: 10 and 20 are in, 5 and 25 are out.
+        val inRange = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.qty between 10..20) } }
+        }
+        assertEquals(listOf(10, 20), inRange.map { it.qty }.sorted())
+
+        // Same over a BigDecimal column.
+        val byPrice = db.autocommit {
+            Products.find {
+                where { (Products.displayName eq tag) and (Products.price between BigDecimal.fromInt(10)..BigDecimal.fromInt(20)) }
+            }
+        }
+        assertEquals(2, byPrice.size)
+
+        // not(between): everything outside 10..20 -> 5 and 25.
+        val outside = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and not(Products.qty between 10..20) } }
+        }
+        assertEquals(listOf(5, 25), outside.map { it.qty }.sorted())
+
+        // Reversed/empty range renders FALSE -> no rows.
+        val empty = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.qty between 20..10) } }
+        }
+        assertEquals(emptyList(), empty)
+
         db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
 

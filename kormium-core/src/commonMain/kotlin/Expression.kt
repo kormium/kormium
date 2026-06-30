@@ -130,11 +130,35 @@ infix fun <Z> Column<Z, *, *>.gtEq(value: Z): Expression = GreaterEqOp(this, Val
 /** `column IN (v1, v2, ...)`. An empty list renders to `FALSE` (matches nothing). */
 class InListOp(private val column: Expression, private val values: List<*>) : Expression {
     override fun toSql(builder: ParamBuilder): String =
-        if (values.isEmpty()) "FALSE"
+        if (values.isEmpty()) FalseExpression.toSql(builder)
         else "${column.toSql(builder)} IN (${values.joinToString(", ") { builder.bind(it) }})"
 }
 
 infix fun <Z> Column<Z, *, *>.inList(values: List<Z>): Expression = InListOp(this, values.map { bindParam(it) })
+
+/** The SQL `FALSE` literal — what a predicate over an empty set (`inList`, `between`) renders to. */
+internal object FalseExpression : Expression {
+    override fun toSql(builder: ParamBuilder): String = "FALSE"
+}
+
+/** `expr BETWEEN lo AND hi` — both bounds inclusive, matching SQL and Kotlin's `lo..hi`. */
+class BetweenOp(private val expr: Expression, private val low: Expression, private val high: Expression) : Expression {
+    override fun toSql(builder: ParamBuilder): String =
+        "${expr.toSql(builder)} BETWEEN ${low.toSql(builder)} AND ${high.toSql(builder)}"
+}
+
+// `column between lo..hi` — inclusive both ends (SQL BETWEEN == Kotlin `..`). The Comparable bound
+// admits exactly the orderable column types (numbers, dates, text) and rejects Json/Bytes/Uuid at
+// compile time, where BETWEEN is meaningless. A reversed/empty range (lo > hi) renders to FALSE,
+// like an empty `inList`. Bounds bind through the column's converter, as in `eq` / `gtEq`.
+infix fun <Z : Comparable<Z>> Column<Z, *, *>.between(range: ClosedRange<Z>): Expression =
+    if (range.isEmpty()) FalseExpression
+    else BetweenOp(this, Value(bindParam(range.start)), Value(bindParam(range.endInclusive)))
+
+/** `(a + b) between lo..hi` — `between` over an arithmetic operand. */
+infix fun <Z : Comparable<Z>> NumericExpr<Z>.between(range: ClosedRange<Z>): Expression =
+    if (range.isEmpty()) FalseExpression
+    else BetweenOp(this, columnType.lit(range.start), columnType.lit(range.endInclusive))
 
 /** `column LIKE pattern` (text columns only). */
 class LikeOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "LIKE")
