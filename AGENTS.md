@@ -114,6 +114,11 @@ built-in types; for an enum/custom type pass the ColumnType: `case(MyColumnType)
 Arithmetic: numeric columns support `+ - * / %` (`Posts.likes - Posts.dislikes`, `Posts.views + 1`)
 — in `where { }`, in an `update { }` `set`, and as a `select(...)` projection that reads back.
 
+Existence (correlated EXISTS): `Table.any { predicate }` → `EXISTS (SELECT 1 FROM table WHERE …)`,
+`Table.none { }` → `NOT EXISTS`. The predicate references the outer column to correlate:
+`Users.find { where { Orders.any { Orders.userId eq Users.id } } }`. This also covers `IN (SELECT)`.
+A scalar subquery isn't modeled — compare against a `RawExpression("(SELECT …)")`.
+
 For a reusable query, build a `Query` value instead of a block:
 `Users.find(Query(Users.age gtEq 18))`. Every `find` / `count` / `update` / `deleteWhere`
 accepts either form.
@@ -241,7 +246,8 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 - `findById` targets the primary key and throws on a composite key — use `find(Query(col eq v))`.
 - Predicate names are `less` / `lessEq` (not `lt` / `ltEq`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.
-- Not modeled by the typed DSL: subqueries, `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
+- Not modeled by the typed DSL: subqueries other than correlated `EXISTS` (use `any`/`none`; scalar →
+  compare against a `RawExpression`), `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
   `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, simple `CASE expr WHEN` (searched
   `case { }` is supported), scalar functions beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`,
   `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.

@@ -7,6 +7,7 @@ import io.github.kormium.Query
 import io.github.kormium.Table
 import io.github.kormium.UniqueViolationException
 import io.github.kormium.and
+import io.github.kormium.any
 import io.github.kormium.autocommit
 import io.github.kormium.between
 import io.github.kormium.case
@@ -23,6 +24,7 @@ import io.github.kormium.innerJoin
 import io.github.kormium.leftJoin
 import io.github.kormium.lower
 import io.github.kormium.ltrim
+import io.github.kormium.none
 import io.github.kormium.not
 import io.github.kormium.rtrim
 import io.github.kormium.trim
@@ -679,6 +681,48 @@ class SqliteIntegrationTest {
         val viaDb = db.renderSql { Products.find { where { Products.qty gtEq 10 } } }
         assertEquals(find.sql, viaDb.sql)
         assertEquals(find.params, viaDb.params)
+    }
+
+    /**
+     * `any` / `none` render correlated `EXISTS` / `NOT EXISTS`: the inner predicate references the
+     * outer table's column (`Books.authorId eq Authors.id`), and both sides render qualified.
+     */
+    @Test
+    fun testExistsViaAnyNone() {
+        val withBook = Uuid.random()
+        val withoutBook = Uuid.random()
+        val bookId = Uuid.random()
+        db.transaction {
+            Authors.execSql(authorsDdl)
+            Books.execSql(booksDdl)
+            Authors.insert(Author().apply { id = withBook; name = "Ada" })
+            Authors.insert(Author().apply { id = withoutBook; name = "Grace" })
+            Books.insert(Book().apply { id = bookId; authorId = withBook; title = "Notes" })
+        }
+        val scope = listOf(withBook, withoutBook)
+
+        // any → authors who have at least one book.
+        val haveBooks = db.autocommit {
+            Authors.find { where { (Authors.id inList scope) and Books.any { Books.authorId eq Authors.id } } }
+        }
+        assertEquals(listOf(withBook), haveBooks.map { it.id })
+
+        // none → authors with no books.
+        val noBooks = db.autocommit {
+            Authors.find { where { (Authors.id inList scope) and Books.none { Books.authorId eq Authors.id } } }
+        }
+        assertEquals(listOf(withoutBook), noBooks.map { it.id })
+
+        // Correlation plus an inner condition.
+        val withNotes = db.autocommit {
+            Authors.find { where { (Authors.id inList scope) and Books.any { (Books.authorId eq Authors.id) and (Books.title eq "Notes") } } }
+        }
+        assertEquals(listOf(withBook), withNotes.map { it.id })
+
+        db.transaction {
+            Books.deleteWhere(Query(Books.id eq bookId))
+            Authors.deleteWhere(Query(Authors.id inList scope))
+        }
     }
 }
 

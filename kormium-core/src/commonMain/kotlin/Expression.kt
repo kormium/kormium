@@ -19,9 +19,12 @@ import kotlin.uuid.Uuid
 class ParamBuilder(
     val dialect: Dialect,
     private val typeMapper: TypeMapper,
-    /** When true, a [Column] renders as `"table"."col"` (needed to disambiguate joins). */
-    val qualifyColumns: Boolean = false,
+    qualifyColumns: Boolean = false,
 ) {
+    /** When true, a [Column] renders as `"table"."col"` (needed to disambiguate joins / subqueries). */
+    var qualifyColumns: Boolean = qualifyColumns
+        private set
+
     private var counter = 0
     private val collected = LinkedHashMap<String, Any?>()
 
@@ -33,6 +36,21 @@ class ParamBuilder(
         val name = "p${counter++}"
         collected[name] = typeMapper.toParameter(value)
         return dialect.renderBind(name, value)
+    }
+
+    /**
+     * Renders [block] with columns qualified by their table, then restores the previous setting —
+     * used inside a correlated subquery so an outer column (`users.id`) and an inner one
+     * (`orders.userId`) don't collide. Parameters keep flowing into this same builder, in order.
+     */
+    internal fun <R> qualified(block: () -> R): R {
+        val previous = qualifyColumns
+        qualifyColumns = true
+        try {
+            return block()
+        } finally {
+            qualifyColumns = previous
+        }
     }
 }
 
