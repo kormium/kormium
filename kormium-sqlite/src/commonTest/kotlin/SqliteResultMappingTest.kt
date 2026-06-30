@@ -36,7 +36,7 @@ class SqliteResultMappingTest {
             executeUpdate("INSERT INTO rm_items (id, note) VALUES (:id, :note)", mapOf("id" to id.toString(), "note" to "x"))
         }
         val ex = assertFailsWith<ResultMappingException> {
-            db.autocommit { RmItems.findById(id) }
+            db.autocommit { RmItems.findOne { where { RmItems.id eq id } } }
         }
         val msg = ex.message ?: ""
         assertTrue("rm_items" in msg && "name" in msg, "should name table+column: $msg")
@@ -55,7 +55,7 @@ class SqliteResultMappingTest {
                 mapOf("id" to id.toString(), "ref" to "not-a-uuid", "status" to "ACTIVE"),
             )
         }
-        val ex = assertFailsWith<ResultMappingException> { db.autocommit { RmTyped.findById(id) } }
+        val ex = assertFailsWith<ResultMappingException> { db.autocommit { RmTyped.findOne { where { RmTyped.id eq id } } } }
         val msg = ex.message ?: ""
         assertTrue("rm_typed" in msg && "ref" in msg, "should name table+column: $msg")
         assertTrue("Uuid" in msg, "should name expected Korm type: $msg")
@@ -72,7 +72,7 @@ class SqliteResultMappingTest {
                 mapOf("id" to id.toString(), "ref" to Uuid.random().toString(), "status" to "BOGUS"),
             )
         }
-        val ex = assertFailsWith<ResultMappingException> { db.autocommit { RmTyped.findById(id) } }
+        val ex = assertFailsWith<ResultMappingException> { db.autocommit { RmTyped.findOne { where { RmTyped.id eq id } } } }
         val msg = ex.message ?: ""
         assertTrue("rm_typed" in msg && "status" in msg, "should name table+column: $msg")
         assertTrue("converted" in msg, "should mark the type as a converted ColumnType: $msg")
@@ -86,7 +86,7 @@ class SqliteResultMappingTest {
             RmItems.execSql(rmDdlNameNullable)
             executeUpdate("INSERT INTO rm_items (id, name) VALUES (:id, :name)", mapOf("id" to id.toString(), "name" to "ok"))
         }
-        val row = db.autocommit { RmItems.findById(id) }
+        val row = db.autocommit { RmItems.findOne { where { RmItems.id eq id } } }
         assertEquals("ok", row?.name)
         assertNull(row?.note, "a nullable column with DB NULL must hydrate as null")
         db.transaction { RmItems.deleteWhere(Query(RmItems.id eq id)) }

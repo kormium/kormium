@@ -81,7 +81,7 @@ fun Application.configure() {
             val patch = call.receive<ProductDTO>().toDomain()
             val updated = call.transaction<AppCatalog, _> {
                 ProductTable.update(Query(ProductTable.id eq id), patch)
-                ProductTable.findById(id)
+                ProductTable.findOne { where { ProductTable.id eq id } }
             }
             call.respond(updated!!.toDto())
         }

@@ -47,8 +47,8 @@ fun main() {
             Users.insertAll(listOf(user(1, "Alice", 30), user(2, "Bob", 25), user(3, "Carol", 41)))
         }
 
-        val carol = db.autocommit { Users.findById(3) }
-        println("findById(3) = ${carol?.name}")
+        val carol = db.autocommit { Users.findOne { where { Users.id eq 3 } } }
+        println("findOne(id=3) = ${carol?.name}")
 
         val over28 = db.autocommit { Users.find(Query(Users.age gt 28)) }
         println("age > 28   = ${over28.map { it.name }}")

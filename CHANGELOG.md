@@ -33,6 +33,16 @@ All notable changes to Kormium are documented here. The format is based on
 - `Table.primaryKey` is now `List<Column<*, *, T>>` (was `List<Column<*, *, *>>`) and the table's
   columns carry their entity type. Source-compatible for normal use; code that passed columns held
   as a bare `Column<*, *, *>` to `onConflict` must use the table's own columns.
+- **`findById(id: Any)` removed in favour of typed `findOne`.** The single untyped read in the API
+  silently accepted a wrong-typed id (e.g. a `String` for a `Uuid` key) and bypassed the column's
+  converter. Replaced by `findOne { where { Users.id eq id } }` / `findOne(Query(...))` → `T?`
+  (`LIMIT 1`): the id is type-checked against the column, binds through its converter, and the same
+  form reads by any unique column, not only the primary key. See
+  [ADR 0005](docs/adr/0005-no-untyped-findbyid.md).
+- **`eq null` / `neq null` are restricted to nullable columns.** They render `IS [NOT] NULL`; on a
+  non-null column the comparison is meaningless (it can never be NULL) and now fails to compile.
+  This also makes a wrong-typed value comparison (`age eq "x"`) report against the real
+  `eq(value)` candidate ("Int expected") instead of the null overload ("Nothing? expected").
 
 ## [0.8.0] — Cross-instance notifications, Windows async, expression UPDATE
 

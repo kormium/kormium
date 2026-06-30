@@ -11,7 +11,7 @@ val all: List<User> = db.autocommit {
 }
 
 val one: User? = db.autocommit {
-    Users.findById(id)
+    Users.findOne { where { Users.id eq id } }
 }
 
 val adults: List<User> = db.autocommit {

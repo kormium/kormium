@@ -91,7 +91,7 @@ class NativeMySqlTest {
                     this.aDateTime = dateTime
                 })
             }
-            val row = db.autocommit { NativeAllTypes.findById(id) }!!
+            val row = db.autocommit { NativeAllTypes.findOne { where { NativeAllTypes.id eq id } } }!!
             assertEquals(42, row.anInt)
             assertEquals(2.5, row.aDouble)
             assertEquals(true, row.aBool)
@@ -123,13 +123,13 @@ class NativeMySqlTest {
                     this.id = id; this.qty = 5; this.name = tricky
                 })
             }
-            val found = db.autocommit { NativeProducts.findById(id) }
+            val found = db.autocommit { NativeProducts.findOne { where { NativeProducts.id eq id } } }
             assertEquals(5, found?.qty)
             assertEquals(tricky, found?.name)
             db.transaction {
                 NativeProducts.update(Query(NativeProducts.id eq id), NativeProduct().apply { qty = 9 })
             }
-            assertEquals(9, db.autocommit { NativeProducts.findById(id) }?.qty)
+            assertEquals(9, db.autocommit { NativeProducts.findOne { where { NativeProducts.id eq id } } }?.qty)
             db.transaction { NativeProducts.deleteWhere(Query(NativeProducts.id eq id)) }
         }
     }
@@ -172,7 +172,7 @@ class NativeMySqlTest {
                     update = NativeProduct().apply { this.qty = 99 },
                 )
             }
-            assertEquals(99, db.autocommit { NativeProducts.findById(id) }?.qty)
+            assertEquals(99, db.autocommit { NativeProducts.findOne { where { NativeProducts.id eq id } } }?.qty)
 
             db.transaction {
                 NativeProducts.insertOrIgnore(
@@ -180,7 +180,7 @@ class NativeMySqlTest {
                     onConflict = NativeProducts.id,
                 )
             }
-            assertEquals("orig", db.autocommit { NativeProducts.findById(id) }?.name) // unchanged
+            assertEquals("orig", db.autocommit { NativeProducts.findOne { where { NativeProducts.id eq id } } }?.name) // unchanged
             db.transaction { NativeProducts.deleteWhere(Query(NativeProducts.id eq id)) }
         }
     }
@@ -197,7 +197,7 @@ class NativeMySqlTest {
                 NativeProducts.deleteWhere(Query(NativeProducts.id eq id))
                 NativeProducts.insert(NativeProduct().apply { this.id = id; this.qty = 1; this.name = text })
             }
-            assertEquals(text, db.autocommit { NativeProducts.findById(id) }?.name)
+            assertEquals(text, db.autocommit { NativeProducts.findOne { where { NativeProducts.id eq id } } }?.name)
             db.transaction { NativeProducts.deleteWhere(Query(NativeProducts.id eq id)) }
         }
     }
@@ -235,7 +235,7 @@ class NativeMySqlTest {
                     throw RuntimeException("boom")
                 }
             }
-            assertEquals(null, db.autocommit { NativeProducts.findById(id) })
+            assertEquals(null, db.autocommit { NativeProducts.findOne { where { NativeProducts.id eq id } } })
         }
     }
 }

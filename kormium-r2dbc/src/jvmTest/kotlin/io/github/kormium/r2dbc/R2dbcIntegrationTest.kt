@@ -72,7 +72,7 @@ class R2dbcIntegrationTest {
                 })
             }
 
-            val found = database.suspendAutocommit { Widgets.findById(id) }
+            val found = database.suspendAutocommit { Widgets.findOne { where { Widgets.id eq id } } }
             assertEquals(id, found?.id)
             assertEquals("async-widget", found?.name)
             assertEquals(7, found?.qty)
@@ -103,7 +103,7 @@ class R2dbcIntegrationTest {
                 }
             }
 
-            assertNull(database.suspendAutocommit { Widgets.findById(id) })
+            assertNull(database.suspendAutocommit { Widgets.findOne { where { Widgets.id eq id } } })
         }
     }
 

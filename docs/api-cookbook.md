@@ -431,11 +431,12 @@ Kormium does not ship a `Repository` type — like Exposed, you call table opera
 queries, this small base is the recommended pattern; copy it and adapt it (it is yours to change):
 
 ```kotlin
-abstract class Repository<G : Catalog, T : Entity>(
+abstract class Repository<G : Catalog, T : Entity, ID>(
     protected val db: SuspendDatabase<G>,
     protected val table: Table<G, T>,
+    private val idColumn: Column<ID, *, T>,   // typed primary key, so findById is checked
 ) {
-    suspend fun findById(id: Any) = db.suspendAutocommit { table.findById(id) }
+    suspend fun findById(id: ID) = db.suspendAutocommit { table.findOne { where { idColumn eq id } } }
     suspend fun all() = db.suspendAutocommit { table.all() }
     suspend fun insert(entity: T) = db.suspendTransaction { table.insert(entity) }
     fun observeAll(): Flow<List<T>> = table.observe(db)                 // needs kormium-observe

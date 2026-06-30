@@ -40,7 +40,7 @@ class SqliteQueryObserverTest {
             ObsItems.insert(ObsItem().apply { this.id = id; name = "a" })
         }
         events.clear()
-        val found = db.autocommit { ObsItems.findById(id) }
+        val found = db.autocommit { ObsItems.findOne { where { ObsItems.id eq id } } }
         assertEquals("a", found?.name)
 
         val select = events.single { it.kind == QueryKind.Select }

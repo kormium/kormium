@@ -5,7 +5,7 @@ A standalone console app — **no server, no external database**. It does migrat
 on Kotlin/Native.
 
 Shows: `createSqliteDatabase()`, `Database.migrate(...)`, `transaction { }` / `autocommit { }`,
-`insert` / `findById` / `find { ... }` / `update` / `deleteWhere`.
+`insert` / `findOne { ... }` / `find { ... }` / `update` / `deleteWhere`.
 
 ## Run
 
@@ -19,5 +19,5 @@ Run from the repository root. No Docker needed.
 ```
 
 It uses an in-memory database by default; pass a path to `createSqliteDatabase("app.db")` in
-`Main.kt` to persist to a file instead. The run prints `findById`, a filtered query, and the rows
-remaining after an update + delete.
+`Main.kt` to persist to a file instead. The run prints a single-row `findOne` lookup, a filtered
+query, and the rows remaining after an update + delete.

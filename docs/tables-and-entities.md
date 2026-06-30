@@ -86,9 +86,10 @@ Column.Text().nullable()
 Column.UUID().primaryKey()
 ```
 
-`findById` uses a single explicit primary key. If none is marked, it falls back to a column
-named `id`. For composite primary keys, use `find { ... }` or `find(Query(...))` instead
-of `findById`.
+`primaryKey()` marks the key that `upsert` / `insertOrIgnore` conflict on, and that backends
+without `RETURNING` re-select a written row by. To read a single row by it, compare it explicitly:
+`findOne { where { Users.id eq id } }` (typed — the id is checked against the column). For a
+composite key, AND each key column.
 
 A non-null column (one declared without `.nullable()`) is enforced on read as well as on write:
 if the database returns SQL `NULL` for it, hydration fails fast with a `ResultMappingException`

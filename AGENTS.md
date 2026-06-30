@@ -85,7 +85,7 @@ val adults: List<User> = db.autocommit {
     }
 }
 
-val ada: User? = db.autocommit { Users.findById(uuid) }   // targets the primary key
+val ada: User? = db.autocommit { Users.findOne { where { Users.id eq uuid } } }   // one row or null
 val all: List<User> = db.autocommit { Users.all() }
 val n: Long       = db.autocommit { Users.count { where { Users.age gtEq 18 } } }
 ```
@@ -237,7 +237,7 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 | Task | Use |
 |------|-----|
 | Filtered read, one table | `Table.find { where { } orderBy limit }` |
-| By primary key | `Table.findById(id)` |
+| One row by id / unique column | `Table.findOne { where { col eq v } }` (→ `T?`) |
 | Reusable / prebuilt query | `Table.find(Query(...))` |
 | Two-table join as entities | `(A innerJoin B on ...).find()` |
 | Columns / aggregates from a join | `.select(...)` + `row[col]` / `row[agg]` |
@@ -245,12 +245,98 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 | Single-table grouping | `Table.query().groupBy(...).select(...)` |
 | Upsert / ignore-on-conflict | `Table.upsert(...)` / `Table.insertOrIgnore(...)` |
 
+## Recipes
+
+Copy-ready patterns for common tasks. They use only the forms above — no raw SQL.
+
+**Dynamic / optional filters.** `where { }` blocks AND together, so add a filter only when its
+argument is present — no string building:
+
+```kotlin
+fun search(name: String?, minAge: Int?) = db.autocommit {
+    Users.find {
+        if (name != null)   where { Users.name like "$name%" }
+        if (minAge != null) where { Users.age gtEq minAge }
+        orderBy ASC Users.name
+        limit = 50
+    }
+}
+```
+
+**Keyset (seek) pagination.** Stabler than `offset` on deep pages — the cursor is the last value
+of an ordered, unique key:
+
+```kotlin
+fun page(after: Instant?, size: Int = 50) = db.autocommit {
+    Users.find {
+        if (after != null) where { Users.createdAt less after }
+        orderBy DESC Users.createdAt
+        limit = size
+    }
+}
+```
+
+`limit`/`offset` works too (`offset = page * size`), but on deep pages it is slower and can skip or
+repeat rows under concurrent writes. If the key is not unique, add a tiebreaker
+(`… or ((Users.createdAt eq c) and (Users.id gt lastId))`).
+
+**Soft-delete.** Kormium has no implicit filters — a "delete" is an `UPDATE` of a marker column, and
+every read **explicitly** excludes the marked rows (no hidden state to forget):
+
+```kotlin
+val deletedAt by Column.Instant().nullable()   // null = live row
+
+db.transaction {
+    Users.update(User().apply { deletedAt = Clock.System.now() }) { where { Users.id eq id } }
+}
+db.autocommit { Users.find { where { Users.deletedAt eq null } } }   // add the predicate on each read
+```
+
+**Optimistic locking.** `update { }` returns the affected-row count, so check the version matched;
+bump it atomically with `set (col + 1)`:
+
+```kotlin
+val applied = db.transaction {
+    Docs.update {
+        Docs.body    set newBody
+        Docs.version set (Docs.version + 1)
+        where { (Docs.id eq id) and (Docs.version eq expected) }
+    } == 1L
+}
+if (!applied) error("stale write — reload and retry")
+```
+
+**Batch insert, input order preserved.** `insertAll` batches by row shape; with `returning = true` it
+backfills DB-generated values and keeps the input order:
+
+```kotlin
+val saved = db.transaction { Users.insertAll(newUsers, returning = true) }
+```
+
+**Find-or-create.** Insert if absent, then read the row back — new or pre-existing:
+
+```kotlin
+val user = db.transaction {
+    Users.insertOrIgnore(newUser, onConflict = Users.id)   // 1 = inserted, 0 = already there
+    Users.findById(newUser.id)!!                           // the row either way
+}
+```
+
 ## Gotchas
 
 - Operations are scope extensions — they don't compile outside `db.transaction { }` /
-  `db.autocommit { }` (or the `suspend*` variants).
-- A `Table<G, _>` can only be used in a `Database<G>` scope; mixing catalogs is a compile error.
-- `findById` targets the primary key and throws on a composite key — use `find(Query(col eq v))`.
+  `db.autocommit { }` (or the `suspend*` variants). Symptom of being outside one: `find` / `insert`
+  resolve to a Kotlin stdlib function (`kotlin.collections.find`) or `where` is "unresolved".
+- A `Table<G, _>` can only be used in a `Database<G>` scope; mixing catalogs is a compile error
+  ("receiver type mismatch" naming `Table<ThatCatalog, _>`).
+- One row by primary key (or any unique column): `findOne { where { col eq v } }` → `T?` (`LIMIT 1`).
+  There is no `findById` — naming the column keeps the id **type-checked**.
+- Value comparisons are typed: `Users.age eq "18"` won't compile (pass `18`; the error names the
+  expected type). Column-to-column comparisons are NOT cross-checked — `intCol eq uuidCol` compiles,
+  so match the types yourself.
+- `eq null` / `neq null` (→ `IS [NOT] NULL`) work only on **nullable** columns; on a non-null column
+  they don't compile (it can never be NULL).
+- `orderBy` needs a direction — `orderBy ASC col` / `orderBy DESC col`; bare `orderBy col` is a syntax error.
 - Predicate names are `less` / `lessEq` (not `lt` / `ltEq`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.
 - Not modeled by the typed DSL: subqueries other than correlated `EXISTS` (use `any`/`none`; scalar →

@@ -96,7 +96,12 @@ class Scope<G : Catalog> internal constructor(
     /** Block form of [find]: `Users.find { where { ... }; orderBy DESC col; limit = 50 }`. */
     fun <T : Entity> Table<G, T>.find(block: QueryBuilder.() -> Unit): List<T> =
         select(QueryBuilder().apply(block).build(), exec)
-    fun <T : Entity> Table<G, T>.findById(id: Any): T? = selectById(id, exec)
+    /** The first row matching [query] (typically a unique predicate), or null. Applies `LIMIT 1`. */
+    fun <T : Entity> Table<G, T>.findOne(query: Query): T? = select(query.copy(limit = 1u), exec).firstOrNull()
+
+    /** Block form of [findOne]: `Users.findOne { where { Users.id eq id } }`. */
+    fun <T : Entity> Table<G, T>.findOne(block: QueryBuilder.() -> Unit): T? =
+        findOne(QueryBuilder().apply(block).build())
     fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
     /** Updates rows matching [query] with the present fields of [entity]; returns the affected row count. */
     fun <T : Entity> Table<G, T>.update(query: Query, entity: T): Long {

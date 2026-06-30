@@ -53,7 +53,7 @@ class SqliteColumnTypeTest {
             })
         }
 
-        val item = db.suspendAutocommit { Items.findById(id) }!!
+        val item = db.suspendAutocommit { Items.findOne { where { Items.id eq id } } }!!
         assertEquals(Grade.B, item.grade)
         assertEquals(255, item.hex)   // stored as "ff", read back as Int
 

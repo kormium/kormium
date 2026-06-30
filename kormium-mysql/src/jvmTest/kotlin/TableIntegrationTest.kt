@@ -44,7 +44,7 @@ class TableIntegrationTest {
                 this.rank = null
             })
 
-            val found = ItProducts.findById(id)
+            val found = ItProducts.findOne { where { ItProducts.id eq id } }
             assertEquals(id, found?.id)
             assertEquals(5, found?.qty)
             assertEquals("widget", found?.displayName)
@@ -54,10 +54,10 @@ class TableIntegrationTest {
             assertEquals(0, BigDecimal.fromInt(100).compareTo(found?.price!!))
 
             ItProducts.update(Query(ItProducts.id eq id), ItProduct().apply { this.qty = 9 })
-            assertEquals(9, ItProducts.findById(id)?.qty)
+            assertEquals(9, ItProducts.findOne { where { ItProducts.id eq id } }?.qty)
 
             ItProducts.deleteWhere(Query(ItProducts.id eq id))
-            assertNull(ItProducts.findById(id))
+            assertNull(ItProducts.findOne { where { ItProducts.id eq id } })
         }
     }
 
@@ -75,7 +75,7 @@ class TableIntegrationTest {
                 this.displayName = tricky
                 this.note = null
             })
-            assertEquals(tricky, ItProducts.findById(id)?.displayName)
+            assertEquals(tricky, ItProducts.findOne { where { ItProducts.id eq id } }?.displayName)
         }
     }
 
@@ -156,7 +156,7 @@ class TableIntegrationTest {
                 update = ItProduct().apply { this.qty = 99 },
             )
         }
-        val row = ItDatabase.autocommit { ItProducts.findById(id) }
+        val row = ItDatabase.autocommit { ItProducts.findOne { where { ItProducts.id eq id } } }
         assertEquals(99, row?.qty)
         assertEquals("orig", row?.displayName) // update only touched qty
         ItDatabase.transaction { ItProducts.deleteWhere(Query(ItProducts.id eq id)) }
@@ -182,7 +182,7 @@ class TableIntegrationTest {
                 onConflict = ItProducts.id,
             )
         }
-        assertEquals("keep", ItDatabase.autocommit { ItProducts.findById(id) }?.displayName)
+        assertEquals("keep", ItDatabase.autocommit { ItProducts.findOne { where { ItProducts.id eq id } } }?.displayName)
         ItDatabase.transaction { ItProducts.deleteWhere(Query(ItProducts.id eq id)) }
     }
 
@@ -235,7 +235,7 @@ class TableIntegrationTest {
                 throw RuntimeException("boom")
             }
         }
-        assertNull(ItDatabase.autocommit { ItProducts.findById(id) })
+        assertNull(ItDatabase.autocommit { ItProducts.findOne { where { ItProducts.id eq id } } })
     }
 
     /** Migrations apply in order, exactly once, and re-running the list is a no-op. */
@@ -292,7 +292,7 @@ class TableIntegrationTest {
                 this.aDateTime = dateTime
             })
         }
-        val row = ItDatabase.autocommit { AllTypes.findById(id) }!!
+        val row = ItDatabase.autocommit { AllTypes.findOne { where { AllTypes.id eq id } } }!!
         assertEquals(42, row.anInt)
         assertEquals(2.5, row.aDouble)
         assertEquals(true, row.aBool)

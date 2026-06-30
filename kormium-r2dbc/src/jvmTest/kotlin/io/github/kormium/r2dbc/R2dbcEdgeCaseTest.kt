@@ -146,8 +146,8 @@ class R2dbcEdgeCaseTest {
                     }
                 }
             }
-            assertEquals(keep, db!!.suspendAutocommit { EParent.findById(keep) }?.id)
-            assertNull(db!!.suspendAutocommit { EParent.findById(inner) })
+            assertEquals(keep, db!!.suspendAutocommit { EParent.findOne { where { EParent.id eq keep } } }?.id)
+            assertNull(db!!.suspendAutocommit { EParent.findOne { where { EParent.id eq inner } } })
         }
     }
 
