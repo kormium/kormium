@@ -37,7 +37,7 @@ private class SqliteAndroidDriver(path: String, private val poolSize: Int, overr
         }
     }
 
-    private val dialect: Dialect = SqliteDialect
+    override val dialect: Dialect = SqliteDialect
     private val typeMapper: TypeMapper = StandardTypeMapper
     override val writeListeners: WriteListeners = WriteListeners()
 
