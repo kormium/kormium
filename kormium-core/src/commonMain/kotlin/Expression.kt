@@ -70,10 +70,18 @@ class ParamBuilder private constructor(
     }
 }
 
+/**
+ * A node in a SQL expression tree that renders itself to a SQL string. Everything that can appear in
+ * a `WHERE` / `HAVING` / `SELECT` / `SET` position is one: a [Column], a literal [Value], a predicate
+ * (built by `eq` / `gt` / `and` / …), a computed [Operand] (`COALESCE`, `CASE`, arithmetic), or a
+ * verbatim [RawExpression]. [toSql] registers any compared values as bind parameters on the builder
+ * rather than inlining them.
+ */
 interface Expression {
     fun toSql(builder: ParamBuilder): String
 }
 
+/** A bound literal value: renders as a bind-parameter placeholder, never inlined into the SQL. */
 class Value(internal val value: Any?) : Expression {
     override fun toSql(builder: ParamBuilder): String = builder.bind(value)
 }
@@ -97,7 +105,7 @@ class RawExpression(val expression: String) : Expression {
     override fun toSql(builder: ParamBuilder): String = expression
 }
 
-sealed class CompoundBooleanOp(
+internal sealed class CompoundBooleanOp(
     private val operator: String,
     private val first: Expression,
     private val second: Expression,
@@ -116,19 +124,19 @@ sealed class CompoundBooleanOp(
     }
 }
 
-class AndOp(first: Expression, second: Expression) : CompoundBooleanOp(" AND ", first, second)
+internal class AndOp(first: Expression, second: Expression) : CompoundBooleanOp(" AND ", first, second)
 
 infix fun <T : Expression, T2 : Expression> T.and(other: T2): Expression = AndOp(this, other)
 
 /**
  * Represents a logical operator that performs an `or` operation between all the specified [expressions].
  */
-class OrOp(first: Expression, second: Expression) : CompoundBooleanOp(" OR ", first, second)
+internal class OrOp(first: Expression, second: Expression) : CompoundBooleanOp(" OR ", first, second)
 
 infix fun <T : Expression, T2 : Expression> T.or(other: T2): Expression = OrOp(this, other)
 
 
-abstract class ComparisonOp(
+internal abstract class ComparisonOp(
     /** Returns the left-hand side operand. */
     val first: Expression,
     /** Returns the right-hand side operand. */
@@ -144,32 +152,32 @@ abstract class ComparisonOp(
 // and the common column-to-value form, which is typed — `Users.age eq 18`, not a string —
 // so the value type must match the column's.
 
-class EqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "=")
+internal class EqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "=")
 
 infix fun <T : Expression, T2 : Expression> T.eq(other: T2): Expression = EqOp(this, other)
 
 /** Checks that the operands are not equal. */
-class NeqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<>")
+internal class NeqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<>")
 
 infix fun <T : Expression, T2 : Expression> T.neq(other: T2): Expression = NeqOp(this, other)
 
 /** Checks that the left operand is less than the right. */
-class LessOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<")
+internal class LessOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<")
 
 infix fun <T : Expression, T2 : Expression> T.lt(other: T2): Expression = LessOp(this, other)
 
 /** Checks that the left operand is less than or equal to the right. */
-class LessEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<=")
+internal class LessEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<=")
 
 infix fun <T : Expression, T2 : Expression> T.ltEq(other: T2): Expression = LessEqOp(this, other)
 
 /** Checks that the left operand is greater than the right. */
-class GreaterOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, ">")
+internal class GreaterOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, ">")
 
 infix fun <T : Expression, T2 : Expression> T.gt(other: T2): Expression = GreaterOp(this, other)
 
 /** Checks that the left operand is greater than or equal to the right. */
-class GreaterEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, ">=")
+internal class GreaterEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, ">=")
 
 infix fun <T : Expression, T2 : Expression> T.gtEq(other: T2): Expression = GreaterEqOp(this, other)
 
@@ -186,7 +194,7 @@ infix fun <Z> Operand<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.l
 infix fun <Z> Operand<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
 
 /** `column IN (v1, v2, ...)`. An empty list renders to `FALSE` (matches nothing). */
-class InListOp(private val column: Expression, private val values: List<*>) : Expression {
+internal class InListOp(private val column: Expression, private val values: List<*>) : Expression {
     override fun toSql(builder: ParamBuilder): String =
         if (values.isEmpty()) FalseExpression.toSql(builder)
         else "${column.toSql(builder)} IN (${values.joinToString(", ") { builder.bind(it) }})"
@@ -200,7 +208,7 @@ internal object FalseExpression : Expression {
 }
 
 /** `expr BETWEEN lo AND hi` — both bounds inclusive, matching SQL and Kotlin's `lo..hi`. */
-class BetweenOp(private val expr: Expression, private val low: Expression, private val high: Expression) : Expression {
+internal class BetweenOp(private val expr: Expression, private val low: Expression, private val high: Expression) : Expression {
     override fun toSql(builder: ParamBuilder): String =
         "${expr.toSql(builder)} BETWEEN ${low.toSql(builder)} AND ${high.toSql(builder)}"
 }
@@ -214,7 +222,7 @@ infix fun <Z : Comparable<Z>> Operand<Z>.between(range: ClosedRange<Z>): Express
     else BetweenOp(this, columnType.lit(range.start), columnType.lit(range.endInclusive))
 
 /** `column LIKE pattern` (text operands only). */
-class LikeOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "LIKE")
+internal class LikeOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "LIKE")
 
 // `like` has no generic Expression form, so both the literal-pattern and operand-to-operand forms
 // live here. A bare string comparison follows the engine collation (see docs) — wrap both sides in
@@ -223,7 +231,7 @@ infix fun Operand<String>.like(pattern: String): Expression = LikeOp(this, Value
 infix fun Operand<String>.like(other: Operand<String>): Expression = LikeOp(this, other)
 
 /** `column IS NULL` / `column IS NOT NULL`. */
-class IsNullOp(private val column: Expression, private val negated: Boolean) : Expression {
+internal class IsNullOp(private val column: Expression, private val negated: Boolean) : Expression {
     override fun toSql(builder: ParamBuilder): String =
         "${column.toSql(builder)} IS ${if (negated) "NOT " else ""}NULL"
 }
@@ -264,7 +272,7 @@ interface NumericExpr<Z> : Operand<Z>
  * built it (`(a + b) * c`, not `a + b * c`). As a [Selectable] it can be read from a `select(...)`
  * projection; the result is read through [columnType] and is null when any operand is.
  */
-class ArithmeticOp<Z>(
+internal class ArithmeticOp<Z>(
     private val left: Expression,
     private val right: Expression,
     private val opSign: String,
@@ -339,7 +347,7 @@ interface StringExpr : Operand<String> {
  * so they compose with the string predicates and chain. The result key is structural (the
  * function over its arguments' keys), so a projected function reads back with a fresh instance.
  */
-class StringFunction(private val fn: String, private val args: List<Expression>) : StringExpr {
+internal class StringFunction(private val fn: String, private val args: List<Expression>) : StringExpr {
     override fun toSql(builder: ParamBuilder): String = "$fn(${args.joinToString(", ") { it.toSql(builder) }})"
     override fun resultKey(): Any =
         "$fn(${args.joinToString(", ") { structuralKey(it).toString() }})"
@@ -364,7 +372,7 @@ fun StringExpr.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
  * arithmetic, and reads from a `select(...)` projection). Renders the dialect's character-length
  * function — `LENGTH` on PostgreSQL/SQLite, `CHAR_LENGTH` on MySQL (whose `LENGTH` counts bytes).
  */
-class LengthOp(private val arg: Expression) : NumericExpr<Int> {
+internal class LengthOp(private val arg: Expression) : NumericExpr<Int> {
     override val columnType: ColumnType<Int> = IntColumnType
     override fun toSql(builder: ParamBuilder): String = builder.dialect.renderCharLength(arg.toSql(builder))
     override fun resultKey(): Any = "CHAR_LENGTH(${structuralKey(arg)})"
@@ -496,12 +504,12 @@ inline fun <reified Z> case(noinline block: CaseBuilder<Z>.() -> Unit): CaseOp<Z
 }
 
 /** Groups an expression in parentheses so it composes safely with surrounding `AND`/`OR`. */
-class ParenExpression(private val expr: Expression) : Expression {
+internal class ParenExpression(private val expr: Expression) : Expression {
     override fun toSql(builder: ParamBuilder): String = "(${expr.toSql(builder)})"
 }
 
 /** Negates an expression: `NOT (expr)`. */
-class NotOp(private val expr: Expression) : Expression {
+internal class NotOp(private val expr: Expression) : Expression {
     override fun toSql(builder: ParamBuilder): String = "NOT (${expr.toSql(builder)})"
 }
 
