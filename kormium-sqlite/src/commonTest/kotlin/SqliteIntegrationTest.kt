@@ -18,7 +18,12 @@ import io.github.kormium.gtEq
 import io.github.kormium.inList
 import io.github.kormium.innerJoin
 import io.github.kormium.leftJoin
+import io.github.kormium.lower
+import io.github.kormium.ltrim
 import io.github.kormium.not
+import io.github.kormium.rtrim
+import io.github.kormium.trim
+import io.github.kormium.upper
 import io.github.kormium.query
 import io.github.kormium.sum
 import io.github.kormium.transaction
@@ -494,6 +499,51 @@ class SqliteIntegrationTest {
             Authors.deleteWhere(Query(Authors.id eq authorId))
         }
     }
+
+    /**
+     * String scalar functions: `lower`/`upper`/`trim`/`ltrim`/`rtrim` compose and chain, match a
+     * literal or another column (case-insensitively when both sides are lowered), order with the
+     * comparison operators, and read back from a projection with a fresh instance.
+     */
+    @Test
+    fun testStringScalarFunctions() {
+        val l1 = Uuid.random(); val l2 = Uuid.random(); val l3 = Uuid.random(); val l4 = Uuid.random()
+        db.transaction {
+            Labels.execSql(labelsDdl)
+            Labels.insertAll(listOf(
+                Label().apply { id = l1; a = "Ada"; b = "ada" },
+                Label().apply { id = l2; a = "BOB"; b = "bob" },
+                Label().apply { id = l3; a = "  cara  "; b = "cara" },
+                Label().apply { id = l4; a = "Zoe"; b = "different" },
+            ))
+        }
+
+        // Column-to-column, both lowered: Ada/ada and BOB/bob match; "  cara  " != "cara".
+        val ci = db.autocommit { Labels.find { where { Labels.a.lower() eq Labels.b.lower() } } }
+        assertEquals(listOf(l1, l2).sorted(), ci.map { it.id }.sorted())
+
+        // trim() makes "  cara  " line up with "cara".
+        val trimmed = db.autocommit { Labels.find { where { Labels.a.trim().lower() eq Labels.b.lower() } } }
+        assertEquals(listOf(l1, l2, l3).sorted(), trimmed.map { it.id }.sorted())
+
+        // lower()/upper() vs a literal.
+        assertEquals(l1, db.autocommit { Labels.find { where { Labels.a.lower() eq "ada" } } }.single().id)
+        assertEquals(l2, db.autocommit { Labels.find { where { Labels.a.upper() eq "BOB" } } }.single().id)
+
+        // ltrim()+rtrim() chained strip both ends.
+        assertEquals(l3, db.autocommit { Labels.find { where { Labels.a.ltrim().rtrim().lower() eq "cara" } } }.single().id)
+
+        // Lexicographic comparison: only "ZOE" >= "M".
+        assertEquals(l4, db.autocommit { Labels.find { where { Labels.a.upper() gtEq "M" } } }.single().id)
+
+        // Read a function projection back — with a freshly built instance (structural result key).
+        val lowered = db.autocommit {
+            Labels.query().where(Labels.id eq l1).select(Labels.a.lower()).single()[Labels.a.lower()]
+        }
+        assertEquals("ada", lowered)
+
+        db.transaction { Labels.deleteWhere(Query(Labels.id inList listOf(l1, l2, l3, l4))) }
+    }
 }
 
 object SqCatalog : Catalog
@@ -558,6 +608,20 @@ object Reviews : Table<SqCatalog, Review>("reviews", ::Review) {
     init { id; bookId; stars }
 }
 
+class Label : Entity() {
+    var id by Labels.id
+    var a by Labels.a
+    var b by Labels.b
+}
+
+object Labels : Table<SqCatalog, Label>("labels", ::Label) {
+    val id by Column.UUID().primaryKey()
+    val a by Column.Text()
+    val b by Column.Text()
+
+    init { id; a; b }
+}
+
 class AllTypesEntity : Entity() {
     var id by AllTypes.id
     var anInt by AllTypes.anInt
@@ -603,4 +667,5 @@ internal val productsDdl = """CREATE TABLE IF NOT EXISTS "products" ("id" TEXT N
 internal val authorsDdl = """CREATE TABLE IF NOT EXISTS "authors" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, PRIMARY KEY ("id"))"""
 internal val booksDdl = """CREATE TABLE IF NOT EXISTS "books" ("id" TEXT NOT NULL, "authorId" TEXT NOT NULL, "title" TEXT NOT NULL, PRIMARY KEY ("id"))"""
 internal val reviewsDdl = """CREATE TABLE IF NOT EXISTS "reviews" ("id" TEXT NOT NULL, "bookId" TEXT NOT NULL, "stars" INTEGER NOT NULL, PRIMARY KEY ("id"))"""
+internal val labelsDdl = """CREATE TABLE IF NOT EXISTS "labels" ("id" TEXT NOT NULL, "a" TEXT NOT NULL, "b" TEXT NOT NULL, PRIMARY KEY ("id"))"""
 internal val allTypesDdl = """CREATE TABLE IF NOT EXISTS "all_types" ("id" TEXT NOT NULL, "anInt" INTEGER NOT NULL, "aDouble" REAL NOT NULL, "aBool" INTEGER NOT NULL, "aText" TEXT NOT NULL, "aDecimal" TEXT NOT NULL, "anInstant" TEXT NOT NULL, "aJson" TEXT NOT NULL, "aLong" INTEGER NOT NULL, "aFloat" REAL NOT NULL, "aShort" INTEGER NOT NULL, "aDate" TEXT NOT NULL, "aTime" TEXT NOT NULL, "aDateTime" TEXT NOT NULL, PRIMARY KEY ("id"))"""

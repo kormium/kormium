@@ -53,6 +53,35 @@ Users.find {
 An empty `inList` renders to `FALSE`, so it matches no rows instead of generating invalid
 SQL.
 
+## String Functions
+
+A `String` column exposes the scalar functions `lower()`, `upper()`, `trim()`, `ltrim()` and
+`rtrim()`. Each returns a `StringExpr` that chains and composes with the string predicates, and
+can also be read back from a `select(...)` projection:
+
+```kotlin
+Users.find { where { Users.name.lower() eq "ada" } }              // LOWER("name") = 'ada'
+Users.find { where { Users.name.trim().lower() eq "ada" } }       // chained
+Users.find { where { Users.name.lower() eq Users.handle.lower() } } // column-to-column
+Users.find { where { Users.sku.upper() gtEq "M000" } }            // lexicographic range
+
+val lowered: List<String> = db.autocommit {
+    val name = Users.name.lower()
+    Users.query().select(name).map { it[name] }
+}
+```
+
+> **Collation note.** A plain string comparison (`eq`, `like`, `<`, …) follows the **engine's
+> collation**, so its case- and accent-sensitivity differ across PostgreSQL, MySQL and SQLite —
+> the same `Users.name eq "Ada"` can match `"ada"` on one engine and not another. Kormium does
+> not inject a collation for you (that would be hidden, and would change which index the query
+> can use). For deterministic, case-insensitive matching, lower **both sides** explicitly:
+> `Users.name.lower() eq "ada"`. `lower()` settles the case dimension; locale ordering and
+> accents still follow the collation.
+
+`LOWER(col)` cannot use a plain index on `col` — add a functional index on `LOWER(col)` if you
+match on it often.
+
 ## Ordering, Limit and Offset
 
 ```kotlin
@@ -285,9 +314,11 @@ Not modeled by the typed DSL today:
   are available, and a table cannot be aliased to join it to itself.
 - **`DISTINCT ON`.** Only plain `DISTINCT` is supported.
 - **`EXISTS` / `NOT EXISTS`.**
-- **Pattern-match variants.** `like` only; no `ILIKE`, `SIMILAR TO`, or regex operators.
+- **Pattern-match variants.** `like` only; no `ILIKE` operator (lower both sides for a
+  case-insensitive match — see [String Functions](#string-functions)), `SIMILAR TO`, or regex.
 - **Computed expressions.** No arithmetic (`+`, `-`, `*`, `/`), string concatenation, `CASE`,
-  `COALESCE`, casts, or scalar functions in `SELECT`/`WHERE`/`HAVING`.
+  `COALESCE`, casts, or scalar functions other than the string functions `lower` / `upper` /
+  `trim` / `ltrim` / `rtrim` (see [String Functions](#string-functions)) in `SELECT`/`WHERE`/`HAVING`.
 - **Expression / aggregate ordering and null placement.** `ORDER BY` takes plain columns with
   `ASC` / `DESC` only — no ordering by an aggregate or expression, and no `NULLS FIRST` /
   `NULLS LAST`.
