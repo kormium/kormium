@@ -360,7 +360,7 @@ val total = Orders.total.sum()
 val result = db.autocommit {
     (Users innerJoin Orders on (Users.id eq Orders.userId))
         .groupBy(Users.id)
-        .having(total gt Value(BigDecimal.fromInt(100)))
+        .having(total gt BigDecimal.fromInt(100))
         .select(Users.name, orders, total)
 }
 

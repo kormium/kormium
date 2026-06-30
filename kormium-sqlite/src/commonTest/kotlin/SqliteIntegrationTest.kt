@@ -126,6 +126,52 @@ class SqliteIntegrationTest {
         db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
 
+    /**
+     * Gaps the `Operand<Z>` unification closed: the comparison/membership operators now live once on
+     * every typed operand, so CASE composes with `inList`, COALESCE with `between`, and an aggregate
+     * compares to a typed literal directly (no `Value(...)` wrapper).
+     */
+    @Test
+    fun testOperandAlgebraClosesGaps() {
+        val tag = "operand-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 100; displayName = tag; note = null; rank = 5 })
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 5; displayName = tag; note = null; rank = null })
+        }
+
+        // CASE inList — CASE was eq/neq-only before; now any operand supports inList.
+        val big = db.autocommit {
+            Products.find {
+                where {
+                    (Products.displayName eq tag) and (case<String> {
+                        whenever(Products.qty gtEq 100) then "big"
+                        otherwise("small")
+                    } inList listOf("big"))
+                }
+            }
+        }
+        assertEquals(listOf(100), big.map { it.qty })
+
+        // COALESCE between — the null-rank row coalesces to 0 and falls in 0..0.
+        val zeroRank = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.rank.coalesce(0) between 0..0) } }
+        }
+        assertEquals(listOf(5), zeroRank.map { it.qty })
+
+        // Aggregate compared to a typed literal directly — no Value(...) wrapper.
+        val grouped = db.autocommit {
+            Products.query()
+                .where(Products.displayName eq tag)
+                .groupBy(Products.displayName)
+                .having(Products.qty.sum() gt 100L)   // SUM(qty) = 105
+                .select(Products.displayName)
+        }
+        assertEquals(1, grouped.size)
+
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
     @Test
     fun testUpsertInsertOrIgnoreAndBatchOrder() {
         db.transaction { Products.execSql(productsDdl) }

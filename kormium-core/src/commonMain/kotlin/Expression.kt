@@ -147,37 +147,43 @@ abstract class ComparisonOp(
 class EqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "=")
 
 infix fun <T : Expression, T2 : Expression> T.eq(other: T2): Expression = EqOp(this, other)
-infix fun <Z> Column<Z, *, *>.eq(value: Z): Expression = EqOp(this, Value(bindParam(value)))
 
 /** Checks that the operands are not equal. */
 class NeqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<>")
 
 infix fun <T : Expression, T2 : Expression> T.neq(other: T2): Expression = NeqOp(this, other)
-infix fun <Z> Column<Z, *, *>.neq(value: Z): Expression = NeqOp(this, Value(bindParam(value)))
 
 /** Checks that the left operand is less than the right. */
 class LessOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<")
 
 infix fun <T : Expression, T2 : Expression> T.less(other: T2): Expression = LessOp(this, other)
-infix fun <Z> Column<Z, *, *>.less(value: Z): Expression = LessOp(this, Value(bindParam(value)))
 
 /** Checks that the left operand is less than or equal to the right. */
 class LessEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<=")
 
 infix fun <T : Expression, T2 : Expression> T.lessEq(other: T2): Expression = LessEqOp(this, other)
-infix fun <Z> Column<Z, *, *>.lessEq(value: Z): Expression = LessEqOp(this, Value(bindParam(value)))
 
 /** Checks that the left operand is greater than the right. */
 class GreaterOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, ">")
 
 infix fun <T : Expression, T2 : Expression> T.gt(other: T2): Expression = GreaterOp(this, other)
-infix fun <Z> Column<Z, *, *>.gt(value: Z): Expression = GreaterOp(this, Value(bindParam(value)))
 
 /** Checks that the left operand is greater than or equal to the right. */
 class GreaterEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, ">=")
 
 infix fun <T : Expression, T2 : Expression> T.gtEq(other: T2): Expression = GreaterEqOp(this, other)
-infix fun <Z> Column<Z, *, *>.gtEq(value: Z): Expression = GreaterEqOp(this, Value(bindParam(value)))
+
+// The typed-value forms of the comparison and membership operators are defined ONCE over [Operand]
+// (a [Selectable] that carries its [ColumnType] — a Column, aggregate, arithmetic, COALESCE, CASE or
+// string function), so every operand compares to a same-typed literal the same way, the literal binds
+// through the operand's column type, and a new operand type composes for free. Operand-to-operand and
+// column-to-column comparisons go through the generic `Expression` operators above.
+infix fun <Z> Operand<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
+infix fun <Z> Operand<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
+infix fun <Z> Operand<Z>.less(value: Z): Expression = LessOp(this, columnType.lit(value))
+infix fun <Z> Operand<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
+infix fun <Z> Operand<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
+infix fun <Z> Operand<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
 
 /** `column IN (v1, v2, ...)`. An empty list renders to `FALSE` (matches nothing). */
 class InListOp(private val column: Expression, private val values: List<*>) : Expression {
@@ -186,7 +192,7 @@ class InListOp(private val column: Expression, private val values: List<*>) : Ex
         else "${column.toSql(builder)} IN (${values.joinToString(", ") { builder.bind(it) }})"
 }
 
-infix fun <Z> Column<Z, *, *>.inList(values: List<Z>): Expression = InListOp(this, values.map { bindParam(it) })
+infix fun <Z> Operand<Z>.inList(values: List<Z>): Expression = InListOp(this, values.map { columnType.lit(it).value })
 
 /** The SQL `FALSE` literal — what a predicate over an empty set (`inList`, `between`) renders to. */
 internal object FalseExpression : Expression {
@@ -199,23 +205,22 @@ class BetweenOp(private val expr: Expression, private val low: Expression, priva
         "${expr.toSql(builder)} BETWEEN ${low.toSql(builder)} AND ${high.toSql(builder)}"
 }
 
-// `column between lo..hi` — inclusive both ends (SQL BETWEEN == Kotlin `..`). The Comparable bound
-// admits exactly the orderable column types (numbers, dates, text) and rejects Json/Bytes/Uuid at
-// compile time, where BETWEEN is meaningless. A reversed/empty range (lo > hi) renders to FALSE,
-// like an empty `inList`. Bounds bind through the column's converter, as in `eq` / `gtEq`.
-infix fun <Z : Comparable<Z>> Column<Z, *, *>.between(range: ClosedRange<Z>): Expression =
-    if (range.isEmpty()) FalseExpression
-    else BetweenOp(this, Value(bindParam(range.start)), Value(bindParam(range.endInclusive)))
-
-/** `(a + b) between lo..hi` — `between` over an arithmetic operand. */
-infix fun <Z : Comparable<Z>> NumericExpr<Z>.between(range: ClosedRange<Z>): Expression =
+// `operand between lo..hi` — inclusive both ends (SQL BETWEEN == Kotlin `..`). The Comparable bound
+// admits exactly the orderable types (numbers, dates, text) and rejects Json/Bytes/Uuid at compile
+// time, where BETWEEN is meaningless. A reversed/empty range (lo > hi) renders to FALSE, like an
+// empty `inList`. Bounds bind through the operand's column type, as in `eq` / `gtEq`.
+infix fun <Z : Comparable<Z>> Operand<Z>.between(range: ClosedRange<Z>): Expression =
     if (range.isEmpty()) FalseExpression
     else BetweenOp(this, columnType.lit(range.start), columnType.lit(range.endInclusive))
 
-/** `column LIKE pattern` (text columns only). */
+/** `column LIKE pattern` (text operands only). */
 class LikeOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "LIKE")
 
-infix fun Column<String, *, *>.like(pattern: String): Expression = LikeOp(this, Value(pattern))
+// `like` has no generic Expression form, so both the literal-pattern and operand-to-operand forms
+// live here. A bare string comparison follows the engine collation (see docs) — wrap both sides in
+// `lower()` for deterministic case folding.
+infix fun Operand<String>.like(pattern: String): Expression = LikeOp(this, Value(pattern))
+infix fun Operand<String>.like(other: Operand<String>): Expression = LikeOp(this, other)
 
 /** `column IS NULL` / `column IS NOT NULL`. */
 class IsNullOp(private val column: Expression, private val negated: Boolean) : Expression {
@@ -236,14 +241,22 @@ infix fun Column.NullableColumn<*, *, *>.eq(value: Nothing?): Expression = IsNul
 infix fun Column.NullableColumn<*, *, *>.neq(value: Nothing?): Expression = IsNullOp(this, true)
 
 /**
- * A typed numeric operand: a [Column] participates via the operators below, and every arithmetic
- * result is itself a [NumericExpr] of the same type [Z], so expressions chain and nest while
- * staying type-checked (`(base + bonus) * 2`). Carrying [columnType] lets a literal on either side
- * bind through the originating column's converter rather than a guessed mapping.
+ * A typed SQL operand: a [Selectable] that knows the [ColumnType] of the value it yields. Every
+ * comparable expression is one — a [Column], an aggregate, arithmetic, COALESCE, CASE, a string
+ * function — so the comparison / membership operators (`eq`, `gt`, `inList`, `between`, `like`) are
+ * defined once over `Operand<Z>` instead of per type, and reading a row defaults to the column type.
+ * Carrying [columnType] also lets a compared literal bind through the originating column's converter.
  */
-interface NumericExpr<Z> : Selectable<Z> {
+interface Operand<Z> : Selectable<Z> {
     val columnType: ColumnType<Z>
+    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
 }
+
+/**
+ * A typed numeric operand: every arithmetic result is itself a [NumericExpr] of the same type [Z],
+ * so expressions chain and nest while staying type-checked (`(base + bonus) * 2`).
+ */
+interface NumericExpr<Z> : Operand<Z>
 
 /**
  * Arithmetic node: renders `left op right`, binding any literal as a parameter. A nested
@@ -258,8 +271,6 @@ class ArithmeticOp<Z>(
     override val columnType: ColumnType<Z>,
 ) : NumericExpr<Z> {
     override fun toSql(builder: ParamBuilder): String = "${render(left, builder)} $opSign ${render(right, builder)}"
-
-    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
 
     override fun resultKey(): Any = "(${structuralKey(left)} $opSign ${structuralKey(right)})"
 
@@ -311,15 +322,6 @@ operator fun <Z> NumericExpr<Z>.rem(value: Z): NumericExpr<Z> = ArithmeticOp(thi
 operator fun <Z> NumericExpr<Z>.rem(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
 operator fun <Z> NumericExpr<Z>.rem(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
 
-// Compare a nested arithmetic expression to a same-typed literal: `(likes - dislikes) gtEq 100`.
-// (NumericExpr-vs-Column/Expression already works through the generic comparison operators.)
-infix fun <Z> NumericExpr<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
-infix fun <Z> NumericExpr<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
-infix fun <Z> NumericExpr<Z>.less(value: Z): Expression = LessOp(this, columnType.lit(value))
-infix fun <Z> NumericExpr<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
-infix fun <Z> NumericExpr<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
-infix fun <Z> NumericExpr<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
-
 /**
  * A typed string-valued SQL expression. A string [Column] yields one via the scalar functions
  * below (`lower()`, `upper()`, `trim()`, `ltrim()`, `rtrim()`), and each returns another
@@ -328,7 +330,9 @@ infix fun <Z> NumericExpr<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, colu
  * `less` / `lessEq` against a `String` literal, or — through the generic expression operators —
  * against another [StringExpr] (`a.lower() eq b.lower()`).
  */
-interface StringExpr : Selectable<String>
+interface StringExpr : Operand<String> {
+    override val columnType: ColumnType<String> get() = TextColumnType
+}
 
 /**
  * A scalar SQL function rendered as `FN(arg, ...)`. The string-returning ones are [StringExpr],
@@ -337,7 +341,6 @@ interface StringExpr : Selectable<String>
  */
 class StringFunction(private val fn: String, private val args: List<Expression>) : StringExpr {
     override fun toSql(builder: ParamBuilder): String = "$fn(${args.joinToString(", ") { it.toSql(builder) }})"
-    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): String? = rs.getString(index)
     override fun resultKey(): Any =
         "$fn(${args.joinToString(", ") { structuralKey(it).toString() }})"
 }
@@ -364,25 +367,11 @@ fun StringExpr.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
 class LengthOp(private val arg: Expression) : NumericExpr<Int> {
     override val columnType: ColumnType<Int> = IntColumnType
     override fun toSql(builder: ParamBuilder): String = builder.dialect.renderCharLength(arg.toSql(builder))
-    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Int? = columnType.read(rs, index)
     override fun resultKey(): Any = "CHAR_LENGTH(${structuralKey(arg)})"
 }
 
 fun Column<String, *, *>.length(): NumericExpr<Int> = LengthOp(this)
 fun StringExpr.length(): NumericExpr<Int> = LengthOp(this)
-
-// Comparing a StringExpr to a String literal. (StringExpr-to-StringExpr comparison already works
-// through the generic `Expression` operators above.) `like` has no generic form, so both its
-// literal and StringExpr forms are provided here. Note: a bare string comparison follows the
-// engine's collation (see docs) — wrap both sides in `lower()` for deterministic case folding.
-infix fun StringExpr.like(pattern: String): Expression = LikeOp(this, Value(pattern))
-infix fun StringExpr.like(other: StringExpr): Expression = LikeOp(this, other)
-infix fun StringExpr.eq(value: String): Expression = EqOp(this, Value(value))
-infix fun StringExpr.neq(value: String): Expression = NeqOp(this, Value(value))
-infix fun StringExpr.less(value: String): Expression = LessOp(this, Value(value))
-infix fun StringExpr.lessEq(value: String): Expression = LessEqOp(this, Value(value))
-infix fun StringExpr.gt(value: String): Expression = GreaterOp(this, Value(value))
-infix fun StringExpr.gtEq(value: String): Expression = GreaterEqOp(this, Value(value))
 
 /**
  * `COALESCE(a, b, ...)` — the first non-null argument. It is a [Selectable] (readable from a
@@ -394,10 +383,9 @@ infix fun StringExpr.gtEq(value: String): Expression = GreaterEqOp(this, Value(v
  */
 class CoalesceOp<Z> internal constructor(
     internal val args: List<Expression>,
-    internal val columnType: ColumnType<Z>,
-) : Selectable<Z> {
+    override val columnType: ColumnType<Z>,
+) : Operand<Z> {
     override fun toSql(builder: ParamBuilder): String = "COALESCE(${args.joinToString(", ") { it.toSql(builder) }})"
-    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
     override fun resultKey(): Any = "COALESCE(${args.joinToString(", ") { structuralKey(it).toString() }})"
 }
 
@@ -416,15 +404,6 @@ fun <Z> CoalesceOp<Z>.coalesce(vararg others: Column<Z, *, *>): CoalesceOp<Z> =
 fun <Z> CoalesceOp<Z>.coalesce(default: Z): CoalesceOp<Z> =
     CoalesceOp(args + columnType.lit(default), columnType)
 
-// Comparing a COALESCE to a typed literal binds it through the source column's converter.
-// (COALESCE-to-expression comparison already works through the generic operators above.)
-infix fun <Z> CoalesceOp<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
-infix fun <Z> CoalesceOp<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
-infix fun <Z> CoalesceOp<Z>.less(value: Z): Expression = LessOp(this, columnType.lit(value))
-infix fun <Z> CoalesceOp<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
-infix fun <Z> CoalesceOp<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
-infix fun <Z> CoalesceOp<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
-
 /**
  * A searched `CASE WHEN cond THEN value ... ELSE default END`. It is a [Selectable] (readable from
  * a `select(...)` projection) carrying the [columnType] that reads the result back and binds each
@@ -435,15 +414,13 @@ infix fun <Z> CoalesceOp<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, colum
 class CaseOp<Z> internal constructor(
     private val branches: List<Pair<Expression, Expression>>,
     private val elseValue: Expression?,
-    internal val columnType: ColumnType<Z>,
-) : Selectable<Z> {
+    override val columnType: ColumnType<Z>,
+) : Operand<Z> {
     override fun toSql(builder: ParamBuilder): String {
         val whens = branches.joinToString(" ") { (cond, value) -> "WHEN ${cond.toSql(builder)} THEN ${value.toSql(builder)}" }
         val elseSql = elseValue?.let { " ELSE ${it.toSql(builder)}" }.orEmpty()
         return "CASE $whens$elseSql END"
     }
-
-    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
 
     // Key off the CASE rendered with its branch literals inlined (key-mode builder): that captures
     // the conditions and values — including literals that normally render as placeholders — so two
@@ -517,13 +494,6 @@ inline fun <reified Z> case(noinline block: CaseBuilder<Z>.() -> Unit): CaseOp<Z
     } as ColumnType<Z>
     return case(columnType, block)
 }
-
-infix fun <Z> CaseOp<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
-infix fun <Z> CaseOp<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
-infix fun <Z> CaseOp<Z>.less(value: Z): Expression = LessOp(this, columnType.lit(value))
-infix fun <Z> CaseOp<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
-infix fun <Z> CaseOp<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
-infix fun <Z> CaseOp<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
 
 /** Groups an expression in parentheses so it composes safely with surrounding `AND`/`OR`. */
 class ParenExpression(private val expr: Expression) : Expression {

@@ -204,7 +204,7 @@ val total  = Orders.total.sum()
 db.autocommit {
     (Users innerJoin Orders on (Users.id eq Orders.userId))
         .groupBy(Users.id)
-        .having(total gt Value(BigDecimal.fromInt(100)))
+        .having(total gt BigDecimal.fromInt(100))   // aggregate vs a typed literal, no Value(...) wrapper
         .select(Users.name, orders, total)
 }.forEach { row ->
     println("${row[Users.name]}: ${row[orders]} orders, ${row[total]}")

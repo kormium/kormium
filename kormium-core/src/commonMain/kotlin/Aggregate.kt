@@ -1,24 +1,23 @@
 package io.github.kormium
 
-import io.github.kormium.resultset.ResultSet
 import kotlin.jvm.JvmName
 
-// Aggregates are Selectable (appear in SELECT and are read from a ResultRow) and, since
-// Selectable is an Expression, can also appear in `having(...)` (e.g. `total gt Value(100)`).
+// Aggregates are Operand (appear in SELECT, are read from a ResultRow, and compare to a typed literal
+// like any operand — `total gt 100`), and since Operand is an Expression they also work in `having(...)`.
 
 /** `COUNT(*)` — the number of rows in the group. */
-fun count(): Selectable<Long> = object : Selectable<Long> {
+fun count(): Operand<Long> = object : Operand<Long> {
+    override val columnType = LongColumnType
     override fun toSql(builder: ParamBuilder) = "COUNT(*)"
-    override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Long? = rs.getLong(index)
     override fun resultKey() = "COUNT(*)"
 }
 
 /** `COUNT(column)` — the non-null values of the column in the group. */
-fun Column<*, *, *>.count(): Selectable<Long> {
+fun Column<*, *, *>.count(): Operand<Long> {
     val column = this
-    return object : Selectable<Long> {
+    return object : Operand<Long> {
+        override val columnType = LongColumnType
         override fun toSql(builder: ParamBuilder) = "COUNT(${column.toSql(builder)})"
-        override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Long? = rs.getLong(index)
         override fun resultKey() = "COUNT(${column.resultKey()})"
     }
 }
@@ -26,47 +25,47 @@ fun Column<*, *, *>.count(): Selectable<Long> {
 // MIN/MAX keep the column's type (read through its type mapping) — MIN/MAX of an integer is
 // still that integer. SUM is different: SUM over an integer column returns a wider type
 // server-side (Postgres: bigint), so reading it back through the Int mapping would overflow
-// (toInt() throws). The integer-family sum() overloads below therefore return Selectable<Long>
+// (toInt() throws). The integer-family sum() overloads below therefore return Operand<Long>
 // and read the aggregate as a Long; SUM of a BigDecimal/Double column keeps the column type
 // via the generic sum().
-fun <Z> Column<Z, *, *>.min(): Selectable<Z> = ColumnAggregate("MIN", this)
-fun <Z> Column<Z, *, *>.max(): Selectable<Z> = ColumnAggregate("MAX", this)
+fun <Z> Column<Z, *, *>.min(): Operand<Z> = ColumnAggregate("MIN", this)
+fun <Z> Column<Z, *, *>.max(): Operand<Z> = ColumnAggregate("MAX", this)
 
 /** `SUM(column)` for a non-integer column (e.g. BigDecimal/Double), read through its type. */
-fun <Z> Column<Z, *, *>.sum(): Selectable<Z> = ColumnAggregate("SUM", this)
+fun <Z> Column<Z, *, *>.sum(): Operand<Z> = ColumnAggregate("SUM", this)
 
 // More-specific sum() overloads for integer columns: they win overload resolution over the
-// generic sum() above and return Selectable<Long>, reading the (bigint) aggregate as a Long so
+// generic sum() above and return Operand<Long>, reading the (bigint) aggregate as a Long so
 // sums beyond Int.MAX_VALUE don't overflow. @JvmName disambiguates the otherwise-identical JVM
 // signatures (generic erasure collides with these).
 @JvmName("sumInt")
-fun Column<kotlin.Int, *, *>.sum(): Selectable<Long> = LongAggregate(this)
+fun Column<kotlin.Int, *, *>.sum(): Operand<Long> = LongAggregate(this)
 
 @JvmName("sumShort")
-fun Column<kotlin.Short, *, *>.sum(): Selectable<Long> = LongAggregate(this)
+fun Column<kotlin.Short, *, *>.sum(): Operand<Long> = LongAggregate(this)
 
 @JvmName("sumLong")
-fun Column<kotlin.Long, *, *>.sum(): Selectable<Long> = LongAggregate(this)
+fun Column<kotlin.Long, *, *>.sum(): Operand<Long> = LongAggregate(this)
 
-private class ColumnAggregate<Z>(private val fn: String, private val column: Column<Z, *, *>) : Selectable<Z> {
+private class ColumnAggregate<Z>(private val fn: String, private val column: Column<Z, *, *>) : Operand<Z> {
+    override val columnType: ColumnType<Z> = column.columnType
     override fun toSql(builder: ParamBuilder) = "$fn(${column.toSql(builder)})"
-    override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Z? = column.read(rs, index, typeMapper)
     override fun resultKey() = "$fn(${column.resultKey()})"
 }
 
 // SUM(column) read as a Long (the server-side bigint width), regardless of the column's own type.
-private class LongAggregate(private val column: Column<*, *, *>) : Selectable<Long> {
+private class LongAggregate(private val column: Column<*, *, *>) : Operand<Long> {
+    override val columnType = LongColumnType
     override fun toSql(builder: ParamBuilder) = "SUM(${column.toSql(builder)})"
-    override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Long? = rs.getLong(index)
     override fun resultKey() = "SUM(${column.resultKey()})"
 }
 
 /** `AVG(column)` as a Double. */
-fun Column<*, *, *>.avg(): Selectable<Double> {
+fun Column<*, *, *>.avg(): Operand<Double> {
     val column = this
-    return object : Selectable<Double> {
+    return object : Operand<Double> {
+        override val columnType = DoubleColumnType
         override fun toSql(builder: ParamBuilder) = "AVG(${column.toSql(builder)})"
-        override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Double? = rs.getDouble(index)
         override fun resultKey() = "AVG(${column.resultKey()})"
     }
 }
