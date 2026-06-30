@@ -71,7 +71,7 @@ class R2dbcCancellationTest {
                 }
             }
             // Rolled back, and the single pooled connection is back (else this query would block).
-            val found = withTimeout(5_000) { database.suspendAutocommit { Widgets.findById(id) } }
+            val found = withTimeout(5_000) { database.suspendAutocommit { Widgets.findOne { where { Widgets.id eq id } } } }
             assertNull(found)
         }
     }
@@ -90,7 +90,7 @@ class R2dbcCancellationTest {
                 }
             }
             // Connection released: a normal query completes.
-            withTimeout(5_000) { database.suspendAutocommit { Widgets.findById(Uuid.random()) } }
+            withTimeout(5_000) { database.suspendAutocommit { Widgets.findOne { where { Widgets.id eq Uuid.random() } } } }
         }
     }
 }

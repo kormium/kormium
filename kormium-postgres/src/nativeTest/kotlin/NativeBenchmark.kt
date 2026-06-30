@@ -62,7 +62,7 @@ private fun newRow(rowName: String) =
 
 private fun runOp(db: Database<BenchCatalog>, op: Op) {
     when (op) {
-        Op.FIND_BY_ID -> db.autocommit { BenchTable.findById(benchSeedId) }
+        Op.FIND_BY_ID -> db.autocommit { BenchTable.findOne { where { BenchTable.id eq benchSeedId } } }
         Op.SELECT_WHERE -> db.autocommit { BenchTable.find(Query(BenchTable.name eq "seed")) }
         Op.SELECT_MANY -> db.autocommit { BenchTable.find(Query(BenchTable.name eq "bulk")) }
         Op.INSERT -> db.transaction { BenchTable.insert(newRow("x")) }

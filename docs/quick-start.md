@@ -100,7 +100,7 @@ db.transaction {
 }
 
 val ada: User? = db.autocommit {
-    Users.findById(user.id)
+    Users.findOne { where { Users.id eq user.id } }
 }
 
 val adults: List<User> = db.autocommit {

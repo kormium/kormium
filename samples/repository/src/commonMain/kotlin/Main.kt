@@ -49,12 +49,12 @@ internal val ordersDdl =
 
 // ---- repositories (extend the copied Repository base, add domain queries) ----
 
-class UserRepository(db: SuspendDatabase<Shop>) : Repository<Shop, User>(db, Users) {
+class UserRepository(db: SuspendDatabase<Shop>) : Repository<Shop, User, Int>(db, Users, Users.id) {
     suspend fun adults(): List<User> = read { Users.find { where { Users.age gtEq 18 } } }
     fun observeAdults(): Flow<List<User>> = Users.observe(db) { where { Users.age gtEq 18 } }
 }
 
-class OrderRepository(db: SuspendDatabase<Shop>) : Repository<Shop, Order>(db, Orders)
+class OrderRepository(db: SuspendDatabase<Shop>) : Repository<Shop, Order, Int>(db, Orders, Orders.id)
 
 // ---- a service that needs a cross-repository transaction ----
 

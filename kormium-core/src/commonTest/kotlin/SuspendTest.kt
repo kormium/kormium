@@ -1,3 +1,4 @@
+import io.github.kormium.eq
 import io.github.kormium.suspendAutocommit
 import io.github.kormium.suspendTransaction
 import kotlinx.coroutines.test.runTest
@@ -11,7 +12,7 @@ class SuspendTest {
     @Test
     fun suspendTransactionRunsTheBlock() = runTest {
         TableTest.suspendDb.suspendTransaction {
-            TestTable.findById(Uuid.random())
+            TestTable.findOne { where { TestTable.id eq Uuid.random() } }
         }
         assertTrue(TableTest.databaseMockObj.internalSql.contains("SELECT"))
     }

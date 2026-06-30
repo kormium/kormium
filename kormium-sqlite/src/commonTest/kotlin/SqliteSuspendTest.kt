@@ -1,6 +1,7 @@
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.SuspendDatabase
+import io.github.kormium.eq
 import io.github.kormium.suspendAutocommit
 import io.github.kormium.suspendTransaction
 import kotlinx.coroutines.test.runTest
@@ -34,7 +35,7 @@ class SqliteSuspendTest {
             })
         }
 
-        val found = db.suspendAutocommit { Products.findById(id) }
+        val found = db.suspendAutocommit { Products.findOne { where { Products.id eq id } } }
         assertEquals(id, found?.id)
         assertEquals("async-widget", found?.displayName)
         assertEquals(3, found?.qty)
@@ -60,7 +61,7 @@ class SqliteSuspendTest {
         }
 
         // The insert must have been rolled back with the transaction.
-        val found = db.suspendAutocommit { Products.findById(id) }
+        val found = db.suspendAutocommit { Products.findOne { where { Products.id eq id } } }
         assertEquals(null, found)
     }
 }

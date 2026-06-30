@@ -37,7 +37,7 @@ class EdgeCaseTest {
 
     @Test
     fun findByIdMissingReturnsNull() {
-        assertNull(ItDatabase.autocommit { EdgeTable.findById(Uuid.random()) })
+        assertNull(ItDatabase.autocommit { EdgeTable.findOne { where { EdgeTable.id eq Uuid.random() } } })
     }
 
     @Test
@@ -52,7 +52,7 @@ class EdgeCaseTest {
         ItDatabase.transaction {
             EdgeTable.insert(EdgeRow().apply { this.id = id; n = null; t = null; big = null; num = 1 })
         }
-        val row = ItDatabase.autocommit { EdgeTable.findById(id) }!!
+        val row = ItDatabase.autocommit { EdgeTable.findOne { where { EdgeTable.id eq id } } }!!
         assertNull(row.n)
         assertNull(row.t)
         assertNull(row.big)
@@ -110,14 +110,14 @@ class EdgeCaseTest {
         val id = Uuid.random()
         val tricky = "a'b\"c\\d\neé\t--; DROP TABLE edge; --"
         ItDatabase.transaction { EdgeTable.insert(EdgeRow().apply { this.id = id; t = tricky; num = 1 }) }
-        assertEquals(tricky, ItDatabase.autocommit { EdgeTable.findById(id) }?.t)
+        assertEquals(tricky, ItDatabase.autocommit { EdgeTable.findOne { where { EdgeTable.id eq id } } }?.t)
     }
 
     @Test
     fun boundaryIntegerValuesRoundTrip() {
         val id = Uuid.random()
         ItDatabase.transaction { EdgeTable.insert(EdgeRow().apply { this.id = id; n = Int.MIN_VALUE; num = Int.MAX_VALUE }) }
-        val row = ItDatabase.autocommit { EdgeTable.findById(id) }!!
+        val row = ItDatabase.autocommit { EdgeTable.findOne { where { EdgeTable.id eq id } } }!!
         assertEquals(Int.MIN_VALUE, row.n)
         assertEquals(Int.MAX_VALUE, row.num)
     }
@@ -153,16 +153,16 @@ class EdgeCaseTest {
                 }
             }
         }
-        assertEquals(keep, ItDatabase.autocommit { EdgeTable.findById(keep) }?.id)
-        assertNull(ItDatabase.autocommit { EdgeTable.findById(mid) })
-        assertNull(ItDatabase.autocommit { EdgeTable.findById(inner) })
+        assertEquals(keep, ItDatabase.autocommit { EdgeTable.findOne { where { EdgeTable.id eq keep } } }?.id)
+        assertNull(ItDatabase.autocommit { EdgeTable.findOne { where { EdgeTable.id eq mid } } })
+        assertNull(ItDatabase.autocommit { EdgeTable.findOne { where { EdgeTable.id eq inner } } })
     }
 
     @Test
     fun reservedWordColumnNameRoundTrips() {
         val id = Uuid.random()
         ItDatabase.transaction { Reserved.insert(ReservedRow().apply { this.id = id; order = 7 }) }
-        assertEquals(7, ItDatabase.autocommit { Reserved.findById(id) }?.order)
+        assertEquals(7, ItDatabase.autocommit { Reserved.findOne { where { Reserved.id eq id } } }?.order)
     }
 }
 

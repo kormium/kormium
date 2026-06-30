@@ -7,6 +7,7 @@ import io.github.kormium.Table
 import io.github.kormium.autocommit
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.Database
+import io.github.kormium.eq
 import io.github.kormium.transaction
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -53,7 +54,7 @@ class ShardedAccounts(private val shards: List<Database<AccountsCatalog>>) {
         return shard
     }
 
-    fun get(id: Int): Account? = shards[shardOf(id)].autocommit { Accounts.findById(id) }
+    fun get(id: Int): Account? = shards[shardOf(id)].autocommit { Accounts.findOne { where { Accounts.id eq id } } }
 
     fun countPerShard(): List<Long> = shards.map { it.autocommit { Accounts.count() } }
 }

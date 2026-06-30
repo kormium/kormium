@@ -3,6 +3,7 @@ import io.github.kormium.BatchInsertMode
 import io.github.kormium.autocommit
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.Database
+import io.github.kormium.eq
 import io.github.kormium.transaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,7 +36,7 @@ class SqliteBuilderTest {
                     this.rank = null
                 })
             }
-            assertEquals("from-builder", db.autocommit { Products.findById(id) }?.displayName)
+            assertEquals("from-builder", db.autocommit { Products.findOne { where { Products.id eq id } } }?.displayName)
         }
     }
 }
