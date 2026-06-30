@@ -107,6 +107,40 @@ The default binds through the column's converter, so an enum/`Instant`/`BigDecim
 the same way a comparison literal does. When the fallback is non-null the result is non-null —
 read it with `row[...]`; for a `coalesce` of two nullable columns, use `getOrNull`.
 
+## Conditional Values (`CASE`)
+
+`case { }` builds a searched `CASE WHEN ... THEN ... ELSE ... END`: `whenever(condition) then value`
+adds a branch, `otherwise(value)` sets the fallback. It is a `Selectable`, so it reads back from a
+`select(...)` projection, and it composes with the predicates:
+
+```kotlin
+val tier = case {
+    whenever(Users.age gtEq 65) then "senior"
+    whenever(Users.age gtEq 18) then "adult"
+    otherwise("minor")
+}
+
+val labels = db.autocommit {
+    Users.query().select(tier).map { it[tier] }     // "senior" / "adult" / "minor"
+}
+
+Users.find { where { case { whenever(Users.age gtEq 18) then true; otherwise(false) } eq true } }
+```
+
+The result type is inferred from the branch values for the built-in types (String, the integer and
+floating types, Boolean, `BigDecimal`, `Instant`, the date/time types, `Uuid`). For an enum or other
+custom-mapped result, pass the `ColumnType` so the value can be read and bound:
+
+```kotlin
+val status = case(StatusColumnType) {
+    whenever(Users.active eq true) then Status.ACTIVE
+    otherwise(Status.INACTIVE)
+}
+```
+
+A `CASE`'s identity is the expression you built, so **hold it in a `val`** to read it back from a row
+(`val tier = case { }; row[tier]`). Only searched `CASE` is modeled (no `CASE expr WHEN value`).
+
 ## Ordering, Limit and Offset
 
 ```kotlin
@@ -341,7 +375,7 @@ Not modeled by the typed DSL today:
 - **`EXISTS` / `NOT EXISTS`.**
 - **Pattern-match variants.** `like` only; no `ILIKE` operator (lower both sides for a
   case-insensitive match — see [String Functions](#string-functions)), `SIMILAR TO`, or regex.
-- **Computed expressions.** No arithmetic (`+`, `-`, `*`, `/`), string concatenation, `CASE`,
+- **Computed expressions.** No arithmetic (`+`, `-`, `*`, `/`), string concatenation,
   casts, or scalar functions other than the string functions `lower` / `upper` /
   `trim` / `ltrim` / `rtrim` (see [String Functions](#string-functions)) in `SELECT`/`WHERE`/`HAVING`.
 - **Expression / aggregate ordering and null placement.** `ORDER BY` takes plain columns with

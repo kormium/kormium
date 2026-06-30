@@ -107,6 +107,10 @@ Null fallback: `column.coalesce(default)` → `COALESCE("column", default)` — 
 fallback when NULL. Readable in `select(...)` and comparable to a literal (`Users.rank.coalesce(0)
 gt 5`), or to another column (`a.coalesce(b)`). A non-null fallback makes the result non-null.
 
+Conditional value: `case { whenever(cond) then v; …; otherwise(d) }` → searched `CASE`. A `Selectable`
+(readable in `select(...)`) — **hold it in a `val`** to read it back. The result type is inferred for
+built-in types; for an enum/custom type pass the ColumnType: `case(MyColumnType) { … }`.
+
 For a reusable query, build a `Query` value instead of a block:
 `Users.find(Query(Users.age gtEq 18))`. Every `find` / `count` / `update` / `deleteWhere`
 accepts either form.
@@ -235,6 +239,6 @@ the `;` splitter can't handle, pass statements explicitly: `Migration("002", lis
 - Predicate names are `less` / `lessEq` (not `lt` / `ltEq`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.
 - Not modeled by the typed DSL: subqueries, `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
-  `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, `CASE` (use `coalesce` for null fallback), scalar functions
+  `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, simple `CASE expr WHEN` (searched `case { }` is supported), scalar functions
   beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`, arithmetic in `SELECT` projections, `RETURNING` on
   `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.

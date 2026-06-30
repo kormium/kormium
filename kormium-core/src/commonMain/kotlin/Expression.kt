@@ -1,6 +1,12 @@
 package io.github.kormium
 
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.resultset.ResultSet
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlin.uuid.Uuid
 
 /**
  * Collects bind values while an [Expression] or [Query] is rendered to SQL.
@@ -342,6 +348,105 @@ infix fun <Z> CoalesceOp<Z>.less(value: Z): Expression = LessOp(this, columnType
 infix fun <Z> CoalesceOp<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
 infix fun <Z> CoalesceOp<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
 infix fun <Z> CoalesceOp<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
+
+/**
+ * A searched `CASE WHEN cond THEN value ... ELSE default END`. It is a [Selectable] (readable from
+ * a `select(...)` projection) carrying the [columnType] that reads the result back and binds each
+ * branch value. Because its identity is the built expression, hold it in a `val` to read it back
+ * from a row (`val tier = case { … }; row[tier]`). Compare it to a typed literal with the operators
+ * below, or to another expression through the generic operators.
+ */
+class CaseOp<Z> internal constructor(
+    private val branches: List<Pair<Expression, Expression>>,
+    private val elseValue: Expression?,
+    internal val columnType: ColumnType<Z>,
+) : Selectable<Z> {
+    override fun toSql(builder: ParamBuilder): String {
+        val whens = branches.joinToString(" ") { (cond, value) -> "WHEN ${cond.toSql(builder)} THEN ${value.toSql(builder)}" }
+        val elseSql = elseValue?.let { " ELSE ${it.toSql(builder)}" }.orEmpty()
+        return "CASE $whens$elseSql END"
+    }
+
+    override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
+
+    // A CASE's value depends on its branch literals, which render as placeholders — so two CASEs
+    // can share a rendered SQL string. Key by instance instead; hold the CASE in a val to read it.
+    override fun resultKey(): Any = this
+}
+
+/** Builds the branches of a [case]. `whenever(cond) then value` adds a branch; `otherwise(value)` sets the ELSE. */
+class CaseBuilder<Z> internal constructor(private val columnType: ColumnType<Z>) {
+    internal val branches = mutableListOf<Pair<Expression, Expression>>()
+    internal var elseValue: Expression? = null
+
+    fun whenever(condition: Expression): WhenStep = WhenStep(condition)
+
+    inner class WhenStep internal constructor(private val condition: Expression) {
+        infix fun then(value: Z) {
+            branches += condition to columnType.lit(value)
+        }
+    }
+
+    fun otherwise(value: Z) {
+        elseValue = columnType.lit(value)
+    }
+}
+
+/**
+ * A searched `CASE` whose result type is given explicitly — use this for enum / custom column
+ * types, where the reader cannot be inferred from [Z]:
+ * `case(StatusColumnType) { whenever(...) then Status.ACTIVE; otherwise Status.INACTIVE }`.
+ */
+fun <Z> case(columnType: ColumnType<Z>, block: CaseBuilder<Z>.() -> Unit): CaseOp<Z> {
+    val builder = CaseBuilder(columnType).apply(block)
+    require(builder.branches.isNotEmpty()) { "case { } needs at least one `whenever(...) then ...`" }
+    return CaseOp(builder.branches, builder.elseValue, columnType)
+}
+
+/**
+ * A searched `CASE` whose result type is inferred from the branch values for the built-in types
+ * (String, the integer and floating types, Boolean, BigDecimal, Instant, the date/time types, Uuid):
+ *
+ * ```kotlin
+ * val tier = case {
+ *     whenever(Users.age gtEq 65) then "senior"
+ *     whenever(Users.age gtEq 18) then "adult"
+ *     otherwise "minor"
+ * }
+ * ```
+ *
+ * For an enum or other custom-mapped result, use the [case] overload that takes a `ColumnType`.
+ */
+inline fun <reified Z> case(noinline block: CaseBuilder<Z>.() -> Unit): CaseOp<Z> {
+    @Suppress("UNCHECKED_CAST")
+    val columnType = when (Z::class) {
+        String::class -> TextColumnType
+        Int::class -> IntColumnType
+        Long::class -> LongColumnType
+        Short::class -> ShortColumnType
+        Boolean::class -> BooleanColumnType
+        Double::class -> DoubleColumnType
+        Float::class -> FloatColumnType
+        BigDecimal::class -> BigDecimalColumnType
+        Instant::class -> InstantColumnType
+        LocalDate::class -> LocalDateColumnType
+        LocalTime::class -> LocalTimeColumnType
+        LocalDateTime::class -> LocalDateTimeColumnType
+        Uuid::class -> UuidColumnType
+        else -> error(
+            "case<${Z::class.simpleName}> can't infer how to read the result; " +
+                "use case(columnType) { ... } with the column's ColumnType",
+        )
+    } as ColumnType<Z>
+    return case(columnType, block)
+}
+
+infix fun <Z> CaseOp<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
+infix fun <Z> CaseOp<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
+infix fun <Z> CaseOp<Z>.less(value: Z): Expression = LessOp(this, columnType.lit(value))
+infix fun <Z> CaseOp<Z>.lessEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
+infix fun <Z> CaseOp<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
+infix fun <Z> CaseOp<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
 
 /** Groups an expression in parentheses so it composes safely with surrounding `AND`/`OR`. */
 class ParenExpression(private val expr: Expression) : Expression {
