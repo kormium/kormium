@@ -9,6 +9,7 @@ import io.github.kormium.UniqueViolationException
 import io.github.kormium.and
 import io.github.kormium.autocommit
 import io.github.kormium.between
+import io.github.kormium.case
 import io.github.kormium.coalesce
 import io.github.kormium.count
 import io.github.kormium.createSqliteDatabase
@@ -574,6 +575,42 @@ class SqliteIntegrationTest {
             Products.find { where { (Products.displayName eq tag) and (Products.rank.coalesce(0) gt 5) } }
         }
         assertEquals(listOf(7), highRank.map { it.rank })
+
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /** `case` buckets a value into a label, read back from a projection and filtered on in a predicate. */
+    @Test
+    fun testCase() {
+        val tag = "case-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            listOf(5, 30, 100).forEach { q ->
+                Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = q; displayName = tag; note = null; rank = null })
+            }
+        }
+
+        // SELECT: bucket qty into a label and read it back (held in a val).
+        val bucket = case {
+            whenever(Products.qty gtEq 100) then "big"
+            whenever(Products.qty gtEq 10) then "mid"
+            otherwise("small")
+        }
+        val labels = db.autocommit {
+            Products.query().where(Products.displayName eq tag).select(bucket).map { it[bucket] }.sorted()
+        }
+        assertEquals(listOf("big", "mid", "small"), labels)
+
+        // WHERE: filter by the computed bucket.
+        val mids = db.autocommit {
+            val b = case {
+                whenever(Products.qty gtEq 100) then "big"
+                whenever(Products.qty gtEq 10) then "mid"
+                otherwise("small")
+            }
+            Products.find { where { (Products.displayName eq tag) and (b eq "mid") } }
+        }
+        assertEquals(listOf(30), mids.map { it.qty })
 
         db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
