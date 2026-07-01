@@ -20,4 +20,7 @@ interface MySqlDriver : Database<Nothing>, SuspendDatabase<Nothing>, AutoCloseab
 
     // Resolves the isClosed default inherited from both interfaces; concrete drivers track it.
     override val isClosed: Boolean
+
+    // Resolves the dialect default inherited from both interfaces; concrete drivers supply MySqlDialect.
+    override val dialect: Dialect
 }

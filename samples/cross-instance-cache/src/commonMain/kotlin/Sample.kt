@@ -86,7 +86,7 @@ class ProductCache(private val db: Database<Shop>) {
             return byId[id]
         }
         println("cache MISS $id -> read Postgres")
-        val name = db.autocommit { Products.findById(id)?.name }
+        val name = db.autocommit { Products.findOne { where { Products.id eq id } }?.name }
         byId[id] = name
         return name
     }
@@ -130,7 +130,7 @@ suspend fun runSample(
             // Instance A updates the row. Its commit is published to Redis; instance B receives it
             // and clears its cache — even though the write never went through B.
             dbA.transaction {
-                Products.update(Query(Products.id eq 1), Product().apply { id = 1; name = "Mechanical Keyboard" })
+                Products.update(Product().apply { id = 1; name = "Mechanical Keyboard" }, Query(Products.id eq 1))
             }
             delay(1_000) // let the notification propagate through Redis
 

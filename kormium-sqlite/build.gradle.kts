@@ -123,10 +123,14 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                // Exposes SqliteDialect / SqliteDriver / createSqliteDatabase. The driver
-                // returns core's ResultSet and binds core's SqlParameterSource, so :kormium-core
-                // is part of the public API.
+                // Exposes SqliteDriver / createSqliteDatabase. The driver returns core's
+                // ResultSet and binds core's SqlParameterSource, so :kormium-core is part of the
+                // public API.
                 api(project(":kormium-core"))
+                // SqliteDialect lives in the pure dialect module (split out so it can also compile
+                // to js/wasm). `api` keeps `io.github.kormium.SqliteDialect` visible to existing
+                // consumers exactly as before.
+                api(project(":kormium-sqlite-dialect"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
             }
         }

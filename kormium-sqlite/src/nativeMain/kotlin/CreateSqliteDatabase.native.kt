@@ -40,7 +40,7 @@ private class SqliteNativeDriver(path: String, private val poolSize: Int, overri
         require(poolSize >= 1) { "poolSize must be >= 1, was $poolSize" }
     }
 
-    private val dialect: Dialect = SqliteDialect
+    override val dialect: Dialect = SqliteDialect
     private val typeMapper: TypeMapper = StandardTypeMapper
     override val writeListeners: WriteListeners = WriteListeners()
 

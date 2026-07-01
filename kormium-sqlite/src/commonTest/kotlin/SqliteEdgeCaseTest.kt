@@ -42,7 +42,7 @@ class SqliteEdgeCaseTest {
     @Test
     fun findByIdMissingReturnsNull() {
         freshSchema()
-        assertNull(db.autocommit { EdgeTbl.findById(Uuid.random()) })
+        assertNull(db.autocommit { EdgeTbl.findOne { where { EdgeTbl.id eq Uuid.random() } } })
     }
 
     @Test
@@ -50,7 +50,7 @@ class SqliteEdgeCaseTest {
         freshSchema()
         val id = Uuid.random()
         db.transaction { EdgeTbl.insert(EdgeR().apply { this.id = id; n = null; t = null; num = 1 }) }
-        val row = db.autocommit { EdgeTbl.findById(id) }!!
+        val row = db.autocommit { EdgeTbl.findOne { where { EdgeTbl.id eq id } } }!!
         assertNull(row.n)
         assertNull(row.t)
         assertEquals(1, row.num)
@@ -93,7 +93,7 @@ class SqliteEdgeCaseTest {
         val id = Uuid.random()
         val tricky = "a'b\"c\\d\neé\t--; DROP TABLE edge; --"
         db.transaction { EdgeTbl.insert(EdgeR().apply { this.id = id; t = tricky; num = 1 }) }
-        assertEquals(tricky, db.autocommit { EdgeTbl.findById(id) }?.t)
+        assertEquals(tricky, db.autocommit { EdgeTbl.findOne { where { EdgeTbl.id eq id } } }?.t)
     }
 
     @Test
@@ -101,7 +101,7 @@ class SqliteEdgeCaseTest {
         freshSchema()
         val id = Uuid.random()
         db.transaction { EdgeTbl.insert(EdgeR().apply { this.id = id; n = Int.MIN_VALUE; num = Int.MAX_VALUE }) }
-        val row = db.autocommit { EdgeTbl.findById(id) }!!
+        val row = db.autocommit { EdgeTbl.findOne { where { EdgeTbl.id eq id } } }!!
         assertEquals(Int.MIN_VALUE, row.n)
         assertEquals(Int.MAX_VALUE, row.num)
     }
@@ -109,7 +109,7 @@ class SqliteEdgeCaseTest {
     @Test
     fun updateMatchingNoRowsIsNoOp() {
         freshSchema()
-        db.transaction { EdgeTbl.update(Query(EdgeTbl.id eq Uuid.random()), EdgeR().apply { num = 5 }) }
+        db.transaction { EdgeTbl.update(EdgeR().apply { num = 5 }, Query(EdgeTbl.id eq Uuid.random())) }
     }
 
     @Test
@@ -136,16 +136,16 @@ class SqliteEdgeCaseTest {
                 }
             }
         }
-        assertEquals(keep, db.autocommit { EdgeTbl.findById(keep) }?.id)
-        assertNull(db.autocommit { EdgeTbl.findById(mid) })
-        assertNull(db.autocommit { EdgeTbl.findById(inner) })
+        assertEquals(keep, db.autocommit { EdgeTbl.findOne { where { EdgeTbl.id eq keep } } }?.id)
+        assertNull(db.autocommit { EdgeTbl.findOne { where { EdgeTbl.id eq mid } } })
+        assertNull(db.autocommit { EdgeTbl.findOne { where { EdgeTbl.id eq inner } } })
     }
 
     @Test
     fun savepointRequiresTransaction() {
         freshSchema()
         assertFailsWith<IllegalStateException> {
-            db.autocommit { savepoint { EdgeTbl.findById(Uuid.random()) } }
+            db.autocommit { savepoint { EdgeTbl.findOne { where { EdgeTbl.id eq Uuid.random() } } } }
         }
     }
 
@@ -154,7 +154,7 @@ class SqliteEdgeCaseTest {
         freshSchema()
         val id = Uuid.random()
         db.transaction { ReservedTbl.insert(ReservedR().apply { this.id = id; order = 7 }) }
-        assertEquals(7, db.autocommit { ReservedTbl.findById(id) }?.order)
+        assertEquals(7, db.autocommit { ReservedTbl.findOne { where { ReservedTbl.id eq id } } }?.order)
     }
 }
 

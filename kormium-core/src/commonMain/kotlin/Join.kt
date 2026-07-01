@@ -11,6 +11,14 @@ import io.github.kormium.resultset.ResultSet
 interface Selectable<Z> : Expression {
     /** Reads this field's value from the result row at [index]. */
     fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z?
+
+    /**
+     * A stable, structural key identifying this field in a [ResultRow] — independent of the
+     * instance and the dialect. Two selectables that select the same thing share a key, so a row
+     * can be read with a freshly built field (`row[Orders.total.sum()]`) without hoisting it into
+     * a `val`. Columns key by `table.name`; aggregates by their function over their target's key.
+     */
+    fun resultKey(): Any
 }
 
 internal enum class JoinType(val sql: String) { INNER("INNER JOIN"), LEFT("LEFT JOIN") }
@@ -169,11 +177,22 @@ class ResultRow internal constructor(private val values: Map<Any, Any?>) {
     internal fun getByKey(key: Any): Any? = values[key]
 }
 
-// Identifies a selected field. A Column's property delegate yields a fresh instance on each
-// access, so instance identity can't be used — key columns by table+name instead; aggregates
-// (held by the caller in a val) are keyed by instance.
-internal fun fieldKey(field: Selectable<*>): Any =
-    if (field is Column<*, *, *>) "${field.tableRef.tableName}.${field.name}" else field
+/**
+ * Reconstructs [table]'s entity from this row. Works for any number of joined tables, so a
+ * three-or-more-table join reads as whole entities — `select()` (all columns), then
+ * `map { Triple(it.entity(A), it.entity(B), it.entity(C)) }`. Columns the projection didn't
+ * select read back as absent.
+ *
+ * For a `LEFT JOIN`, a row with no match still hydrates the right table here (its columns are
+ * NULL); detect the unmatched case yourself, e.g. `row.getOrNull(Right.id) == null`. The
+ * two-table `find()` does this for you and returns `Pair<A, B?>`.
+ */
+fun <T : Entity> ResultRow.entity(table: Table<*, T>): T = table.hydrateFrom(this)
+
+// Identifies a selected field by its structural key, so a row reads back regardless of which
+// instance is used — both a Column's property delegate and an aggregate factory yield a fresh
+// instance on each access, so instance identity can't be used.
+internal fun fieldKey(field: Selectable<*>): Any = field.resultKey()
 
 // Qualifies a table reference.
 internal fun Table<*, *>.qualifiedName(dialect: Dialect): String {
@@ -185,7 +204,7 @@ internal fun Join<*>.allColumns(): List<Column<*, *, *>> =
 
 // Builds the SELECT SQL + params (columns are emitted qualified, e.g. "users"."id",
 // so colliding names don't clash). Pure — no I/O; the runners below execute it.
-private fun buildSelect(
+internal fun buildSelect(
     join: Join<*>,
     fields: List<Selectable<*>>,
     dialect: Dialect,

@@ -19,6 +19,11 @@ buildscript {
         // Android Gradle plugin for the modules that declare an androidTarget() (Compose
         // Multiplatform support). They apply id("com.android.library") without a version.
         classpath("com.android.tools.build:gradle:9.2.1")
+        // Compose Multiplatform for the wasmJs todo sample. The Compose gradle plugin (libs/DSL)
+        // plus the Kotlin Compose compiler plugin (decoupled from the gradle plugin since Kotlin
+        // 2.0, versioned with Kotlin). The sample applies both without a version.
+        classpath("org.jetbrains.compose:compose-gradle-plugin:1.11.1")
+        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.4.0")
     }
 }
 
@@ -30,6 +35,18 @@ allprojects {
             url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
         }
     }
+}
+
+// Kotlin's wasm/js yarn install runs with --ignore-scripts, which stops native npm packages
+// (e.g. better-sqlite3 in kormium-sqlite-node) from building/fetching their native binary. Allow
+// install scripts so those modules work under the Node test runner.
+//
+// SUPPLY-CHAIN NOTE: this re-enables arbitrary postinstall scripts for every js/wasm dependency, so
+// a compromised (transitive) package could run code at install time. The exposure is bounded: npm
+// versions are pinned and the resolved tree is committed in kotlin-js-store/*yarn.lock, so installs
+// are reproducible and auditable. Review lockfile changes when bumping a Wasm/Node engine's deps.
+plugins.withType(org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnPlugin::class.java) {
+    the<org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnRootEnvSpec>().ignoreScripts.set(false)
 }
 
 // iOS simulator tests need an installed iOS simulator runtime (Xcode). On a machine without

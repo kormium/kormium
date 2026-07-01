@@ -6,18 +6,71 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.0] — Web stack (JS / Wasm / Node), and a pre-1.0 API consolidation
+
 ### Added
+- **Kotlin/JS + Kotlin/Wasm support.** The typed DSL now compiles and is tested on `js`, `wasmJs`
+  and `wasmWasi`; `kormium-core`, `kormium-migrate` and `kormium-observe` ship web artifacts.
+  Logging goes through an internal `KormiumLogger` facade so core no longer hard-depends on
+  kotlin-logging (which has no wasmWasi artifact).
+- **Standalone dialect modules** (`kormium-postgres-dialect` / `kormium-sqlite-dialect` /
+  `kormium-mysql-dialect`): the pure SQL dialect is split out of each driver so it can compile to
+  every target (incl. js/wasm). The driver modules re-export it via `api`, so existing imports are
+  unchanged. See [ADR 0001](docs/adr/0001-standalone-dialect-modules.md).
+- **Browser & Node database engines** (suspend-only, sharing `kormium-wasm-driver`):
+  `kormium-sqlite-wasm` (wa-sqlite, IndexedDB-persisted, with a Compose Multiplatform todo sample),
+  `kormium-sqlite-node` (better-sqlite3), `kormium-postgres-node` (node-postgres, pooled) and
+  `kormium-mysql-node` (mysql2, pooled). A separate
+  [kormium/pglite](https://github.com/kormium/pglite) repo runs full Postgres (PGlite) in the browser.
+- **`Column.Bytes()`** — a `ByteArray` column type, bound and read as native binary (`bytea`/`BLOB`,
+  JDBC `setObject`/`getBytes`, libpq bytea, and `Buffer`/`Uint8Array` on the Wasm/Node engines).
 - **Compile-time validation of `upsert` / `insertOrIgnore` conflict columns.** `onConflict` is now
   typed `Column<*, *, T>` (and `List<Column<*, *, T>>`), so a conflict column from another table is
   a compile error instead of rendering the wrong column into `ON CONFLICT`. Same-table targets,
   including `onConflict = Table.primaryKey`, are unchanged. A runtime backstop still rejects an
   empty target — and the rare same-entity-other-table case — with a clear `IllegalArgumentException`
   naming the column and tables (#32).
+- **`ConcurrencyConflictException`** — a typed signal for a transient serialization failure / deadlock
+  (SQLSTATE `40001` / `40P01`), so a caller can catch one portable type instead of matching SQLSTATE
+  strings to know a transaction is safe to retry. Kormium ships the exception, not a retry loop (the
+  policy is the application's) — see the retry recipe in `AGENTS.md` and
+  [ADR 0007](docs/adr/0007-concurrency-conflict-exception.md).
 
 ### Changed
 - `Table.primaryKey` is now `List<Column<*, *, T>>` (was `List<Column<*, *, *>>`) and the table's
   columns carry their entity type. Source-compatible for normal use; code that passed columns held
   as a bare `Column<*, *, *>` to `onConflict` must use the table's own columns.
+- **`update(query, entity)` argument order flipped to `update(entity, query)`.** The `Query` form now
+  takes the patch entity first, matching the block form `update(entity) { where { … } }` — the entity
+  is in the same position in both. Migrate `update(Query(...), patch)` to `update(patch, Query(...))`.
+- **`insert` / `upsert` now return a non-null `T`** (was `T?`). They always yield a row — the passed
+  entity on the fast path, or the written row on `returning = true` — so the result no longer needs a
+  `!!`. The `returning = true` path now throws (instead of returning null) if the row can't be read
+  back, matching `insertAll`. `insertOrIgnore` still returns the affected-row count (`Long`).
+- **`findById(id: Any)` removed in favour of typed `findOne`.** The single untyped read in the API
+  silently accepted a wrong-typed id (e.g. a `String` for a `Uuid` key) and bypassed the column's
+  converter. Replaced by `findOne { where { Users.id eq id } }` / `findOne(Query(...))` → `T?`
+  (`LIMIT 1`): the id is type-checked against the column, binds through its converter, and the same
+  form reads by any unique column, not only the primary key. See
+  [ADR 0005](docs/adr/0005-no-untyped-findbyid.md).
+- **`eq null` / `neq null` are restricted to nullable columns.** They render `IS [NOT] NULL`; on a
+  non-null column the comparison is meaningless (it can never be NULL) and now fails to compile.
+  This also makes a wrong-typed value comparison (`age eq "x"`) report against the real
+  `eq(value)` candidate ("Int expected") instead of the null overload ("Nothing? expected").
+- **Comparison / membership operators unified onto `Operand<Z>`.** The typed-literal forms of `eq`,
+  `neq`, `lt`, `ltEq`, `gt`, `gtEq`, `inList`, `between` and `like` were declared separately on
+  `Column` / `NumericExpr` / `StringExpr` / `CoalesceOp` / `CaseOp` (≈30 overloads, with gaps), and
+  aggregates had none. They are now defined once over a new `Operand<Z>` interface (a `Selectable`
+  that carries its `ColumnType`) that every typed expression implements. Existing code compiles
+  unchanged and renders identical SQL; the change is additive — the gaps close, so e.g. `case { … }
+  inList listOf(…)`, `col.coalesce(0) between 1..10` and `total.sum() gt 100` (no `Value(…)` wrapper)
+  now work uniformly. A new expression type composes for free.
+- **Predicates renamed `less` → `lt`, `lessEq` → `ltEq`.** The comparison operators are now symmetric
+  (`lt` / `ltEq` paired with `gt` / `gtEq`, instead of the abbreviated `gt` against the spelled-out
+  `less`), matching the common `lt`/`gt` convention. `eq` / `neq` / `gt` / `gtEq` are unchanged.
+- **`isNull()` / `isNotNull()` moved from `Column` to any `Operand`.** A computed expression that can be
+  null (a `COALESCE` of nullable columns, `rank + 1`, a `CASE`, …) can now be tested for NULL —
+  previously only a `Column` could. Additive; `eq null` / `neq null` stay as the nullable-column sugar.
 
 ## [0.8.0] — Cross-instance notifications, Windows async, expression UPDATE
 

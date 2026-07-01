@@ -74,7 +74,7 @@ class MySqlR2dbcIntegrationTest {
                 })
             }
 
-            val found = database.suspendAutocommit { MyWidgets.findById(id) }
+            val found = database.suspendAutocommit { MyWidgets.findOne { where { MyWidgets.id eq id } } }
             assertEquals(id, found?.id)
             assertEquals("async-widget", found?.name)
             assertEquals(7, found?.qty)
@@ -105,7 +105,7 @@ class MySqlR2dbcIntegrationTest {
                 }
             }
 
-            assertNull(database.suspendAutocommit { MyWidgets.findById(id) })
+            assertNull(database.suspendAutocommit { MyWidgets.findOne { where { MyWidgets.id eq id } } })
         }
     }
 

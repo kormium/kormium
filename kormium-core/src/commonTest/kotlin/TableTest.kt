@@ -490,19 +490,21 @@ class TableTest {
                         ("id", "price", "position", "text", "nullableTest")
                         VALUES (:p0, :p1, :p2, :p3, :p4)
                         RETURNING "id", "price", "position", "text", "nullableTest""""
-        db.transaction {
-            TestTable.insert(
-                TestEntity().apply {
-                    this.id = Uuid.random()
-                    this.price = BigDecimal.fromInt(1)
-                    this.position = 1
-                    this.text = "x"
-                    this.nullableTest = null
-                },
-                returning = true,
-            )
+        val entity = TestEntity().apply {
+            this.id = Uuid.random()
+            this.price = BigDecimal.fromInt(1)
+            this.position = 1
+            this.text = "x"
+            this.nullableTest = null
         }
-        assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
+        databaseMockObj.result = listOf(entity)   // RETURNING yields the written row back (insert is non-null)
+        try {
+            val returned = db.transaction { TestTable.insert(entity, returning = true) }
+            assertEquals(entity, returned)
+            assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
+        } finally {
+            databaseMockObj.result = null
+        }
     }
 
     @Test
@@ -517,13 +519,13 @@ class TableTest {
             WHERE "id" = :p5
         """
         db.transaction {
-            TestTable.update(Query(TestTable.id eq uuid), TestEntity().apply {
+            TestTable.update(TestEntity().apply {
                 this.id = uuid
                 this.price = price
                 this.position = position
                 this.text = text
                 this.nullableTest = null
-            })
+            }, Query(TestTable.id eq uuid))
         }
         assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
         assertEquals(
@@ -548,10 +550,7 @@ class TableTest {
         val uuid = Uuid.random()
         val expectedResult = """UPDATE "products" SET "nullableTest"=:p0 WHERE "id" = :p1"""
         db.transaction {
-            TestTable.update(
-                Query(TestTable.id eq uuid),
-                TestEntity().apply { this.nullableTest = null },
-            )
+            TestTable.update(TestEntity().apply { this.nullableTest = null }, Query(TestTable.id eq uuid))
         }
         assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
         assertEquals(mapOf("p0" to null, "p1" to uuid.toString()), databaseMockObj.internalParams)
@@ -581,10 +580,10 @@ class TableTest {
     }
 
     @Test
-    fun testFindById() {
+    fun testFindOneByPrimaryKey() {
         val uuid = Uuid.random()
-        val expectedResult = """SELECT "id", "price", "position", "text", "nullableTest" FROM "products" WHERE "id" = :p0"""
-        db.transaction { TestTable.findById(uuid) }
+        val expectedResult = """SELECT "id", "price", "position", "text", "nullableTest" FROM "products" WHERE "id" = :p0 LIMIT 1"""
+        db.transaction { TestTable.findOne { where { TestTable.id eq uuid } } }
         assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
         assertEquals(mapOf("p0" to uuid.toString()), databaseMockObj.internalParams)
     }
@@ -656,7 +655,7 @@ class TableTest {
     @Test
     fun testUpdateWithNoNonNullFieldsFails() {
         assertFailsWith<IllegalArgumentException> {
-            db.transaction { TestTable.update(Query(TestTable.id eq Uuid.random()), TestEntity()) }
+            db.transaction { TestTable.update(TestEntity(), Query(TestTable.id eq Uuid.random())) }
         }
     }
 
@@ -781,17 +780,12 @@ class TableTest {
     }
 
     @Test
-    fun testFindByIdUsesMarkedPrimaryKeyColumn() {
-        db.autocommit { Coded.findById("abc") }
-        assertTrue(remoteNewLinesAndSpaces(databaseMockObj.internalSql).contains("""WHERE"code"=:p0"""))
+    fun testFindOneRendersPredicateAndLimitsToOne() {
+        db.autocommit { Coded.findOne { where { Coded.code eq "abc" } } }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains("""WHERE"code"=:p0"""), sql)
+        assertTrue(sql.contains("LIMIT1"), sql)
         assertEquals(mapOf("p0" to "abc"), databaseMockObj.internalParams)
-    }
-
-    @Test
-    fun testFindByIdFailsForCompositeKey() {
-        assertFailsWith<IllegalStateException> {
-            db.autocommit { CompositeKey.findById(Uuid.random()) }
-        }
     }
 
     companion object {

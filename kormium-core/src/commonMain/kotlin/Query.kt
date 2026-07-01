@@ -5,7 +5,7 @@ data class Query(
     val whereExpression: Expression? = null,
     val limit: UInt = UInt.MAX_VALUE,
     val offset: UInt = 0u,
-    val orderBy: Map<Column<*, *, *>, AscDescOrder>? = null
+    val orderBy: Map<Selectable<*>, AscDescOrder>? = null
 ) {
     /**
      * Renders this query's clauses to SQL, registering any compared values as
@@ -31,8 +31,8 @@ data class Query(
     // Debug-friendly rendering; placeholders are emitted in place of values.
     override fun toString(): String = toSql(ParamBuilder(StandardDialect, StandardTypeMapper))
 
-    private fun prepareOrderBy(orderBy: Map<Column<*, *, *>, AscDescOrder>, builder: ParamBuilder): String =
-        orderBy.entries.joinToString(",") { (key, value) -> "${builder.dialect.quoteIdentifier(key.name)} ${value.name}" }
+    private fun prepareOrderBy(orderBy: Map<Selectable<*>, AscDescOrder>, builder: ParamBuilder): String =
+        orderBy.entries.joinToString(",") { (key, value) -> "${key.toSql(builder)} ${value.name}" }
 }
 
 enum class AscDescOrder{

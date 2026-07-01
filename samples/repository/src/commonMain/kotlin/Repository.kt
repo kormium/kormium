@@ -1,11 +1,13 @@
 package io.github.kormium.samples.repository
 
 import io.github.kormium.Catalog
+import io.github.kormium.Column
 import io.github.kormium.Entity
 import io.github.kormium.QueryBuilder
 import io.github.kormium.SuspendScope
 import io.github.kormium.Table
 import io.github.kormium.database.SuspendDatabase
+import io.github.kormium.eq
 import io.github.kormium.observe.observe
 import io.github.kormium.suspendAutocommit
 import io.github.kormium.suspendTransaction
@@ -21,11 +23,13 @@ import kotlinx.coroutines.flow.Flow
  * operations atomic, wrap their table operations in one outer `suspendTransaction { }` instead —
  * see [ShopService.register].
  */
-abstract class Repository<G : Catalog, T : Entity>(
+abstract class Repository<G : Catalog, T : Entity, ID>(
     protected val db: SuspendDatabase<G>,
     protected val table: Table<G, T>,
+    // The primary-key column, so `findById` is type-checked: passing the wrong id type won't compile.
+    private val idColumn: Column<ID, *, T>,
 ) {
-    suspend fun findById(id: Any): T? = read { table.findById(id) }
+    suspend fun findById(id: ID): T? = read { table.findOne { where { idColumn eq id } } }
     suspend fun all(): List<T> = read { table.all() }
     suspend fun insert(entity: T): T? = write { table.insert(entity) }
     suspend fun deleteWhere(block: QueryBuilder.() -> Unit): Long = write { table.deleteWhere(block) }

@@ -83,7 +83,7 @@ private class PostgresDriverImpl(
         require(poolSize >= 1) { "poolSize must be >= 1, was $poolSize" }
     }
 
-    private val dialect: Dialect = PostgresDialect
+    override val dialect: Dialect = PostgresDialect
     private val typeMapper: TypeMapper = StandardTypeMapper
     override val writeListeners: WriteListeners = WriteListeners()
 

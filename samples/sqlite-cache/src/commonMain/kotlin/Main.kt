@@ -8,6 +8,7 @@ import io.github.kormium.autocommit
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.Database
 import io.github.kormium.database.createDatabase
+import io.github.kormium.eq
 import io.github.kormium.transaction
 
 // Two catalogs: the same "products" shape lives in Postgres (source of truth) and in a
@@ -49,11 +50,11 @@ class ProductRepository(
     private val cache: Database<CacheCatalog>,
 ) {
     fun get(id: Int): Product? {
-        cache.autocommit { CachedProducts.findById(id) }?.let {
+        cache.autocommit { CachedProducts.findOne { where { CachedProducts.id eq id } } }?.let {
             println("cache HIT  $id")
             return it.toProduct()
         }
-        val fromPg = pg.autocommit { PgProducts.findById(id) }?.toProduct()
+        val fromPg = pg.autocommit { PgProducts.findOne { where { PgProducts.id eq id } } }?.toProduct()
         if (fromPg == null) {
             println("cache MISS $id (not in Postgres)")
             return null

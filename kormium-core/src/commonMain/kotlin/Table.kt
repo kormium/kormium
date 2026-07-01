@@ -1,9 +1,8 @@
 package io.github.kormium
 
 import io.github.kormium.resultset.ResultSet
-import io.github.oshai.kotlinlogging.KotlinLogging
 
-private val logger = KotlinLogging.logger {}
+private val logger = kormiumLogger()
 
 /**
  * A table definition: its SQL table name and columns, tagged with the catalog
@@ -115,18 +114,6 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
 
     // ---- pure SQL builders (no I/O) — shared by the blocking and suspend runners ----
 
-    private fun selectByIdSql(id: Any, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
-        val pk = primaryKey.singleOrNull()
-            ?: throw IllegalStateException(
-                "findById requires a single-column primary key on $tableName; " +
-                    "use find(...) for composite (or missing) keys",
-            )
-        val builder = paramBuilder(dialect, typeMapper)
-        val idPlaceholder = builder.bind(id)
-        val sql = "SELECT ${getColumnNames(dialect).joinToString(", ")} FROM ${qualifiedTableName(dialect)} WHERE ${dialect.quoteIdentifier(pk.name)} = $idPlaceholder"
-        return sql.trimIndent() to builder.params
-    }
-
     // Re-selects a just-written row by its primary key, for backends without RETURNING (MySQL):
     // the insert/upsert runs first, then this reads the stored row back (DB defaults applied).
     private fun selectByPkSql(entity: T, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
@@ -147,17 +134,17 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql.trimIndent() to builder.params
     }
 
-    private fun selectSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun selectSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         val queryStr = query.toSql(builder)
         val sql = "SELECT ${getColumnNames(dialect).joinToString(", ")} FROM ${qualifiedTableName(dialect)} $queryStr"
         return sql.trimIndent() to builder.params
     }
 
-    private fun selectAllSql(dialect: Dialect): String =
+    internal fun selectAllSql(dialect: Dialect): String =
         "SELECT ${getColumnNames(dialect).joinToString(", ")} FROM ${qualifiedTableName(dialect)}".trimIndent()
 
-    private fun insertSql(entity: T, dialect: Dialect, typeMapper: TypeMapper, returning: Boolean): Pair<String, Map<String, Any?>> {
+    internal fun insertSql(entity: T, dialect: Dialect, typeMapper: TypeMapper, returning: Boolean): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         // Only the present fields go into the INSERT: an absent field is omitted (so the
         // database can apply its default / generated value), an explicit null is bound as NULL.
@@ -205,9 +192,9 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
 
     // One executable statement of a batch: SQL, its params, and the original input indices it
     // covers (so RETURNING results can be scattered back into input order).
-    private class BatchStatement(val sql: String, val params: Map<String, Any?>, val indices: List<Int>)
+    internal class BatchStatement(val sql: String, val params: Map<String, Any?>, val indices: List<Int>)
 
-    private fun buildBatchStatements(
+    internal fun buildBatchStatements(
         entities: List<T>,
         mode: BatchInsertMode,
         dialect: Dialect,
@@ -257,7 +244,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         }
     }
 
-    private fun upsertSql(
+    internal fun upsertSql(
         entity: T,
         conflict: List<Column<*, *, *>>,
         update: T,
@@ -281,7 +268,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql to builder.params
     }
 
-    private fun insertOrIgnoreSql(
+    internal fun insertOrIgnoreSql(
         entity: T,
         conflict: List<Column<*, *, *>>,
         dialect: Dialect,
@@ -298,7 +285,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
             dialect.renderInsertOrIgnoreSuffix(conflictCols) to builder.params
     }
 
-    private fun countSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun countSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         // Count the rows matching the predicate only: ORDER BY / LIMIT / OFFSET must not apply
         // to an aggregate (an OFFSET would skip the single COUNT row and read as 0).
@@ -307,7 +294,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql.trimIndent() to builder.params
     }
 
-    private fun updateSql(query: Query, entity: T, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun updateSql(query: Query, entity: T, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         val updateFields = generatePresentFields(entity)
         require(updateFields.isNotEmpty()) {
@@ -325,7 +312,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql.trimIndent() to builder.params
     }
 
-    private fun updateSql(query: Query, assignments: Map<Column<*, *, *>, Expression>, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun updateSql(query: Query, assignments: Map<Column<*, *, *>, Expression>, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         // Order matters: render SET (collecting binds) before WHERE so placeholders are numbered
         // left-to-right as they appear in the statement.
@@ -342,7 +329,7 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         return sql.trimIndent() to builder.params
     }
 
-    private fun deleteSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
+    internal fun deleteSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         // WHERE only: a plain DELETE doesn't take ORDER BY / LIMIT / OFFSET (invalid in Postgres).
         val queryStr = query.toWhereSql(builder)
@@ -356,11 +343,6 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         exec.execute(sql = sql.trimIndent())
     }
 
-    internal fun selectById(id: Any, exec: SqlExecutor): T? {
-        val (sql, params) = selectByIdSql(id, exec.dialect, exec.typeMapper)
-        return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
-    }
-
     internal fun select(query: Query, exec: SqlExecutor): List<T> {
         val (sql, params) = selectSql(query, exec.dialect, exec.typeMapper)
         return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }
@@ -369,18 +351,20 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
     internal fun selectAll(exec: SqlExecutor): List<T> =
         exec.execute(selectAllSql(exec.dialect)) { rs -> mapToDao(rs, exec.typeMapper) }
 
-    internal fun insert(entity: T, exec: SqlExecutor, returning: Boolean): T? {
+    internal fun insert(entity: T, exec: SqlExecutor, returning: Boolean): T {
         val dialect = exec.dialect
         val emitReturning = returning && dialect.supportsReturning
         val (sql, params) = insertSql(entity, dialect, exec.typeMapper, emitReturning)
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+                ?: error("INSERT ... RETURNING returned no row in $tableName")
         }
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
         // No RETURNING (MySQL): re-select the stored row by primary key.
         val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+            ?: error("inserted row not found re-selecting by primary key in $tableName")
     }
 
     internal fun insertAll(entities: List<T>, exec: SqlExecutor, returning: Boolean, mode: BatchInsertMode): List<T> {
@@ -407,18 +391,20 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         }
     }
 
-    internal fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SqlExecutor, returning: Boolean): T? {
+    internal fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SqlExecutor, returning: Boolean): T {
         val dialect = exec.dialect
         val emitReturning = returning && dialect.supportsReturning
         val (sql, params) = upsertSql(entity, conflict, update, dialect, exec.typeMapper, emitReturning)
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+                ?: error("INSERT ... ON CONFLICT ... RETURNING returned no row in $tableName")
         }
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
         // No RETURNING (MySQL): re-select the upserted row by primary key.
         val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+            ?: error("upserted row not found re-selecting by primary key in $tableName")
     }
 
     internal fun insertOrIgnore(entity: T, conflict: List<Column<*, *, *>>, exec: SqlExecutor): Long {
@@ -452,11 +438,6 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         exec.execute(sql = sql.trimIndent())
     }
 
-    internal suspend fun selectById(id: Any, exec: SuspendSqlExecutor): T? {
-        val (sql, params) = selectByIdSql(id, exec.dialect, exec.typeMapper)
-        return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
-    }
-
     internal suspend fun select(query: Query, exec: SuspendSqlExecutor): List<T> {
         val (sql, params) = selectSql(query, exec.dialect, exec.typeMapper)
         return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }
@@ -465,17 +446,19 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
     internal suspend fun selectAll(exec: SuspendSqlExecutor): List<T> =
         exec.execute(selectAllSql(exec.dialect)) { rs -> mapToDao(rs, exec.typeMapper) }
 
-    internal suspend fun insert(entity: T, exec: SuspendSqlExecutor, returning: Boolean): T? {
+    internal suspend fun insert(entity: T, exec: SuspendSqlExecutor, returning: Boolean): T {
         val dialect = exec.dialect
         val emitReturning = returning && dialect.supportsReturning
         val (sql, params) = insertSql(entity, dialect, exec.typeMapper, emitReturning)
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+                ?: error("INSERT ... RETURNING returned no row in $tableName")
         }
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
         val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+            ?: error("inserted row not found re-selecting by primary key in $tableName")
     }
 
     internal suspend fun insertAll(entities: List<T>, exec: SuspendSqlExecutor, returning: Boolean, mode: BatchInsertMode): List<T> {
@@ -501,17 +484,19 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
         }
     }
 
-    internal suspend fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SuspendSqlExecutor, returning: Boolean): T? {
+    internal suspend fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SuspendSqlExecutor, returning: Boolean): T {
         val dialect = exec.dialect
         val emitReturning = returning && dialect.supportsReturning
         val (sql, params) = upsertSql(entity, conflict, update, dialect, exec.typeMapper, emitReturning)
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+                ?: error("INSERT ... ON CONFLICT ... RETURNING returned no row in $tableName")
         }
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
         val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
+            ?: error("upserted row not found re-selecting by primary key in $tableName")
     }
 
     internal suspend fun insertOrIgnore(entity: T, conflict: List<Column<*, *, *>>, exec: SuspendSqlExecutor): Long {

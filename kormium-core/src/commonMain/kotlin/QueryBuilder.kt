@@ -20,7 +20,7 @@ package io.github.kormium
 @KormiumDsl
 class QueryBuilder {
     private val conditions = mutableListOf<Expression>()
-    private val orderings = LinkedHashMap<Column<*, *, *>, AscDescOrder>()
+    private val orderings = LinkedHashMap<Selectable<*>, AscDescOrder>()
 
     /** `orderBy DESC Users.age`, `orderBy ASC Users.name`. Multiple calls keep their order. */
     val orderBy: OrderByDsl = OrderByDsl(orderings)
@@ -60,13 +60,17 @@ class QueryBuilder {
     }
 }
 
-/** Infix ordering for [QueryBuilder.orderBy]: `orderBy DESC column`, `orderBy ASC column`. */
-class OrderByDsl internal constructor(private val orderings: MutableMap<Column<*, *, *>, AscDescOrder>) {
-    infix fun ASC(column: Column<*, *, *>) {
-        orderings[column] = AscDescOrder.ASC
+/**
+ * Infix ordering for [QueryBuilder.orderBy]: `orderBy DESC column`, `orderBy ASC column`. The
+ * operand is any [Selectable] — a column, or a computed value like `Users.name.lower()` or
+ * `Users.qty * 2` (for case-insensitive or computed ordering).
+ */
+class OrderByDsl internal constructor(private val orderings: MutableMap<Selectable<*>, AscDescOrder>) {
+    infix fun ASC(expression: Selectable<*>) {
+        orderings[expression] = AscDescOrder.ASC
     }
 
-    infix fun DESC(column: Column<*, *, *>) {
-        orderings[column] = AscDescOrder.DESC
+    infix fun DESC(expression: Selectable<*>) {
+        orderings[expression] = AscDescOrder.DESC
     }
 }

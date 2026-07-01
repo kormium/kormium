@@ -6,22 +6,43 @@ import io.github.kormium.ForeignKeyViolationException
 import io.github.kormium.Query
 import io.github.kormium.Table
 import io.github.kormium.UniqueViolationException
+import io.github.kormium.and
+import io.github.kormium.any
 import io.github.kormium.autocommit
+import io.github.kormium.between
+import io.github.kormium.case
+import io.github.kormium.coalesce
 import io.github.kormium.count
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.Database
+import io.github.kormium.entity
 import io.github.kormium.eq
+import io.github.kormium.gt
 import io.github.kormium.gtEq
 import io.github.kormium.inList
 import io.github.kormium.innerJoin
+import io.github.kormium.isNotNull
+import io.github.kormium.isNull
 import io.github.kormium.leftJoin
+import io.github.kormium.length
+import io.github.kormium.lower
+import io.github.kormium.ltrim
+import io.github.kormium.none
+import io.github.kormium.not
+import io.github.kormium.plus
+import io.github.kormium.rtrim
+import io.github.kormium.trim
+import io.github.kormium.upper
 import io.github.kormium.query
+import io.github.kormium.renderSql
 import io.github.kormium.sum
+import io.github.kormium.times
 import io.github.kormium.transaction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 /**
@@ -52,7 +73,7 @@ class SqliteIntegrationTest {
             })
         }
 
-        val found = db.autocommit { Products.findById(id) }
+        val found = db.autocommit { Products.findOne { where { Products.id eq id } } }
         assertEquals(id, found?.id)
         assertEquals(5, found?.qty)
         assertEquals("widget", found?.displayName)
@@ -82,7 +103,7 @@ class SqliteIntegrationTest {
             Products.update(Product().apply { this.qty = 9 }) { where { Products.id eq id } }
         }
         assertEquals(1L, updated)
-        assertEquals(9, db.autocommit { Products.findById(id) }?.qty)
+        assertEquals(9, db.autocommit { Products.findOne { where { Products.id eq id } } }?.qty)
         // No row matches → 0 affected.
         assertEquals(0L, db.transaction {
             Products.update(Product().apply { this.qty = 1 }) { where { Products.id eq Uuid.random() } }
@@ -90,7 +111,89 @@ class SqliteIntegrationTest {
 
         val deleted = db.transaction { Products.deleteWhere { where { Products.id eq id } } }
         assertEquals(1L, deleted)
-        assertNull(db.autocommit { Products.findById(id) })
+        assertNull(db.autocommit { Products.findOne { where { Products.id eq id } } })
+    }
+
+    /** `findOne` reads a single row by any column (not just the PK) and returns null on no match. */
+    @Test
+    fun testFindOneByNonPrimaryKeyColumnAndMiss() {
+        val tag = "one-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 7; displayName = tag; note = null; rank = null })
+        }
+        val hit = db.autocommit { Products.findOne { where { Products.displayName eq tag } } }
+        assertEquals(7, hit?.qty)
+        val miss = db.autocommit { Products.findOne { where { Products.displayName eq "nope-$tag" } } }
+        assertNull(miss)
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /**
+     * Gaps the `Operand<Z>` unification closed: the comparison/membership operators now live once on
+     * every typed operand, so CASE composes with `inList`, COALESCE with `between`, and an aggregate
+     * compares to a typed literal directly (no `Value(...)` wrapper).
+     */
+    @Test
+    fun testOperandAlgebraClosesGaps() {
+        val tag = "operand-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 100; displayName = tag; note = null; rank = 5 })
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 5; displayName = tag; note = null; rank = null })
+        }
+
+        // CASE inList — CASE was eq/neq-only before; now any operand supports inList.
+        val big = db.autocommit {
+            Products.find {
+                where {
+                    (Products.displayName eq tag) and (case<String> {
+                        whenever(Products.qty gtEq 100) then "big"
+                        otherwise("small")
+                    } inList listOf("big"))
+                }
+            }
+        }
+        assertEquals(listOf(100), big.map { it.qty })
+
+        // COALESCE between — the null-rank row coalesces to 0 and falls in 0..0.
+        val zeroRank = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.rank.coalesce(0) between 0..0) } }
+        }
+        assertEquals(listOf(5), zeroRank.map { it.qty })
+
+        // Aggregate compared to a typed literal directly — no Value(...) wrapper.
+        val grouped = db.autocommit {
+            Products.query()
+                .where(Products.displayName eq tag)
+                .groupBy(Products.displayName)
+                .having(Products.qty.sum() gt 100L)   // SUM(qty) = 105
+                .select(Products.displayName)
+        }
+        assertEquals(1, grouped.size)
+
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /** `isNull()` / `isNotNull()` now work on any operand — here a computed (arithmetic) expression. */
+    @Test
+    fun testIsNullOnComputedExpression() {
+        val tag = "isnull-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 1; displayName = tag; note = null; rank = 5 })
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 2; displayName = tag; note = null; rank = null })
+        }
+        // `rank + 1` is NULL exactly when rank is — .isNull() on the computed expression finds it.
+        val nullRank = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.rank + 1).isNull() } }
+        }
+        assertEquals(listOf(2), nullRank.map { it.qty })
+        val hasRank = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.rank + 1).isNotNull() } }
+        }
+        assertEquals(listOf(1), hasRank.map { it.qty })
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
 
     @Test
@@ -106,7 +209,7 @@ class SqliteIntegrationTest {
                 update = Product().apply { qty = 2 },
             )
         }
-        assertEquals(1, db.autocommit { Products.findById(id) }?.qty)
+        assertEquals(1, db.autocommit { Products.findOne { where { Products.id eq id } } }?.qty)
 
         // upsert again on the same id → DO UPDATE applies the patch.
         db.transaction {
@@ -116,7 +219,7 @@ class SqliteIntegrationTest {
                 update = Product().apply { qty = 2 },
             )
         }
-        assertEquals(2, db.autocommit { Products.findById(id) }?.qty)
+        assertEquals(2, db.autocommit { Products.findOne { where { Products.id eq id } } }?.qty)
 
         // insertOrIgnore: existing id → 0 affected, new id → 1 affected.
         assertEquals(0L, db.transaction {
@@ -159,7 +262,7 @@ class SqliteIntegrationTest {
                 this.displayName = tricky; this.note = null; this.rank = null
             })
         }
-        assertEquals(tricky, db.autocommit { Products.findById(id) }?.displayName)
+        assertEquals(tricky, db.autocommit { Products.findOne { where { Products.id eq id } } }?.displayName)
         db.transaction { Products.deleteWhere(Query(Products.id eq id)) }
     }
 
@@ -191,7 +294,7 @@ class SqliteIntegrationTest {
                 this.aDateTime = dateTime
             })
         }
-        val row = db.autocommit { AllTypes.findById(id) }!!
+        val row = db.autocommit { AllTypes.findOne { where { AllTypes.id eq id } } }!!
         assertEquals(42, row.anInt)
         assertEquals(2.5, row.aDouble)
         assertEquals(true, row.aBool)
@@ -252,6 +355,78 @@ class SqliteIntegrationTest {
         db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
     }
 
+    /**
+     * `between` is inclusive on both ends, composes with `not`, and an empty/reversed range
+     * (lo > hi) matches nothing — over an Int column and a BigDecimal column.
+     */
+    @Test
+    fun testBetweenInclusiveAndEmptyRange() {
+        val tag = "between-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            listOf(5, 10, 20, 25).forEach { q ->
+                Products.insert(Product().apply {
+                    id = Uuid.random(); price = BigDecimal.fromInt(q); qty = q
+                    displayName = tag; note = null; rank = null
+                })
+            }
+        }
+
+        // Inclusive both ends: 10 and 20 are in, 5 and 25 are out.
+        val inRange = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.qty between 10..20) } }
+        }
+        assertEquals(listOf(10, 20), inRange.map { it.qty }.sorted())
+
+        // Same over a BigDecimal column.
+        val byPrice = db.autocommit {
+            Products.find {
+                where { (Products.displayName eq tag) and (Products.price between BigDecimal.fromInt(10)..BigDecimal.fromInt(20)) }
+            }
+        }
+        assertEquals(2, byPrice.size)
+
+        // not(between): everything outside 10..20 -> 5 and 25.
+        val outside = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and not(Products.qty between 10..20) } }
+        }
+        assertEquals(listOf(5, 25), outside.map { it.qty }.sorted())
+
+        // Reversed/empty range renders FALSE -> no rows.
+        val empty = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.qty between 20..10) } }
+        }
+        assertEquals(emptyList(), empty)
+
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /**
+     * Aggregates are keyed structurally, so a row reads back with a freshly built aggregate
+     * instance — no need to hoist it into a `val` shared between select and read.
+     */
+    @Test
+    fun testAggregateReadsWithFreshInstance() {
+        val tag = "fresh-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insertAll(List(3) {
+                Product().apply {
+                    this.id = Uuid.random(); this.price = BigDecimal.fromInt(0); this.qty = 10
+                    this.displayName = tag; this.note = null; this.rank = null
+                }
+            })
+        }
+        val row = db.autocommit {
+            // Selected with one aggregate instance...
+            Products.query().where(Products.displayName eq tag).select(count(), Products.qty.sum()).single()
+        }
+        // ...read back with brand-new, separate instances.
+        assertEquals(3L, row[count()])
+        assertEquals(30L, row[Products.qty.sum()])
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
     /** An exception out of a transaction block rolls back every statement in it. */
     @Test
     fun testTransactionRollsBackOnException() {
@@ -266,7 +441,7 @@ class SqliteIntegrationTest {
                 throw RuntimeException("boom")
             }
         }
-        assertNull(db.autocommit { Products.findById(id) })
+        assertNull(db.autocommit { Products.findOne { where { Products.id eq id } } })
     }
 
     /** A duplicate primary key surfaces as a typed UniqueViolationException. */
@@ -381,6 +556,333 @@ class SqliteIntegrationTest {
             Authors.deleteWhere(Query(Authors.id inList listOf(withBook, withoutBook)))
         }
     }
+
+    /** A three-table join reads every side as a whole entity via select() + row.entity(table). */
+    @Test
+    fun testThreeTableJoinHydratesEntities() {
+        val authorId = Uuid.random()
+        val bookId = Uuid.random()
+        val reviewId = Uuid.random()
+        db.transaction {
+            Authors.execSql(authorsDdl)
+            Books.execSql(booksDdl)
+            Reviews.execSql(reviewsDdl)
+            Authors.insert(Author().apply { id = authorId; name = "Ada" })
+            Books.insert(Book().apply { id = bookId; this.authorId = authorId; title = "Notes" })
+            Reviews.insert(Review().apply { id = reviewId; this.bookId = bookId; stars = 5 })
+        }
+
+        val triples: List<Triple<Author, Book, Review>> = db.autocommit {
+            (Authors innerJoin Books on (Authors.id eq Books.authorId)
+                     innerJoin Reviews on (Books.id eq Reviews.bookId))
+                .select()
+                .map { Triple(it.entity(Authors), it.entity(Books), it.entity(Reviews)) }
+        }
+
+        assertEquals(1, triples.size)
+        val (author, book, review) = triples.single()
+        assertEquals("Ada", author.name)
+        assertEquals("Notes", book.title)
+        assertEquals(authorId, book.authorId)
+        assertEquals(5, review.stars)
+        assertEquals(bookId, review.bookId)
+
+        db.transaction {
+            Reviews.deleteWhere(Query(Reviews.id eq reviewId))
+            Books.deleteWhere(Query(Books.id eq bookId))
+            Authors.deleteWhere(Query(Authors.id eq authorId))
+        }
+    }
+
+    /**
+     * String scalar functions: `lower`/`upper`/`trim`/`ltrim`/`rtrim` compose and chain, match a
+     * literal or another column (case-insensitively when both sides are lowered), order with the
+     * comparison operators, and read back from a projection with a fresh instance.
+     */
+    @Test
+    fun testStringScalarFunctions() {
+        val l1 = Uuid.random(); val l2 = Uuid.random(); val l3 = Uuid.random(); val l4 = Uuid.random()
+        db.transaction {
+            Labels.execSql(labelsDdl)
+            Labels.insertAll(listOf(
+                Label().apply { id = l1; a = "Ada"; b = "ada" },
+                Label().apply { id = l2; a = "BOB"; b = "bob" },
+                Label().apply { id = l3; a = "  cara  "; b = "cara" },
+                Label().apply { id = l4; a = "Zoe"; b = "different" },
+            ))
+        }
+
+        // Column-to-column, both lowered: Ada/ada and BOB/bob match; "  cara  " != "cara".
+        val ci = db.autocommit { Labels.find { where { Labels.a.lower() eq Labels.b.lower() } } }
+        assertEquals(listOf(l1, l2).sorted(), ci.map { it.id }.sorted())
+
+        // trim() makes "  cara  " line up with "cara".
+        val trimmed = db.autocommit { Labels.find { where { Labels.a.trim().lower() eq Labels.b.lower() } } }
+        assertEquals(listOf(l1, l2, l3).sorted(), trimmed.map { it.id }.sorted())
+
+        // lower()/upper() vs a literal.
+        assertEquals(l1, db.autocommit { Labels.find { where { Labels.a.lower() eq "ada" } } }.single().id)
+        assertEquals(l2, db.autocommit { Labels.find { where { Labels.a.upper() eq "BOB" } } }.single().id)
+
+        // ltrim()+rtrim() chained strip both ends.
+        assertEquals(l3, db.autocommit { Labels.find { where { Labels.a.ltrim().rtrim().lower() eq "cara" } } }.single().id)
+
+        // Lexicographic comparison: only "ZOE" >= "M".
+        assertEquals(l4, db.autocommit { Labels.find { where { Labels.a.upper() gtEq "M" } } }.single().id)
+
+        // Read a function projection back — with a freshly built instance (structural result key).
+        val lowered = db.autocommit {
+            Labels.query().where(Labels.id eq l1).select(Labels.a.lower()).single()[Labels.a.lower()]
+        }
+        assertEquals("ada", lowered)
+
+        db.transaction { Labels.deleteWhere(Query(Labels.id inList listOf(l1, l2, l3, l4))) }
+    }
+
+    /**
+     * `coalesce` fills a null column with a fallback — read back from a projection (the default
+     * makes it non-null) and used in a predicate (a null is treated as the fallback).
+     */
+    @Test
+    fun testCoalesce() {
+        val tag = "coalesce-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 1; displayName = tag; note = null; rank = null })
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 1; displayName = tag; note = "set"; rank = 7 })
+        }
+
+        // SELECT: the null note reads back as the fallback.
+        val notes = db.autocommit {
+            val n = Products.note.coalesce("none")
+            Products.query().where(Products.displayName eq tag).select(n).map { it[n] }.sorted()
+        }
+        assertEquals(listOf("none", "set"), notes)
+
+        // WHERE: a null rank coalesces to 0, so only the rank=7 row passes `> 5`.
+        val highRank = db.autocommit {
+            Products.find { where { (Products.displayName eq tag) and (Products.rank.coalesce(0) gt 5) } }
+        }
+        assertEquals(listOf(7), highRank.map { it.rank })
+
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /** `case` buckets a value into a label, read back from a projection and filtered on in a predicate. */
+    @Test
+    fun testCase() {
+        val tag = "case-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            listOf(5, 30, 100).forEach { q ->
+                Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = q; displayName = tag; note = null; rank = null })
+            }
+        }
+
+        // SELECT: bucket qty into a label. Selected and read back with *separate, freshly built*
+        // case { } instances — no val — proving CASE is keyed structurally like the other computed
+        // expressions (the conditions and branch literals are part of the key).
+        fun bucket() = case {
+            whenever(Products.qty gtEq 100) then "big"
+            whenever(Products.qty gtEq 10) then "mid"
+            otherwise("small")
+        }
+        val labels = db.autocommit {
+            Products.query().where(Products.displayName eq tag).select(bucket()).map { it[bucket()] }.sorted()
+        }
+        assertEquals(listOf("big", "mid", "small"), labels)
+
+        // WHERE: filter by the computed bucket.
+        val mids = db.autocommit {
+            val b = case {
+                whenever(Products.qty gtEq 100) then "big"
+                whenever(Products.qty gtEq 10) then "mid"
+                otherwise("small")
+            }
+            Products.find { where { (Products.displayName eq tag) and (b eq "mid") } }
+        }
+        assertEquals(listOf(30), mids.map { it.qty })
+
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /**
+     * Arithmetic reads back from a `select(...)` projection — with a *fresh* expression instance,
+     * proving the structural result key (the literal is part of the key, so different literals in
+     * one query don't collide). COALESCE with a literal now reads back fresh too.
+     */
+    @Test
+    fun testArithmeticInProjection() {
+        val tag = "arith-${Uuid.random()}"
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 10; displayName = tag; note = null; rank = 5 })
+        }
+
+        // Selected and read back with brand-new `* 2` instances — no val needed.
+        val doubled = db.autocommit {
+            Products.query().where(Products.displayName eq tag).select(Products.qty * 2).single()[Products.qty * 2]
+        }
+        assertEquals(20, doubled)
+
+        // Two different literals in one projection don't share a key.
+        val pair = db.autocommit {
+            val row = Products.query().where(Products.displayName eq tag).select(Products.qty * 2, Products.qty * 3).single()
+            row[Products.qty * 2] to row[Products.qty * 3]
+        }
+        assertEquals(20 to 30, pair)
+
+        // COALESCE(rank, 0) with a literal default also reads back with a fresh instance.
+        val coalesced = db.autocommit {
+            Products.query().where(Products.displayName eq tag).select(Products.rank.coalesce(0)).single()[Products.rank.coalesce(0)]
+        }
+        assertEquals(5, coalesced)
+
+        db.transaction { Products.deleteWhere(Query(Products.displayName eq tag)) }
+    }
+
+    /**
+     * `renderSql` produces the SQL a query would run, with its bound params, without a connection —
+     * for reads, writes and joins — and `db.renderSql` does the same using the database's dialect.
+     */
+    @Test
+    fun testRenderSqlWithoutExecuting() {
+        val id = Uuid.random()
+
+        // Offline render (no connection): the predicate value is bound, not inlined.
+        val find = renderSql(SqCatalog) { Products.find { where { Products.qty gtEq 10 } } }
+        assertTrue(find.sql.startsWith("SELECT"), find.sql)
+        assertTrue(find.sql.contains("WHERE"), find.sql)
+        assertEquals(listOf<Any?>(10), find.params.values.toList())
+
+        // Reads, writes and joins all render.
+        assertTrue(renderSql(SqCatalog) { Products.count { where { Products.qty gtEq 10 } } }.sql.trim().startsWith("SELECT COUNT(*)"))
+        assertTrue(renderSql(SqCatalog) { Products.update(Product().apply { qty = 1 }) { where { Products.id eq id } } }.sql.trim().startsWith("UPDATE"))
+        assertTrue(renderSql(SqCatalog) { Products.deleteWhere { where { Products.id eq id } } }.sql.trim().startsWith("DELETE"))
+        assertTrue(
+            renderSql(SqCatalog) {
+                (Authors innerJoin Books on (Authors.id eq Books.authorId)).select(Authors.name, Books.title)
+            }.sql.contains("INNER JOIN"),
+        )
+
+        // db.renderSql renders with the database's own dialect; same query → same SQL here.
+        val viaDb = db.renderSql { Products.find { where { Products.qty gtEq 10 } } }
+        assertEquals(find.sql, viaDb.sql)
+        assertEquals(find.params, viaDb.params)
+    }
+
+    /**
+     * `any` / `none` render correlated `EXISTS` / `NOT EXISTS`: the inner predicate references the
+     * outer table's column (`Books.authorId eq Authors.id`), and both sides render qualified.
+     */
+    @Test
+    fun testExistsViaAnyNone() {
+        val withBook = Uuid.random()
+        val withoutBook = Uuid.random()
+        val bookId = Uuid.random()
+        db.transaction {
+            Authors.execSql(authorsDdl)
+            Books.execSql(booksDdl)
+            Authors.insert(Author().apply { id = withBook; name = "Ada" })
+            Authors.insert(Author().apply { id = withoutBook; name = "Grace" })
+            Books.insert(Book().apply { id = bookId; authorId = withBook; title = "Notes" })
+        }
+        val scope = listOf(withBook, withoutBook)
+
+        // any → authors who have at least one book.
+        val haveBooks = db.autocommit {
+            Authors.find { where { (Authors.id inList scope) and Books.any { Books.authorId eq Authors.id } } }
+        }
+        assertEquals(listOf(withBook), haveBooks.map { it.id })
+
+        // none → authors with no books.
+        val noBooks = db.autocommit {
+            Authors.find { where { (Authors.id inList scope) and Books.none { Books.authorId eq Authors.id } } }
+        }
+        assertEquals(listOf(withoutBook), noBooks.map { it.id })
+
+        // Correlation plus an inner condition.
+        val withNotes = db.autocommit {
+            Authors.find { where { (Authors.id inList scope) and Books.any { (Books.authorId eq Authors.id) and (Books.title eq "Notes") } } }
+        }
+        assertEquals(listOf(withBook), withNotes.map { it.id })
+
+        db.transaction {
+            Books.deleteWhere(Query(Books.id eq bookId))
+            Authors.deleteWhere(Query(Authors.id inList scope))
+        }
+    }
+
+    /** `orderBy` accepts a computed expression — case-insensitive sort via `lower(name)`. */
+    @Test
+    fun testOrderByExpression() {
+        val rows = listOf("Zara", "alice", "bob").map { Uuid.random() to it }
+        db.transaction {
+            Authors.execSql(authorsDdl)
+            rows.forEach { (id, n) -> Authors.insert(Author().apply { this.id = id; name = n }) }
+        }
+        val scope = rows.map { it.first }
+
+        // Binary order would put "Zara" first (uppercase Z < lowercase a); lower(name) sorts properly.
+        val byLower = db.autocommit {
+            Authors.find {
+                where { Authors.id inList scope }
+                orderBy ASC Authors.name.lower()
+            }
+        }
+        assertEquals(listOf("alice", "bob", "Zara"), byLower.map { it.name })
+
+        db.transaction { Authors.deleteWhere(Query(Authors.id inList scope)) }
+    }
+
+    /** `length()` counts characters (read back, and used in a predicate). */
+    @Test
+    fun testLength() {
+        val idA = Uuid.random()
+        val idB = Uuid.random()
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = idA; price = BigDecimal.fromInt(1); qty = 1; displayName = "café"; note = null; rank = null }) // 4 chars
+            Products.insert(Product().apply { id = idB; price = BigDecimal.fromInt(1); qty = 1; displayName = "hi"; note = null; rank = null })   // 2 chars
+        }
+        val scope = listOf(idA, idB)
+
+        // Read the character count back from a projection.
+        val lengths = db.autocommit {
+            val len = Products.displayName.length()
+            Products.query().where(Products.id inList scope).select(len).map { it[len] }.sorted()
+        }
+        assertEquals(listOf(2, 4), lengths)
+
+        // Filter by length — `length()` is a NumericExpr, so it compares like a number.
+        val long = db.autocommit {
+            Products.find { where { (Products.id inList scope) and (Products.displayName.length() gtEq 3) } }
+        }
+        assertEquals(listOf("café"), long.map { it.displayName })
+
+        db.transaction { Products.deleteWhere(Query(Products.id inList scope)) }
+    }
+
+    /** N-ary `coalesce`: more columns via vararg, plus a trailing literal fallback. */
+    @Test
+    fun testCoalesceVararg() {
+        val idA = Uuid.random()
+        val idB = Uuid.random()
+        db.transaction {
+            Products.execSql(productsDdl)
+            Products.insert(Product().apply { id = idA; price = BigDecimal.fromInt(1); qty = 1; displayName = "A"; note = null; rank = null })
+            Products.insert(Product().apply { id = idB; price = BigDecimal.fromInt(1); qty = 1; displayName = "x"; note = "B"; rank = null })
+        }
+
+        // COALESCE("note", "displayName", 'Z'): A's note is NULL -> "A"; B's note -> "B".
+        val values = db.autocommit {
+            val c = Products.note.coalesce(Products.displayName).coalesce("Z")
+            Products.query().where(Products.id inList listOf(idA, idB)).select(c).map { it[c] }.sorted()
+        }
+        assertEquals(listOf("A", "B"), values)
+
+        db.transaction { Products.deleteWhere(Query(Products.id inList listOf(idA, idB))) }
+    }
 }
 
 object SqCatalog : Catalog
@@ -431,6 +933,34 @@ object Books : Table<SqCatalog, Book>("books", ::Book) {
     init { id; authorId; title }
 }
 
+class Review : Entity() {
+    var id by Reviews.id
+    var bookId by Reviews.bookId
+    var stars by Reviews.stars
+}
+
+object Reviews : Table<SqCatalog, Review>("reviews", ::Review) {
+    val id by Column.UUID().primaryKey()
+    val bookId by Column.UUID()
+    val stars by Column.Int()
+
+    init { id; bookId; stars }
+}
+
+class Label : Entity() {
+    var id by Labels.id
+    var a by Labels.a
+    var b by Labels.b
+}
+
+object Labels : Table<SqCatalog, Label>("labels", ::Label) {
+    val id by Column.UUID().primaryKey()
+    val a by Column.Text()
+    val b by Column.Text()
+
+    init { id; a; b }
+}
+
 class AllTypesEntity : Entity() {
     var id by AllTypes.id
     var anInt by AllTypes.anInt
@@ -475,4 +1005,6 @@ object AllTypes : Table<SqCatalog, AllTypesEntity>("all_types", ::AllTypesEntity
 internal val productsDdl = """CREATE TABLE IF NOT EXISTS "products" ("id" TEXT NOT NULL, "price" TEXT NOT NULL, "qty" INTEGER NOT NULL, "displayName" TEXT NOT NULL, "note" TEXT, "rank" INTEGER, PRIMARY KEY ("id"))"""
 internal val authorsDdl = """CREATE TABLE IF NOT EXISTS "authors" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, PRIMARY KEY ("id"))"""
 internal val booksDdl = """CREATE TABLE IF NOT EXISTS "books" ("id" TEXT NOT NULL, "authorId" TEXT NOT NULL, "title" TEXT NOT NULL, PRIMARY KEY ("id"))"""
+internal val reviewsDdl = """CREATE TABLE IF NOT EXISTS "reviews" ("id" TEXT NOT NULL, "bookId" TEXT NOT NULL, "stars" INTEGER NOT NULL, PRIMARY KEY ("id"))"""
+internal val labelsDdl = """CREATE TABLE IF NOT EXISTS "labels" ("id" TEXT NOT NULL, "a" TEXT NOT NULL, "b" TEXT NOT NULL, PRIMARY KEY ("id"))"""
 internal val allTypesDdl = """CREATE TABLE IF NOT EXISTS "all_types" ("id" TEXT NOT NULL, "anInt" INTEGER NOT NULL, "aDouble" REAL NOT NULL, "aBool" INTEGER NOT NULL, "aText" TEXT NOT NULL, "aDecimal" TEXT NOT NULL, "anInstant" TEXT NOT NULL, "aJson" TEXT NOT NULL, "aLong" INTEGER NOT NULL, "aFloat" REAL NOT NULL, "aShort" INTEGER NOT NULL, "aDate" TEXT NOT NULL, "aTime" TEXT NOT NULL, "aDateTime" TEXT NOT NULL, PRIMARY KEY ("id"))"""

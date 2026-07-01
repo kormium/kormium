@@ -3,6 +3,44 @@
 The core DSL is backend-agnostic. Backends provide a `Dialect`, a `TypeMapper` and a driver
 that executes parameterized SQL.
 
+## Engines: database × driver × target
+
+A backend is **one database × one driver × one target**, not a fork of the others. Every engine
+implements the *same* core SPI — `Dialect`, `SqlExecutor` / `SuspendSqlExecutor`, `ResultSet` —
+and reuses the one pure dialect per database (`kormium-<db>-dialect`, see
+[ADR 0001](adr/0001-standalone-dialect-modules.md)). So your `Table`/`Entity`/query code is
+identical regardless of which engine you open. Adding a driver is a new row below, not a new API.
+
+| Database | Driver | Target | API | Module |
+| --- | --- | --- | --- | --- |
+| PostgreSQL | JDBC + HikariCP | JVM | blocking + suspend | `kormium-postgres` |
+| PostgreSQL | libpq (cinterop) | Native | blocking + suspend | `kormium-postgres` |
+| PostgreSQL | r2dbc | JVM | suspend | `kormium-r2dbc` |
+| PostgreSQL | node-postgres (`pg`) | Wasm/Node | suspend | `kormium-postgres-node` |
+| PostgreSQL | PGlite (Postgres in WASM) | Wasm/browser + Node | suspend | separate repo: [kormium/pglite](https://github.com/kormium/pglite) |
+| MySQL / MariaDB | JDBC + HikariCP | JVM | blocking + suspend | `kormium-mysql` |
+| MySQL / MariaDB | libmariadb (cinterop) | Native (Linux/macOS) | blocking + suspend | `kormium-mysql` |
+| MySQL / MariaDB | r2dbc-mysql | JVM | suspend | `kormium-r2dbc` |
+| MySQL / MariaDB | mysql2 | Wasm/Node | suspend | `kormium-mysql-node` |
+| SQLite | sqlite-jdbc | JVM | blocking + suspend | `kormium-sqlite` |
+| SQLite | sqlite3 (cinterop) | Native / iOS | blocking + suspend | `kormium-sqlite` |
+| SQLite | AndroidX SQLite | Android | blocking + suspend | `kormium-sqlite` |
+| SQLite | better-sqlite3 | Wasm/Node | suspend | `kormium-sqlite-node` |
+| SQLite | wa-sqlite (SQLite in WASM) | Wasm/browser | suspend | `kormium-sqlite-wasm` |
+
+**Blocking + suspend** engines implement both `Database` and `SuspendDatabase`. The **suspend**-only
+engines (r2dbc and every Wasm/Node one) implement only `SuspendDatabase` — a JS event loop can't be
+blocked, and `SuspendDatabase` is a *sibling* of `Database`, not a subtype, exactly for this case.
+The Wasm/Node engines bind values as text and bridge the driver's `Promise` to suspend with
+`await()`; the JS-interop ones (PGlite, wa-sqlite) run a database compiled to WASM in the page. They
+share the named-parameter parser, the text `ResultSet` and the binding helper from
+`kormium-wasm-driver`, so only the driver bindings differ per engine.
+
+> **Supply chain:** `kormium-sqlite-node` uses a native npm package (better-sqlite3), so the build
+> re-enables npm install scripts for the Wasm/Node toolchain (see the root `build.gradle.kts`). npm
+> versions are pinned and the resolved tree is committed in `kotlin-js-store/*yarn.lock`; review
+> lockfile changes when bumping these engines' dependencies.
+
 ## PostgreSQL
 
 Artifact:
@@ -212,6 +250,10 @@ Kormium's common column types map through backend-specific SQL types:
 | `BigDecimal` | numeric | `TEXT` |
 | `Instant` and local date/time types | temporal/text depending on backend mapper | `TEXT` |
 | `Json` | JSON/JSONB-compatible binding | `TEXT` |
+| `Bytes` | `bytea` | `BLOB` |
+
+`Bytes` (`ByteArray`) is bound and read as native binary, not text: JDBC `setObject`/`getBytes`,
+libpq's `bytea` (OID 17), and a `Buffer`/`Uint8Array` on the Wasm/Node engines (verified there).
 
 The public API presents Kotlin values consistently even when storage differs.
 
@@ -225,6 +267,9 @@ The public API presents Kotlin values consistently even when storage differs.
 | Android | Not shipped | AndroidX SQLite |
 | iOS | Not shipped | sqlite3 |
 | Windows Native | libpq (experimental) | sqlite3 (experimental) |
-| Wasm | Research | Planned |
+| Wasm/Node | node-postgres (`kormium-postgres-node`) | better-sqlite3 (`kormium-sqlite-node`) |
+| Wasm/Browser | PGlite ([separate repo](https://github.com/kormium/pglite)) | wa-sqlite (`kormium-sqlite-wasm`) |
 
-See [Installation](installation.md#platform-matrix) for module-level details.
+MySQL/MariaDB on Wasm/Node uses mysql2 (`kormium-mysql-node`). See the
+[engine matrix](#engines-database--driver--target) above and
+[Installation](installation.md#platform-matrix) for module-level details.

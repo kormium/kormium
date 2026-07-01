@@ -31,7 +31,7 @@ class SuspendScope<G : Catalog> internal constructor(
     }
 
     /** Inserts [entity]; see [Scope.insert]. */
-    suspend fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T? {
+    suspend fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T {
         markWritten()
         return insert(entity, exec, returning)
     }
@@ -47,13 +47,13 @@ class SuspendScope<G : Catalog> internal constructor(
     }
 
     /** Insert-or-update on a single-column conflict target; see [Scope.upsert]. */
-    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T? {
+    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, listOf(onConflict), update, exec, returning)
     }
 
     /** Insert-or-update on a composite conflict target; see [Scope.upsert]. */
-    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T? {
+    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, onConflict, update, exec, returning)
     }
@@ -82,10 +82,15 @@ class SuspendScope<G : Catalog> internal constructor(
     /** Block form of [find]; see [Scope.find]. */
     suspend fun <T : Entity> Table<G, T>.find(block: QueryBuilder.() -> Unit): List<T> =
         select(QueryBuilder().apply(block).build(), exec)
-    suspend fun <T : Entity> Table<G, T>.findById(id: Any): T? = selectById(id, exec)
+    /** The first row matching [query] (typically a unique predicate), or null. Applies `LIMIT 1`. */
+    suspend fun <T : Entity> Table<G, T>.findOne(query: Query): T? = select(query.copy(limit = 1u), exec).firstOrNull()
+
+    /** Block form of [findOne]: `Users.findOne { where { Users.id eq id } }`. */
+    suspend fun <T : Entity> Table<G, T>.findOne(block: QueryBuilder.() -> Unit): T? =
+        findOne(QueryBuilder().apply(block).build())
     suspend fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
     /** Updates rows matching [query] with the present fields of [entity]; returns the affected row count. */
-    suspend fun <T : Entity> Table<G, T>.update(query: Query, entity: T): Long {
+    suspend fun <T : Entity> Table<G, T>.update(entity: T, query: Query): Long {
         markWritten()
         return updateRows(query, entity, exec)
     }

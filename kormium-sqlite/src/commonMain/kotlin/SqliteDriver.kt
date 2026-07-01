@@ -21,4 +21,7 @@ interface SqliteDriver : Database<Nothing>, SuspendDatabase<Nothing>, AutoClosea
 
     // Resolves the isClosed default inherited from both interfaces; concrete drivers track it.
     override val isClosed: Boolean
+
+    // Resolves the dialect default inherited from both interfaces; concrete drivers supply SqliteDialect.
+    override val dialect: Dialect
 }

@@ -16,7 +16,8 @@ interface TypeMapper {
  */
 object StandardTypeMapper : TypeMapper {
     override fun toParameter(value: Any?): Any? = when (value) {
-        null, is Boolean, is Int, is Long, is Double, is String -> value
+        // ByteArray passes through so backends can bind it as binary (blob/bytea) rather than text.
+        null, is Boolean, is Int, is Long, is Double, is String, is ByteArray -> value
         // BigDecimal.toString() runs bignum division per digit — hot on every numeric bind,
         // so render from the (significand, exponent) pair instead.
         is BigDecimal -> bigDecimalToParamString(value)

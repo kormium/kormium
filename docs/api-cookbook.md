@@ -160,6 +160,68 @@ fun usersAfter(cursor: User?): List<User> = db.autocommit {
 
 Each `where { }` is ANDed with the others; multiple `orderBy` calls keep their order.
 
+## Case-Insensitive Match (instead of `ILIKE`)
+
+Kormium has no `ilike` operator. Plain `like` / `eq` follow the engine's **collation**, so their
+case behavior differs across PostgreSQL, MySQL and SQLite. For a result that is identical on every
+backend, lower **both sides** explicitly with the `lower()` scalar function:
+
+```kotlin
+// Case-insensitive equality — matches "Ada", "ADA", "ada" on every engine.
+val ada = db.autocommit {
+    Users.find { where { Users.name.lower() eq "ada" } }            // LOWER("name") = 'ada'
+}
+
+// Case-insensitive LIKE — the pattern is already lowercase, since the left side is lowered.
+val examples = db.autocommit {
+    Users.find { where { Users.email.lower() like "%@example.com" } }
+}
+```
+
+`lower()` chains, and the right side can be another lowered column:
+
+```kotlin
+Users.find { where { Users.name.trim().lower() eq "ada" } }
+Users.find { where { Users.name.lower() eq Users.email.lower() } }
+```
+
+`LOWER("name")` cannot use a plain index on `name`. If you match on it often, add a functional
+index so the lookup stays fast:
+
+```kotlin
+db.transaction {
+    executeUpdate("""CREATE INDEX IF NOT EXISTS users_name_lower_idx ON "users" (LOWER("name"))""")
+}
+```
+
+`lower()` settles only the case dimension; locale ordering and accents still follow the collation.
+See [ADR 0002](adr/0002-no-ilike-explicit-lower.md) for the full rationale.
+
+## Render a Query's SQL Without Running It
+
+`renderSql { }` produces the SQL a query *would* run — as a string plus its bound parameters —
+without a connection. The block reads exactly like a `transaction { }` / `autocommit { }` body,
+but each operation returns its `RenderedSql` instead of executing. Useful to inspect, log, or
+have a coding agent self-check a query before it runs.
+
+```kotlin
+import io.github.kormium.renderSql
+
+// Offline: pass the Catalog (for the type tag) and a dialect.
+val r = renderSql(App, PostgresDialect) {
+    Users.find { where { Users.age gtEq 18 } }
+}
+println(r.sql)     //  SELECT "id", "name", "age" FROM "users" WHERE "age" >= :p0 ...
+println(r.params)  //  {p0=18}
+
+// Against a live database, using its own dialect:
+val r2 = db.renderSql { Users.deleteWhere { where { Users.deletedAt neq null } } }
+```
+
+Reads, writes and joins all render. A batch `insertAll` may split into several statements, so it
+returns a `List<RenderedSql>`. For a suspend-only backend (r2dbc), pass its dialect to the offline
+form: `renderSql(App, db.dialect) { ... }`.
+
 ## Count Rows
 
 ```kotlin
@@ -369,11 +431,12 @@ Kormium does not ship a `Repository` type — like Exposed, you call table opera
 queries, this small base is the recommended pattern; copy it and adapt it (it is yours to change):
 
 ```kotlin
-abstract class Repository<G : Catalog, T : Entity>(
+abstract class Repository<G : Catalog, T : Entity, ID>(
     protected val db: SuspendDatabase<G>,
     protected val table: Table<G, T>,
+    private val idColumn: Column<ID, *, T>,   // typed primary key, so findById is checked
 ) {
-    suspend fun findById(id: Any) = db.suspendAutocommit { table.findById(id) }
+    suspend fun findById(id: ID) = db.suspendAutocommit { table.findOne { where { idColumn eq id } } }
     suspend fun all() = db.suspendAutocommit { table.all() }
     suspend fun insert(entity: T) = db.suspendTransaction { table.insert(entity) }
     fun observeAll(): Flow<List<T>> = table.observe(db)                 // needs kormium-observe

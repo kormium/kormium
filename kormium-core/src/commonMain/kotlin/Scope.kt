@@ -38,7 +38,7 @@ class Scope<G : Catalog> internal constructor(
      * path). Pass `returning = true` to fetch the stored row back via SQL `RETURNING`, e.g. to
      * read database-generated columns; then it returns that row (or null if none).
      */
-    fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T? {
+    fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T {
         markWritten()
         return insert(entity, exec, returning)
     }
@@ -61,13 +61,13 @@ class Scope<G : Catalog> internal constructor(
      * and on conflict with [onConflict] updates with [update]'s present fields. Pass
      * `returning = true` to fetch the resulting row.
      */
-    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T? {
+    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, listOf(onConflict), update, exec, returning)
     }
 
     /** Insert-or-update on a composite (multi-column) conflict target; see the single-column overload. */
-    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T? {
+    fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, onConflict, update, exec, returning)
     }
@@ -96,10 +96,15 @@ class Scope<G : Catalog> internal constructor(
     /** Block form of [find]: `Users.find { where { ... }; orderBy DESC col; limit = 50 }`. */
     fun <T : Entity> Table<G, T>.find(block: QueryBuilder.() -> Unit): List<T> =
         select(QueryBuilder().apply(block).build(), exec)
-    fun <T : Entity> Table<G, T>.findById(id: Any): T? = selectById(id, exec)
+    /** The first row matching [query] (typically a unique predicate), or null. Applies `LIMIT 1`. */
+    fun <T : Entity> Table<G, T>.findOne(query: Query): T? = select(query.copy(limit = 1u), exec).firstOrNull()
+
+    /** Block form of [findOne]: `Users.findOne { where { Users.id eq id } }`. */
+    fun <T : Entity> Table<G, T>.findOne(block: QueryBuilder.() -> Unit): T? =
+        findOne(QueryBuilder().apply(block).build())
     fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
     /** Updates rows matching [query] with the present fields of [entity]; returns the affected row count. */
-    fun <T : Entity> Table<G, T>.update(query: Query, entity: T): Long {
+    fun <T : Entity> Table<G, T>.update(entity: T, query: Query): Long {
         markWritten()
         return updateRows(query, entity, exec)
     }

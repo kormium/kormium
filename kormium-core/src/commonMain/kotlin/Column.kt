@@ -1,12 +1,11 @@
 package io.github.kormium
 
 import io.github.kormium.resultset.ResultSet
-import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonElement
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
-private val logger = KotlinLogging.logger {}
+private val logger = kormiumLogger()
 
 /**
  * A typed column on table [T]. A column is the SQL identifier (an [Expression]/[Selectable])
@@ -35,8 +34,8 @@ sealed class Column<Z, T: Table<*, N>, N: Entity>(
     /** Rendered SQL column identifier. Equals [fieldKey] unless a custom name was supplied. */
     val name: String,
     val nullable: kotlin.Boolean,
-    val columnType: ColumnType<Z>,
-) : Expression, Selectable<Z> {
+    override val columnType: ColumnType<Z>,
+) : Expression, Operand<Z> {
 
     open fun init() {
         logger.trace { "init column $fieldKey (sql: $name)" }
@@ -56,9 +55,9 @@ sealed class Column<Z, T: Table<*, N>, N: Entity>(
     /** Whether this column is part of the table's primary key. */
     internal var isPrimaryKey: kotlin.Boolean = false
 
-    // As a selectable, read its value via its column type (its toSql is the SELECT SQL).
-    override fun read(rs: ResultSet, index: kotlin.Int, typeMapper: TypeMapper): Z? =
-        columnType.read(rs, index)
+    // The property delegate yields a fresh Column per access, so identity can't key a result row;
+    // table+SQL-name is the stable, dialect-independent key (aggregates embed this for their target).
+    override fun resultKey(): Any = "${table.tableName}.$name"
 
     // Converts a domain value to its bound form (e.g. enum -> name, @Serializable -> JsonElement)
     // before it reaches the ParamBuilder. Null passes through; built-in types are identity.
@@ -164,4 +163,5 @@ sealed class Column<Z, T: Table<*, N>, N: Entity>(
     class LocalDate(name: String? = null) : Spec<kotlinx.datetime.LocalDate>(name, LocalDateColumnType)
     class LocalTime(name: String? = null) : Spec<kotlinx.datetime.LocalTime>(name, LocalTimeColumnType)
     class LocalDateTime(name: String? = null) : Spec<kotlinx.datetime.LocalDateTime>(name, LocalDateTimeColumnType)
+    class Bytes(name: String? = null) : Spec<kotlin.ByteArray>(name, BytesColumnType)
 }

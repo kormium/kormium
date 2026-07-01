@@ -72,7 +72,7 @@ class NativeTableIntegrationTest {
             this.rank = null
         })
 
-        val found = NativeProducts.findById(id)
+        val found = NativeProducts.findOne { where { NativeProducts.id eq id } }
         assertEquals(id, found?.id)
         assertEquals(5, found?.qty)
         assertEquals("widget", found?.displayName)
@@ -81,7 +81,7 @@ class NativeTableIntegrationTest {
         assertEquals(0, BigDecimal.fromInt(100).compareTo(found?.price!!))
 
         NativeProducts.deleteWhere(Query(NativeProducts.id eq id))
-        assertNull(NativeProducts.findById(id))
+        assertNull(NativeProducts.findOne { where { NativeProducts.id eq id } })
         }
     }
 
@@ -155,7 +155,7 @@ class NativeTableIntegrationTest {
                 throw RuntimeException("boom")
             }
         }
-        assertNull(NativeDatabase.autocommit { NativeProducts.findById(id) })
+        assertNull(NativeDatabase.autocommit { NativeProducts.findOne { where { NativeProducts.id eq id } } })
     }
 
     /** A duplicate primary key surfaces as a typed UniqueViolationException (SQLSTATE 23505). */
@@ -207,8 +207,8 @@ class NativeTableIntegrationTest {
                 }
             }
         }
-        assertEquals(keep, NativeDatabase.autocommit { NativeProducts.findById(keep) }?.id)
-        assertNull(NativeDatabase.autocommit { NativeProducts.findById(inner) })
+        assertEquals(keep, NativeDatabase.autocommit { NativeProducts.findOne { where { NativeProducts.id eq keep } } }?.id)
+        assertNull(NativeDatabase.autocommit { NativeProducts.findOne { where { NativeProducts.id eq inner } } })
         NativeDatabase.transaction { NativeProducts.deleteWhere(Query(NativeProducts.id eq keep)) }
     }
 

@@ -49,4 +49,7 @@ object MySqlDialect : Dialect by StandardDialect {
     // No `ON CONFLICT DO NOTHING`; a no-op self-assignment on a conflict column ignores a dup key.
     override fun renderInsertOrIgnoreSuffix(conflictColumns: List<String>): String =
         "ON DUPLICATE KEY UPDATE ${conflictColumns.first()} = ${conflictColumns.first()}"
+
+    // MySQL's LENGTH counts bytes; CHAR_LENGTH counts characters (what length() promises).
+    override fun renderCharLength(arg: String): String = "CHAR_LENGTH($arg)"
 }

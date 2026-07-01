@@ -47,13 +47,13 @@ fun main() {
             Users.insertAll(listOf(user(1, "Alice", 30), user(2, "Bob", 25), user(3, "Carol", 41)))
         }
 
-        val carol = db.autocommit { Users.findById(3) }
-        println("findById(3) = ${carol?.name}")
+        val carol = db.autocommit { Users.findOne { where { Users.id eq 3 } } }
+        println("findOne(id=3) = ${carol?.name}")
 
         val over28 = db.autocommit { Users.find(Query(Users.age gt 28)) }
         println("age > 28   = ${over28.map { it.name }}")
 
-        db.transaction { Users.update(Query(Users.id eq 2), user(2, "Bob", 26)) }
+        db.transaction { Users.update(user(2, "Bob", 26), Query(Users.id eq 2)) }
         db.transaction { Users.deleteWhere(Query(Users.id eq 1)) }
 
         val remaining = db.autocommit { Users.all() }

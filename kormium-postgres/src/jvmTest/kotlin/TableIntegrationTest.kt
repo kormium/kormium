@@ -54,7 +54,7 @@ class TableIntegrationTest {
             this.rank = null
         })
 
-        val found = ItProducts.findById(id)
+        val found = ItProducts.findOne { where { ItProducts.id eq id } }
         assertEquals(id, found?.id)
         assertEquals(5, found?.qty)
         assertEquals("widget", found?.displayName)
@@ -68,11 +68,11 @@ class TableIntegrationTest {
         assertEquals(1, byQty.size)
 
         // Partial update: only non-null fields go into SET.
-        ItProducts.update(Query(ItProducts.id eq id), ItProduct().apply { this.qty = 9 })
-        assertEquals(9, ItProducts.findById(id)?.qty)
+        ItProducts.update(ItProduct().apply { this.qty = 9 }, Query(ItProducts.id eq id))
+        assertEquals(9, ItProducts.findOne { where { ItProducts.id eq id } }?.qty)
 
         ItProducts.deleteWhere(Query(ItProducts.id eq id))
-        assertNull(ItProducts.findById(id))
+        assertNull(ItProducts.findOne { where { ItProducts.id eq id } })
         }
     }
 
@@ -94,7 +94,7 @@ class TableIntegrationTest {
             this.note = null
         })
 
-        assertEquals(tricky, ItProducts.findById(id)?.displayName)
+        assertEquals(tricky, ItProducts.findOne { where { ItProducts.id eq id } }?.displayName)
         }
     }
 
@@ -129,7 +129,7 @@ class TableIntegrationTest {
                 this.note = null
                 this.rank = null
             })
-            ItProducts.findById(id)
+            ItProducts.findOne { where { ItProducts.id eq id } }
             }
         }
     }
@@ -212,7 +212,7 @@ class TableIntegrationTest {
             }
         }
         // The insert above must not have been committed.
-        assertNull(ItDatabase.autocommit { ItProducts.findById(id) })
+        assertNull(ItDatabase.autocommit { ItProducts.findOne { where { ItProducts.id eq id } } })
     }
 
     /**
@@ -247,8 +247,8 @@ class TableIntegrationTest {
                 }
             }
         }
-        assertEquals("kept", ItDatabase.autocommit { ItProducts.findById(kept) }?.displayName)
-        assertNull(ItDatabase.autocommit { ItProducts.findById(rolled) })
+        assertEquals("kept", ItDatabase.autocommit { ItProducts.findOne { where { ItProducts.id eq kept } } }?.displayName)
+        assertNull(ItDatabase.autocommit { ItProducts.findOne { where { ItProducts.id eq rolled } } })
     }
 
     /** new() returns the stored row via RETURNING. */
@@ -352,7 +352,7 @@ class TableIntegrationTest {
                 this.aDateTime = dateTime
             })
         }
-        val row = ItDatabase.autocommit { AllTypes.findById(id) }!!
+        val row = ItDatabase.autocommit { AllTypes.findOne { where { AllTypes.id eq id } } }!!
         assertEquals(42, row.anInt)
         assertEquals(2.5, row.aDouble)
         assertEquals(true, row.aBool)
