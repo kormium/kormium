@@ -141,8 +141,8 @@ db.transaction {
     Users.update(User().apply { age = 37 }) { where { Users.id eq id } }   // only assigned fields
     Users.deleteWhere { where { Users.name eq "Ada" } }
 
-    Users.upsert(user, conflict = listOf(Users.id), update = patch)        // INSERT ... ON CONFLICT
-    Users.insertOrIgnore(user, conflict = listOf(Users.id))
+    Users.upsert(user, onConflict = listOf(Users.id), update = patch)      // INSERT ... ON CONFLICT
+    Users.insertOrIgnore(user, onConflict = listOf(Users.id))
 }
 ```
 
