@@ -53,7 +53,7 @@ class TableIntegrationTest {
             assertNull(found?.rank)
             assertEquals(0, BigDecimal.fromInt(100).compareTo(found?.price!!))
 
-            ItProducts.update(Query(ItProducts.id eq id), ItProduct().apply { this.qty = 9 })
+            ItProducts.update(ItProduct().apply { this.qty = 9 }, Query(ItProducts.id eq id))
             assertEquals(9, ItProducts.findOne { where { ItProducts.id eq id } }?.qty)
 
             ItProducts.deleteWhere(Query(ItProducts.id eq id))

@@ -517,13 +517,13 @@ class TableTest {
             WHERE "id" = :p5
         """
         db.transaction {
-            TestTable.update(Query(TestTable.id eq uuid), TestEntity().apply {
+            TestTable.update(TestEntity().apply {
                 this.id = uuid
                 this.price = price
                 this.position = position
                 this.text = text
                 this.nullableTest = null
-            })
+            }, Query(TestTable.id eq uuid))
         }
         assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
         assertEquals(
@@ -548,10 +548,7 @@ class TableTest {
         val uuid = Uuid.random()
         val expectedResult = """UPDATE "products" SET "nullableTest"=:p0 WHERE "id" = :p1"""
         db.transaction {
-            TestTable.update(
-                Query(TestTable.id eq uuid),
-                TestEntity().apply { this.nullableTest = null },
-            )
+            TestTable.update(TestEntity().apply { this.nullableTest = null }, Query(TestTable.id eq uuid))
         }
         assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
         assertEquals(mapOf("p0" to null, "p1" to uuid.toString()), databaseMockObj.internalParams)
@@ -656,7 +653,7 @@ class TableTest {
     @Test
     fun testUpdateWithNoNonNullFieldsFails() {
         assertFailsWith<IllegalArgumentException> {
-            db.transaction { TestTable.update(Query(TestTable.id eq Uuid.random()), TestEntity()) }
+            db.transaction { TestTable.update(TestEntity(), Query(TestTable.id eq Uuid.random())) }
         }
     }
 

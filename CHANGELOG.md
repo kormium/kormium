@@ -38,6 +38,9 @@ All notable changes to Kormium are documented here. The format is based on
 - `Table.primaryKey` is now `List<Column<*, *, T>>` (was `List<Column<*, *, *>>`) and the table's
   columns carry their entity type. Source-compatible for normal use; code that passed columns held
   as a bare `Column<*, *, *>` to `onConflict` must use the table's own columns.
+- **`update(query, entity)` argument order flipped to `update(entity, query)`.** The `Query` form now
+  takes the patch entity first, matching the block form `update(entity) { where { … } }` — the entity
+  is in the same position in both. Migrate `update(Query(...), patch)` to `update(patch, Query(...))`.
 - **`findById(id: Any)` removed in favour of typed `findOne`.** The single untyped read in the API
   silently accepted a wrong-typed id (e.g. a `String` for a `Uuid` key) and bypassed the column's
   converter. Replaced by `findOne { where { Users.id eq id } }` / `findOne(Query(...))` → `T?`

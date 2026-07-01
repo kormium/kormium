@@ -54,11 +54,11 @@ class RenderScope<G : Catalog> internal constructor(val dialect: Dialect, val ty
     fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: List<Column<*, *, T>>): RenderedSql =
         RenderedSql(insertOrIgnoreSql(entity, onConflict, dialect, typeMapper))
 
-    fun <T : Entity> Table<G, T>.update(query: Query, entity: T): RenderedSql =
+    fun <T : Entity> Table<G, T>.update(entity: T, query: Query): RenderedSql =
         RenderedSql(updateSql(query, entity, dialect, typeMapper))
 
     fun <T : Entity> Table<G, T>.update(entity: T, block: QueryBuilder.() -> Unit): RenderedSql =
-        update(QueryBuilder().apply(block).build(), entity)
+        update(entity, QueryBuilder().apply(block).build())
 
     fun <T : Entity> Table<G, T>.update(block: UpdateBuilder.() -> Unit): RenderedSql {
         val builder = UpdateBuilder().apply(block)

@@ -104,7 +104,7 @@ class Scope<G : Catalog> internal constructor(
         findOne(QueryBuilder().apply(block).build())
     fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
     /** Updates rows matching [query] with the present fields of [entity]; returns the affected row count. */
-    fun <T : Entity> Table<G, T>.update(query: Query, entity: T): Long {
+    fun <T : Entity> Table<G, T>.update(entity: T, query: Query): Long {
         markWritten()
         return updateRows(query, entity, exec)
     }

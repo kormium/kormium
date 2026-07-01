@@ -109,7 +109,7 @@ class SqliteEdgeCaseTest {
     @Test
     fun updateMatchingNoRowsIsNoOp() {
         freshSchema()
-        db.transaction { EdgeTbl.update(Query(EdgeTbl.id eq Uuid.random()), EdgeR().apply { num = 5 }) }
+        db.transaction { EdgeTbl.update(EdgeR().apply { num = 5 }, Query(EdgeTbl.id eq Uuid.random())) }
     }
 
     @Test

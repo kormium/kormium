@@ -68,7 +68,7 @@ class TableIntegrationTest {
         assertEquals(1, byQty.size)
 
         // Partial update: only non-null fields go into SET.
-        ItProducts.update(Query(ItProducts.id eq id), ItProduct().apply { this.qty = 9 })
+        ItProducts.update(ItProduct().apply { this.qty = 9 }, Query(ItProducts.id eq id))
         assertEquals(9, ItProducts.findOne { where { ItProducts.id eq id } }?.qty)
 
         ItProducts.deleteWhere(Query(ItProducts.id eq id))

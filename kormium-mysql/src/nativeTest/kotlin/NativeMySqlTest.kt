@@ -127,7 +127,7 @@ class NativeMySqlTest {
             assertEquals(5, found?.qty)
             assertEquals(tricky, found?.name)
             db.transaction {
-                NativeProducts.update(Query(NativeProducts.id eq id), NativeProduct().apply { qty = 9 })
+                NativeProducts.update(NativeProduct().apply { qty = 9 }, Query(NativeProducts.id eq id))
             }
             assertEquals(9, db.autocommit { NativeProducts.findOne { where { NativeProducts.id eq id } } }?.qty)
             db.transaction { NativeProducts.deleteWhere(Query(NativeProducts.id eq id)) }
