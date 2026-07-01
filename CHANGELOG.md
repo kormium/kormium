@@ -6,6 +6,8 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.0] — Web stack (JS / Wasm / Node), and a pre-1.0 API consolidation
+
 ### Added
 - **Kotlin/JS + Kotlin/Wasm support.** The typed DSL now compiles and is tested on `js`, `wasmJs`
   and `wasmWasi`; `kormium-core`, `kormium-migrate` and `kormium-observe` ship web artifacts.
