@@ -69,9 +69,9 @@ private fun runOp(db: Database<BenchCatalog>, op: Op) {
         Op.BATCH_INSERT -> db.transaction { BenchTable.insertAll(List(BATCH_SIZE) { newRow("x") }) }
         Op.UPDATE_BY_ID -> db.transaction {
             BenchTable.update(
-                Query(BenchTable.id eq updateIds[Random.nextInt(UPDATE_ROWS)]),
-                BenchRow().apply { amount = BigDecimal.fromInt(2) },
-            )
+            BenchRow().apply { amount = BigDecimal.fromInt(2) },
+            Query(BenchTable.id eq updateIds[Random.nextInt(UPDATE_ROWS)]),
+        )
         }
     }
 }
