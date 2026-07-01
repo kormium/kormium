@@ -358,7 +358,8 @@ retrying {
   expected type). Column-to-column comparisons are NOT cross-checked — `intCol eq uuidCol` compiles,
   so match the types yourself.
 - `eq null` / `neq null` (→ `IS [NOT] NULL`) work only on **nullable** columns; on a non-null column
-  they don't compile (it can never be NULL).
+  they don't compile (it can never be NULL). For a computed expression that can be null (a `COALESCE`
+  of nullable columns, `rank + 1`, …), use `expr.isNull()` / `expr.isNotNull()` — available on any operand.
 - `orderBy` needs a direction — `orderBy ASC col` / `orderBy DESC col`; bare `orderBy col` is a syntax error.
 - Predicate names are `lt` / `ltEq` (not `less` / `lessEq` or `<`) and `neq` (not `ne`).
 - Read nullable join columns with `getOrNull`; `row[col]` throws on NULL/absent.

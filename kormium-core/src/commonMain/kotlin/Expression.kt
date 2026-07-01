@@ -228,15 +228,18 @@ class IsNullOp(private val column: Expression, private val negated: Boolean) : E
         "${column.toSql(builder)} IS ${if (negated) "NOT " else ""}NULL"
 }
 
-fun Column<*, *, *>.isNull(): Expression = IsNullOp(this, false)
-fun Column<*, *, *>.isNotNull(): Expression = IsNullOp(this, true)
+// `IS [NOT] NULL` on any operand — a column or a computed expression (`COALESCE` of nullable columns,
+// a `CASE`, an aggregate, …). This is the general form; nullable columns also get the `eq null` sugar
+// below. (A non-null column's `.isNull()` is allowed but always false — use it on the nullable ones.)
+fun Operand<*>.isNull(): Expression = IsNullOp(this, false)
+fun Operand<*>.isNotNull(): Expression = IsNullOp(this, true)
 
-// `column eq null` / `column neq null` render as IS [NOT] NULL. The `Nothing?` parameter
-// makes the null literal bind here instead of the typed `eq(value: Z)` overload, so the
-// comparison vocabulary stays uniform (`note eq null` reads like `age gtEq 18`). Restricted to a
-// NULLABLE column: a non-null column is never NULL, so `eq null` on one is a bug — and keeping this
-// overload off non-null columns means a typed mismatch (`age eq "x"`) reports against the real
-// `eq(value: Z)` candidate ("Int expected") instead of this one ("Nothing? expected").
+// `column eq null` / `column neq null` render as IS [NOT] NULL. The `Nothing?` parameter makes the
+// null literal bind here instead of the typed `eq(value: Z)` overload, so the comparison vocabulary
+// stays uniform (`note eq null` reads like `age gtEq 18`). Restricted to a NULLABLE column: a non-null
+// column is never NULL, so `eq null` on one is a bug — and keeping this overload off non-null columns
+// means a typed mismatch (`age eq "x"`) reports against the real `eq(value: Z)` candidate ("Int
+// expected") instead of this one ("Nothing? expected"). A computed nullable expression uses `.isNull()`.
 infix fun Column.NullableColumn<*, *, *>.eq(value: Nothing?): Expression = IsNullOp(this, false)
 infix fun Column.NullableColumn<*, *, *>.neq(value: Nothing?): Expression = IsNullOp(this, true)
 

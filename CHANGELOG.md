@@ -59,6 +59,9 @@ All notable changes to Kormium are documented here. The format is based on
 - **Predicates renamed `less` → `lt`, `lessEq` → `ltEq`.** The comparison operators are now symmetric
   (`lt` / `ltEq` paired with `gt` / `gtEq`, instead of the abbreviated `gt` against the spelled-out
   `less`), matching the common `lt`/`gt` convention. `eq` / `neq` / `gt` / `gtEq` are unchanged.
+- **`isNull()` / `isNotNull()` moved from `Column` to any `Operand`.** A computed expression that can be
+  null (a `COALESCE` of nullable columns, `rank + 1`, a `CASE`, …) can now be tested for NULL —
+  previously only a `Column` could. Additive; `eq null` / `neq null` stay as the nullable-column sugar.
 
 ## [0.8.0] — Cross-instance notifications, Windows async, expression UPDATE
 

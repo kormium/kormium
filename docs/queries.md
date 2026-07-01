@@ -450,8 +450,9 @@ Not modeled by the typed DSL today:
 
 The supported `WHERE` / `HAVING` predicates are exactly: `eq`, `neq`, `lt`, `ltEq`, `gt`,
 `gtEq`, `between` (an inclusive `lo..hi` range; an empty range matches nothing), `like`,
-`inList`, `eq null` / `neq null` (rendered as `IS [NOT] NULL`), and the `and` / `or` / `not(...)`
-combinators.
+`inList`, `eq null` / `neq null` on a nullable column (rendered as `IS [NOT] NULL`) or
+`expr.isNull()` / `expr.isNotNull()` on any operand (including a computed one), and the
+`and` / `or` / `not(...)` combinators.
 
 ## Observing Changes
 
