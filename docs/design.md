@@ -20,10 +20,14 @@ transactions and indexes.
 
 | Module | Responsibility |
 | --- | --- |
-| `kormium-core` | DSL, table/entity model, query rendering contracts, scopes and migrations |
-| `kormium-postgres` | PostgreSQL dialect and backend factories for JDBC/libpq |
-| `kormium-sqlite` | SQLite dialect and backend factories for sqlite-jdbc/sqlite3/AndroidX SQLite |
-| `kormium-r2dbc` | Async PostgreSQL `SuspendDatabase` implementation |
+| `kormium-core` | DSL, table/entity model, query rendering contracts and scopes |
+| `kormium-<db>-dialect` | The pure SQL dialect per database (`postgres`/`sqlite`/`mysql`), compiled to every target — see [ADR 0001](adr/0001-standalone-dialect-modules.md) |
+| `kormium-postgres` | PostgreSQL backend factories for JDBC/libpq |
+| `kormium-mysql` | MySQL / MariaDB backend factories for JDBC/libmariadb |
+| `kormium-sqlite` | SQLite backend factories for sqlite-jdbc/sqlite3/AndroidX SQLite |
+| `kormium-r2dbc` | Async PostgreSQL and MySQL `SuspendDatabase` implementations |
+| `kormium-{sqlite-wasm,sqlite-node,postgres-node,mysql-node}` | Browser / Node engines (suspend-only), sharing `kormium-wasm-driver` |
+| `kormium-migrate` | Ordered, checksummed migration runner over raw SQL execution |
 | `kormium-observe` | Reactive `Flow` queries over core's `WriteListener` commit hook |
 | `kormium-jdbc` | Shared JVM JDBC execution, pooling and named parameter binding |
 | `kormium-ktor*` | Server integration over the suspend API |
@@ -131,24 +135,25 @@ join the caller's connection instead of opening their own.
 ## Joins and Result Rows
 
 Join SQL qualifies columns by table to avoid ambiguous identifiers. `ResultRow` maps
-selected fields by key:
+selected fields by a **structural** key (`Selectable.resultKey()`), because delegated column
+access and the expression operators create fresh instances per use:
 
-- columns are keyed by table name and column name because delegated column access may create
-  fresh column instances;
-- aggregate expressions are keyed by instance, so users should keep them in `val`s.
+- a column keys by table name and column name;
+- a computed expression (aggregate, `COALESCE`, `CASE`, arithmetic, string function) keys by its
+  structure — the function/shape over its operands' keys, including literals.
 
-That tradeoff keeps projection reads simple while preserving typed access:
+So a row reads back with a freshly built, identical expression — a `val` is handy for reuse (and
+in `having(...)`), not required:
 
 ```kotlin
-val total = Orders.total.sum()
 row[Users.name]
-row[total]
+row[Orders.total.sum()]   // fresh instance; no val needed
 ```
 
 ## Migrations
 
-Migrations live in core because they operate on scopes and raw execution. Backends only need
-to provide normal SQL execution.
+Migrations live in their own module, `kormium-migrate` (not core): they build on scopes and raw
+execution, so they need no backend-specific code. Backends only need to provide normal SQL execution.
 
 Each migration:
 

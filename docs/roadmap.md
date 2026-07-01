@@ -11,8 +11,11 @@ Shipped today:
 - backend-agnostic Kotlin Multiplatform core;
 - PostgreSQL on JVM through JDBC/HikariCP;
 - PostgreSQL on Kotlin/Native through libpq;
+- MySQL / MariaDB on JVM (JDBC) and Kotlin/Native (libmariadb);
 - SQLite on JVM, Kotlin/Native and Android;
-- JVM-only async PostgreSQL through r2dbc;
+- async PostgreSQL and MySQL on JVM through r2dbc;
+- browser & Node engines (JS / Wasm): SQLite (wa-sqlite, better-sqlite3) and Node
+  Postgres/MySQL — see [Backends](backends.md) and [Web targets](web-targets.md);
 - typed table/entity DSL;
 - an open `ColumnType` system (built-ins + `enum`/`json` + custom converters);
 - typed predicates, joins and aggregations;
@@ -31,20 +34,24 @@ and a smaller chance that public API has to move later.
 
 ### API Hardening
 
-- Review naming consistency across blocking and suspend APIs.
 - Decide which APIs are stable enough to keep source-compatible after 1.0.
 - Make raw SQL extension points clearer and safer.
-- Improve compiler errors where catalog/type inference currently produces noisy messages.
 - Keep the entity model small unless a new abstraction removes real complexity.
-- Work through the sharp edges tracked in [API ergonomics review](api-ergonomics.md).
+
+(Done: blocking/suspend naming reviewed and made symmetric — `lt`/`ltEq` paired with `gt`/`gtEq`;
+comparison/membership operators unified onto one `Operand<Z>` abstraction; untyped `findById`
+replaced by typed `findOne`; `insert`/`upsert` return a non-null `T`; a compile-error-quality audit
+tightened predicate mismatch messages; the impl-only expression nodes are `internal`. See the
+[API ergonomics review](api-ergonomics.md).)
 
 ### Query Coverage
 
-- Consider richer update/delete result reporting.
-
 (Done: tests for joins with colliding column names; aggregation/`HAVING` coverage; pagination,
 projection and nullable-left-join recipes; an explicit unsupported-SQL section in
-[queries](queries.md).)
+[queries](queries.md). `RETURNING` on `UPDATE`/`DELETE` was considered and **declined** — it isn't
+portable (MySQL has none) without hidden multi-statement emulation; see
+[ADR 0008](adr/0008-no-returning-on-update-delete.md). Get the rows with an explicit two-step in one
+transaction.)
 
 ### Schema and Migrations
 
@@ -89,9 +96,11 @@ After 1.0 the project should optimize for compatibility and ecosystem fit:
 These are useful but should not distract from core reliability:
 
 - Windows Native hardening — drop the experimental label after a stable release cycle;
-- Kotlin web stack (JS / Wasm-JS / Wasm-WASI) — the typed DSL already compiles and tests
-  green on all three; next are SQLite (browser) and Node (sqlite/pg/mysql) engines. A PGlite
-  engine (Postgres in the browser) lives in a separate repo. See [Web targets](web-targets.md);
+- Kotlin web stack (JS / Wasm-JS / Wasm-WASI) — the typed DSL compiles and tests green on all
+  three, and the browser/Node engines have shipped (wa-sqlite in the browser, better-sqlite3 /
+  node-postgres / mysql2 on Node); still new, so treated as experimental. A PGlite engine
+  (Postgres in the browser) lives in a separate repo. Remaining: wasmWasi stays DSL-only until
+  WASI sockets mature. See [Web targets](web-targets.md);
 - more SQL dialects;
 - richer schema DSL;
 - generated entities or compiler plugin support;

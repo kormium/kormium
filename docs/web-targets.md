@@ -43,8 +43,10 @@ Near-term targets (have real DB access today):
   Compose Multiplatform todo app — `./gradlew :samples:wasm-todo:wasmJsBrowserDevelopmentRun`.
   Tested under Node in CI by passing the `.wasm` as `wasmBinary` (wa-sqlite's async build would
   otherwise `fetch()` it, which Node rejects for `file://`).
-- **Node — SQLite / Postgres / MySQL.** Kotlin compiled to JS/Wasm running under Node, against
-  real databases via the `node:sqlite` / `node-postgres` / `mysql2` packages. Next up.
+- **Node — SQLite / Postgres / MySQL** ✅ `kormium-sqlite-node` (better-sqlite3),
+  `kormium-postgres-node` (node-postgres, pooled), `kormium-mysql-node` (mysql2, pooled). Kotlin
+  compiled to JS/Wasm running under Node against real databases; suspend-only, sharing
+  `kormium-wasm-driver`.
 
 ### PGlite lives in a separate repo
 
@@ -55,11 +57,10 @@ target (~20 MB), kept out of core; use it when you specifically want Postgres-on
 parity between client and server. The patterns it proved (named-ESM `@file:JsModule` import,
 text binding, Promise→suspend, single-connection `Mutex`) carry over to the engines above.
 
-## Phase 2 — Breadth
+## Phase 2 — Breadth ✅ (done)
 
-- The remaining Node engines (whichever of sqlite/pg/mysql aren't done first).
-- Add web targets to the pure modules `kormium-migrate` and `kormium-observe` (after a
-  jvm-ism audit).
+- All three Node engines shipped (sqlite/pg/mysql, above).
+- The pure modules `kormium-migrate` and `kormium-observe` now ship web artifacts too.
 
 ## Phase 3 — Upstream + wasmWasi
 
