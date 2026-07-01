@@ -219,8 +219,8 @@ open class ComparisonBenchmark {
     @Benchmark
     fun kormiumUpdateById(): Any? = kormiumDb.transaction {
         CmpTable.update(
-            Query(CmpTable.id eq updateKormiumIds[randomUpdateIndex()]),
             CmpRow().apply { amount = KormiumBigDecimal.fromInt(2) },
+            Query(CmpTable.id eq updateKormiumIds[randomUpdateIndex()]),
         )
     }
 
