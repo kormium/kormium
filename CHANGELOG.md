@@ -41,6 +41,10 @@ All notable changes to Kormium are documented here. The format is based on
 - **`update(query, entity)` argument order flipped to `update(entity, query)`.** The `Query` form now
   takes the patch entity first, matching the block form `update(entity) { where { … } }` — the entity
   is in the same position in both. Migrate `update(Query(...), patch)` to `update(patch, Query(...))`.
+- **`insert` / `upsert` now return a non-null `T`** (was `T?`). They always yield a row — the passed
+  entity on the fast path, or the written row on `returning = true` — so the result no longer needs a
+  `!!`. The `returning = true` path now throws (instead of returning null) if the row can't be read
+  back, matching `insertAll`. `insertOrIgnore` still returns the affected-row count (`Long`).
 - **`findById(id: Any)` removed in favour of typed `findOne`.** The single untyped read in the API
   silently accepted a wrong-typed id (e.g. a `String` for a `Uuid` key) and bypassed the column's
   converter. Replaced by `findOne { where { Users.id eq id } }` / `findOne(Query(...))` → `T?`

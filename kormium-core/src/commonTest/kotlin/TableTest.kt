@@ -490,19 +490,21 @@ class TableTest {
                         ("id", "price", "position", "text", "nullableTest")
                         VALUES (:p0, :p1, :p2, :p3, :p4)
                         RETURNING "id", "price", "position", "text", "nullableTest""""
-        db.transaction {
-            TestTable.insert(
-                TestEntity().apply {
-                    this.id = Uuid.random()
-                    this.price = BigDecimal.fromInt(1)
-                    this.position = 1
-                    this.text = "x"
-                    this.nullableTest = null
-                },
-                returning = true,
-            )
+        val entity = TestEntity().apply {
+            this.id = Uuid.random()
+            this.price = BigDecimal.fromInt(1)
+            this.position = 1
+            this.text = "x"
+            this.nullableTest = null
         }
-        assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
+        databaseMockObj.result = listOf(entity)   // RETURNING yields the written row back (insert is non-null)
+        try {
+            val returned = db.transaction { TestTable.insert(entity, returning = true) }
+            assertEquals(entity, returned)
+            assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
+        } finally {
+            databaseMockObj.result = null
+        }
     }
 
     @Test
