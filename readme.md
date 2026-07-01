@@ -10,9 +10,10 @@
 Type-safe ORM and SQL DSL for Kotlin Multiplatform.
 
 Kormium gives you an Exposed-like Kotlin API for tables, entities, typed predicates,
-transactions, migrations, joins and aggregations, while keeping the core portable across
-JVM and Kotlin/Native. It ships PostgreSQL, MySQL/MariaDB, SQLite, async r2dbc
-(PostgreSQL and MySQL) and Ktor integration modules.
+transactions, migrations, joins and aggregations, with one schema and query model shared
+across **server and client**. The core runs on JVM, Kotlin/Native, Android and iOS — and,
+experimentally, on Node and in the browser (Wasm). It ships PostgreSQL, MySQL/MariaDB and
+SQLite backends, async r2dbc (PostgreSQL and MySQL) and Ktor integration modules.
 
 ```kotlin
 object App : Catalog
@@ -47,8 +48,8 @@ val adults = db.autocommit {
 
 ## Why Kormium?
 
-- **Multiplatform core.** Write tables, entities, queries and migrations once; run them
-  on JVM and Kotlin/Native backends.
+- **Multiplatform core.** Write tables, entities, queries and migrations once; run them on
+  JVM, Kotlin/Native, Android and iOS — and, experimentally, on Node and in the browser (Wasm).
 - **Typed SQL DSL.** Predicates are built from columns and Kotlin values (`Users.age gtEq
   18`), and values are always bound as parameters.
 - **Catalog safety.** A `Table<App, User>` cannot be used inside a `Database<Cache>`
@@ -138,6 +139,8 @@ dependencies {
     // implementation("io.github.kormium:kormium-sqlite")   // SQLite, JVM + Native + Android
     // implementation("io.github.kormium:kormium-r2dbc")    // async PostgreSQL + MySQL, JVM only
 
+    // Experimental (new in 0.9.0): kormium-sqlite-wasm (browser), kormium-{sqlite,postgres,mysql}-node — see docs/web-targets.md
+
     // implementation("io.github.kormium:kormium-observe")  // reactive Flow queries
     // implementation("io.github.kormium:kormium-migrate")  // SQL migration runner
 
@@ -172,15 +175,18 @@ module details.
 
 ## Platform Support
 
-| Platform | PostgreSQL | SQLite | Notes |
-| --- | --- | --- | --- |
-| JVM | JDBC/HikariCP; async r2dbc | sqlite-jdbc | The most stable server target |
-| Linux Native | libpq | sqlite3 | Covered by CI native tests |
-| macOS Native | libpq | sqlite3 | Published artifacts for x64 and arm64 |
-| Android | Not shipped | AndroidX SQLite | `kormium-core` and `kormium-sqlite` compile for Android |
-| iOS | Not shipped | sqlite3 | `kormium-core`, `kormium-sqlite` and Ktor integration compile for iOS |
-| Windows Native | libpq (experimental) | sqlite3 (experimental) | CI runs JVM + native tests on a Windows runner |
-| Wasm | Research | Planned | No shipped backend yet |
+| Platform | PostgreSQL | MySQL / MariaDB | SQLite | Notes |
+| --- | --- | --- | --- | --- |
+| JVM | JDBC/HikariCP; async r2dbc | JDBC; async r2dbc | sqlite-jdbc | The most stable server target |
+| Linux Native | libpq | libmariadb | sqlite3 | Covered by CI native tests |
+| macOS Native | libpq | libmariadb | sqlite3 | Published artifacts for x64 and arm64 |
+| Windows Native | libpq (experimental) | JVM driver only | sqlite3 (experimental) | CI runs JVM + native tests on a Windows runner |
+| Android | Not shipped | Not shipped | AndroidX SQLite | Client target; `kormium-core` + `kormium-sqlite` compile for Android |
+| iOS | Not shipped | Not shipped | sqlite3 | Client target; core, `kormium-sqlite` and Ktor integration compile for iOS |
+| Node (experimental) | node-postgres | mysql2 | better-sqlite3 | New in 0.9.0 |
+| Browser / Wasm (experimental) | — | — | wa-sqlite | New in 0.9.0; runs in the browser |
+
+> **Note:** the web targets — Node and browser/Wasm — are **experimental** and new in 0.9.0. The rest of the matrix is exercised by CI against real databases (see [Testing strategy](#testing-strategy)).
 
 ## Minimal Workflow
 
@@ -222,6 +228,7 @@ Runnable samples live under `samples/`:
 | `samples:ktor-di` | Ktor CRUD with built-in DI |
 | `samples:ktor-koin` | Ktor CRUD with Koin |
 | `samples:r2dbc` | Ktor CRUD on async r2dbc PostgreSQL |
+| `samples:wasm-todo` | SQLite in the browser: Compose Multiplatform + wa-sqlite (experimental) |
 
 See [Samples and benchmarks](docs/project.md#samples).
 
