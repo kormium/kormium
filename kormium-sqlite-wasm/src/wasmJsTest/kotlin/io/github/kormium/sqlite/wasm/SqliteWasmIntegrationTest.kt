@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 package io.github.kormium.sqlite.wasm
 
 import io.github.kormium.Catalog
