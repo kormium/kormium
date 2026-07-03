@@ -410,6 +410,38 @@ Use raw SQL only when the SQL text is fully controlled by your application:
 Users.find(Query(RawExpression("""lower("name") = 'ada'""")))
 ```
 
+## Vector Search (pgvector)
+
+A [vector column](tables-and-entities.md#vector-columns-pgvector) computes a pgvector distance to a
+query vector. `distance(query, metric)` returns an orderable `Double`, so nearest-neighbour search is
+an ordinary `orderBy` — ascending, since for every metric *smaller is more similar*:
+
+```kotlin
+val query = Vector(openAiClient.embed(question))
+
+val nearest = Docs.find {
+    orderBy ASC Docs.embedding.distance(query, VectorMetric.COSINE)
+    limit = 5
+}
+```
+
+`metric` defaults to `COSINE` (the usual choice for text embeddings). Three named aliases read more
+directly and are exactly `distance(query, ...)` under the hood:
+
+| Alias | `distance(...)` | SQL | Metric |
+| --- | --- | --- | --- |
+| `euclideanDistance(v)` | `distance(v, EUCLIDEAN)` | `<->` | Euclidean (L2) distance |
+| `cosineDistance(v)` | `distance(v, COSINE)` | `<=>` | cosine distance (`1 - similarity`) |
+| `innerProduct(v)` | `distance(v, DOT)` | `<#>` | negative inner product (≤ 0) |
+
+The query vector binds as a parameter with a `::vector` cast — never string-interpolated. The
+operators also take another vector operand (`Docs.embedding.euclideanDistance(Other.centroid)`) for
+column-to-column distance, and compose in `where` for a radius filter
+(`where { Docs.embedding.cosineDistance(query) lt 0.2 }`) or a `select(...)` projection to read the
+score back. Building an ANN index (`ivfflat` / `hnsw`) is a DDL/migration concern — and the index's
+operator class must match the metric you query (`vector_cosine_ops` for `cosineDistance`, etc.) for it
+to be used. This is Postgres-only; the operators render pgvector syntax.
+
 ## Unsupported / Out-of-Scope SQL
 
 Kormium covers a deliberate slice of SQL: typed `SELECT`/`WHERE`/`ORDER BY`/`LIMIT`/`OFFSET`,

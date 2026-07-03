@@ -125,6 +125,38 @@ new storage type; most custom types are a `convert` over `TextColumnType` / `Jso
 `IntColumnType`. Conversion applies on insert, update and in predicates, so
 `where { Users.role eq Role.ADMIN }` binds the stored form automatically.
 
+## Vector Columns (pgvector)
+
+For AI / RAG workloads, `kormium-postgres` ships a column type for the
+[pgvector](https://github.com/pgvector/pgvector) `vector` type, storing an embedding as a
+`Vector` (an unboxed `FloatArray` with value semantics):
+
+```kotlin
+object Docs : Table<App, Doc>("docs", ::Doc) {
+    val id        by Column.UUID().primaryKey()
+    val embedding by Column.Vector(dimensions = 1536)   // entity property: Vector
+}
+
+doc.embedding = Vector(openAiClient.embed(text))        // FloatArray or List<Float>
+```
+
+`dimensions` (optional) is validated on every write, so a wrong-length embedding fails fast with
+a clear message instead of an opaque server error. As always Kormium does not own DDL — enable the
+extension and declare the column in raw SQL or a migration:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE TABLE docs (id uuid PRIMARY KEY, embedding vector(1536) NOT NULL);
+```
+
+> **pgvector is a third-party extension, not part of core PostgreSQL** — it ships with no standard
+> distribution. Install the binary first (an OS package like `postgresql-16-pgvector`, the
+> `pgvector/pgvector` Docker image, or enabling it on a managed service such as RDS/Cloud SQL/Supabase),
+> then run `CREATE EXTENSION vector`. Without the installed binary that statement fails with
+> "could not open extension control file".
+
+See [Queries → Vector search](queries.md#vector-search-pgvector) for nearest-neighbour ordering.
+
 ## Entities
 
 ```kotlin

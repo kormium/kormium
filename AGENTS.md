@@ -345,6 +345,36 @@ retrying {
 }
 ```
 
+**Vector / semantic search (pgvector, Postgres).** Store an embedding in a `Column.Vector` and
+rank by a distance operator — nearest-neighbour search is a plain ascending `orderBy` (for every
+metric, smaller = more similar). Kormium does not own DDL, so enable the extension and declare the
+column in a migration (`CREATE EXTENSION vector; ... embedding vector(1536)`):
+
+```kotlin
+object Docs : Table<App, Doc>("docs", ::Doc) {
+    val id        by Column.UUID().primaryKey()
+    val embedding by Column.Vector(dimensions = 1536)   // entity property: Vector
+}
+class Doc : Entity() { var id by Docs.id; var embedding by Docs.embedding }
+
+// embed(...) is YOUR embedding model (OpenAI/Cohere/local ...), not a Kormium function; it returns a
+// FloatArray / List<Float>. Kormium stores and searches vectors, it does not generate them.
+db.transaction { Docs.insert(Doc().apply { id = docId; embedding = Vector(embed(text)) }) }
+
+val query = Vector(embed(question))
+val hits = db.autocommit {
+    Docs.find {
+        orderBy ASC Docs.embedding.distance(query, VectorMetric.COSINE)   // <=>
+        limit = 5
+    }
+}
+```
+
+`distance(query, metric)` (metric defaults to `COSINE`) has aliases `euclideanDistance` (`<->`),
+`cosineDistance` (`<=>`), `innerProduct` (`<#>`). The query vector binds as a parameter with a
+`::vector` cast (never interpolated). `Vector` wraps a `FloatArray` (or `List<Float>`); `dimensions`
+is validated on write. See [docs/queries.md](docs/queries.md#vector-search-pgvector).
+
 ## Gotchas
 
 - Operations are scope extensions — they don't compile outside `db.transaction { }` /
