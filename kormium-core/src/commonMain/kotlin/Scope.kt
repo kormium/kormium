@@ -146,6 +146,7 @@ class Scope<G : Catalog> internal constructor(
         return deleteRows(QueryBuilder().apply(block).build(), exec)
     }
 
+    @DelicateKormiumApi
     fun <T : Entity> Table<G, T>.execSql(sql: String) {
         markWritten()
         runRaw(sql, exec)
@@ -188,37 +189,31 @@ class Scope<G : Catalog> internal constructor(
 
     /**
      * Runs a raw query on the pinned connection, mapping each row with [handler]. Kormium can't
-     * see which tables raw SQL touches, so pass any it writes in [invalidates] to notify write
-     * listeners (e.g. `kormium-observe`) on commit; leave it empty for a pure read.
+     * see which tables raw SQL touches, so [invalidates] must list any it writes to notify write
+     * listeners (e.g. `kormium-observe`) on commit — pass `emptyList()` for a pure read. [params]
+     * must be given explicitly too, even when empty, so the parameterized path is never more
+     * effort than concatenating values into [sql].
      */
+    @DelicateKormiumApi
     fun <R> execute(
         sql: String,
-        params: Map<String, Any?> = emptyMap(),
-        invalidates: List<Table<G, *>> = emptyList(),
+        params: Map<String, Any?>,
+        invalidates: List<Table<G, *>>,
         handler: (ResultSet) -> R,
     ): List<R> {
         invalidates.forEach { it.markWritten() }
         return exec.execute(sql, params, handler)
     }
 
-    /** Runs raw SQL on the pinned connection, returning the row/update count. See [invalidates]. */
-    fun execute(
-        sql: String,
-        params: Map<String, Any?> = emptyMap(),
-        invalidates: List<Table<G, *>> = emptyList(),
-    ): Long {
-        invalidates.forEach { it.markWritten() }
-        return exec.execute(sql, params)
-    }
-
-    /** Runs a raw statement (DDL/DML) on the pinned connection. See [invalidates]. */
+    /** Runs a raw statement (DDL/DML) on the pinned connection, returning the affected row count. See [execute]. */
+    @DelicateKormiumApi
     fun executeUpdate(
         sql: String,
-        params: Map<String, Any?> = emptyMap(),
-        invalidates: List<Table<G, *>> = emptyList(),
-    ) {
+        params: Map<String, Any?>,
+        invalidates: List<Table<G, *>>,
+    ): Long {
         invalidates.forEach { it.markWritten() }
-        exec.executeUpdate(sql, params)
+        return exec.executeUpdate(sql, params)
     }
 
     /**

@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.Catalog
 import io.github.kormium.KormiumConfig
 import io.github.kormium.QueryEvent
@@ -29,7 +31,7 @@ class QueryObserverTest {
     fun selectIsObservedWithKindRowCountAndBackend() {
         val events = mutableListOf<QueryEvent>()
         val db = mock({ events += it }, listOf(1, 2, 3))
-        val rows = db.autocommit { execute("SELECT 1") { it.getInt(0) } }
+        val rows = db.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { it.getInt(0) } }
         assertEquals(3, rows.size)
         assertEquals(1, events.size)
         val e = events.single()
@@ -47,7 +49,7 @@ class QueryObserverTest {
     fun updateReportsAffectedRowCountAndKind() {
         val events = mutableListOf<QueryEvent>()
         val db = mock({ events += it }, 5L)
-        val affected = db.transaction { execute("UPDATE t SET x = :x", mapOf("x" to 1)) }
+        val affected = db.transaction { executeUpdate("UPDATE t SET x = :x", params = mapOf("x" to 1), invalidates = emptyList()) }
         assertEquals(5L, affected)
         val e = events.single()
         assertEquals(QueryKind.Update, e.kind)
@@ -58,7 +60,9 @@ class QueryObserverTest {
     fun observerNeverSeesParameterValues() {
         val events = mutableListOf<QueryEvent>()
         val db = mock({ events += it }, 1L)
-        db.transaction { executeUpdate("INSERT INTO t (secret) VALUES (:secret)", mapOf("secret" to "hunter2")) }
+        db.transaction {
+            executeUpdate("INSERT INTO t (secret) VALUES (:secret)", params = mapOf("secret" to "hunter2"), invalidates = emptyList())
+        }
         // The SQL template is reported verbatim; the value must not appear anywhere on the event.
         assertEquals("INSERT INTO t (secret) VALUES (:secret)", events.single().sql)
         assertEquals(QueryKind.Insert, events.single().kind)
@@ -68,14 +72,14 @@ class QueryObserverTest {
     fun nullObserverDoesNotWrapOrCrash() {
         val db = mock(null, listOf(42))
         // No observer configured: the call path must work exactly as before.
-        assertEquals(listOf(42), db.autocommit { execute("SELECT 1") { it.getInt(0) } })
+        assertEquals(listOf(42), db.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { it.getInt(0) } })
     }
 
     @Test
     fun throwingObserverDoesNotBreakTheQuery() {
         val db = mock({ throw RuntimeException("observer boom") }, listOf(7))
         // A misbehaving observer is swallowed; the query result is unaffected.
-        assertEquals(listOf(7), db.autocommit { execute("SELECT 1") { it.getInt(0) } })
+        assertEquals(listOf(7), db.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { it.getInt(0) } })
     }
 
     @Test
@@ -85,7 +89,7 @@ class QueryObserverTest {
             config = KormiumConfig(queryObserver = { events += it })
             result = listOf(1, 2)
         }
-        val rows = db.suspendAutocommit { execute("SELECT 1") { it.getInt(0) } }
+        val rows = db.suspendAutocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { it.getInt(0) } }
         assertEquals(2, rows.size)
         val e = events.single()
         assertEquals(QueryKind.Select, e.kind)

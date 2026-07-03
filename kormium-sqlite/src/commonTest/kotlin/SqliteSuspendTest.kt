@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.SuspendDatabase

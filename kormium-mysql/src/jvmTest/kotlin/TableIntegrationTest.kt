@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
@@ -192,9 +194,9 @@ class TableIntegrationTest {
         assumeDockerAvailable()
         ItDatabase.newDriver(poolSize = 1).use { driver ->
             assertFailsWith<Exception> {
-                driver.autocommit { execute("SELECT * FROM table_that_does_not_exist") { rs -> rs.getInt(0) } }
+                driver.autocommit { execute("SELECT * FROM table_that_does_not_exist", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) } }
             }
-            assertEquals(1, driver.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) } }.single())
+            assertEquals(1, driver.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) } }.single())
         }
     }
 
@@ -205,7 +207,7 @@ class TableIntegrationTest {
         val driver = ItDatabase.newDriver(poolSize = 1)
         driver.close()
         assertFailsWith<DatabaseClosedException> {
-            driver.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) } }
+            driver.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) } }
         }
     }
 
@@ -251,14 +253,15 @@ class TableIntegrationTest {
         ItDatabase.migrate(migrations)
         ItDatabase.migrate(migrations) // already applied -> no-op
 
-        val rows = ItDatabase.autocommit { execute("SELECT id FROM `$table`") { it.getInt(0) } }
+        val rows = ItDatabase.autocommit { execute("SELECT id FROM `$table`", params = emptyMap(), invalidates = emptyList()) { it.getInt(0) } }
         assertEquals(listOf(1), rows)
 
-        ItDatabase.autocommit { executeUpdate("DROP TABLE `$table`") }
+        ItDatabase.autocommit { executeUpdate("DROP TABLE `$table`", params = emptyMap(), invalidates = emptyList()) }
         ItDatabase.autocommit {
             executeUpdate(
                 "DELETE FROM kormium_migrations WHERE id IN (:a, :b)",
-                mapOf("a" to "001-$suffix", "b" to "002-$suffix"),
+                params = mapOf("a" to "001-$suffix", "b" to "002-$suffix"),
+                invalidates = emptyList(),
             )
         }
     }
@@ -482,6 +485,8 @@ object ItDatabase : Database<ItCatalog> {
                     `rank` INT
                 )
                 """.trimIndent(),
+                params = emptyMap(),
+                invalidates = emptyList(),
             )
         }
     }

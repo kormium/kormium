@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity
@@ -33,7 +35,7 @@ class SqliteResultMappingTest {
         db.transaction {
             RmItems.execSql(rmDdlNameNullable)
             // Plant a row whose non-null `name` is actually NULL in the database.
-            executeUpdate("INSERT INTO rm_items (id, note) VALUES (:id, :note)", mapOf("id" to id.toString(), "note" to "x"))
+            executeUpdate("INSERT INTO rm_items (id, note) VALUES (:id, :note)", params = mapOf("id" to id.toString(), "note" to "x"), invalidates = emptyList())
         }
         val ex = assertFailsWith<ResultMappingException> {
             db.autocommit { RmItems.findOne { where { RmItems.id eq id } } }
@@ -52,7 +54,8 @@ class SqliteResultMappingTest {
             // Plant a non-parseable UUID in the non-null `ref` column.
             executeUpdate(
                 "INSERT INTO rm_typed (id, ref, status) VALUES (:id, :ref, :status)",
-                mapOf("id" to id.toString(), "ref" to "not-a-uuid", "status" to "ACTIVE"),
+                params = mapOf("id" to id.toString(), "ref" to "not-a-uuid", "status" to "ACTIVE"),
+                invalidates = emptyList(),
             )
         }
         val ex = assertFailsWith<ResultMappingException> { db.autocommit { RmTyped.findOne { where { RmTyped.id eq id } } } }
@@ -69,7 +72,8 @@ class SqliteResultMappingTest {
             RmTyped.execSql(rmTypedDdl)
             executeUpdate(
                 "INSERT INTO rm_typed (id, ref, status) VALUES (:id, :ref, :status)",
-                mapOf("id" to id.toString(), "ref" to Uuid.random().toString(), "status" to "BOGUS"),
+                params = mapOf("id" to id.toString(), "ref" to Uuid.random().toString(), "status" to "BOGUS"),
+                invalidates = emptyList(),
             )
         }
         val ex = assertFailsWith<ResultMappingException> { db.autocommit { RmTyped.findOne { where { RmTyped.id eq id } } } }
@@ -84,7 +88,7 @@ class SqliteResultMappingTest {
         val id = Uuid.random()
         db.transaction {
             RmItems.execSql(rmDdlNameNullable)
-            executeUpdate("INSERT INTO rm_items (id, name) VALUES (:id, :name)", mapOf("id" to id.toString(), "name" to "ok"))
+            executeUpdate("INSERT INTO rm_items (id, name) VALUES (:id, :name)", params = mapOf("id" to id.toString(), "name" to "ok"), invalidates = emptyList())
         }
         val row = db.autocommit { RmItems.findOne { where { RmItems.id eq id } } }
         assertEquals("ok", row?.name)

@@ -101,6 +101,7 @@ internal fun structuralKey(expr: Expression): Any = when (expr) {
  * input — prefer [Value] and the typed operators below. Use only for SQL you
  * fully control.
  */
+@DelicateKormiumApi
 class RawExpression(val expression: String) : Expression {
     override fun toSql(builder: ParamBuilder): String = expression
 }

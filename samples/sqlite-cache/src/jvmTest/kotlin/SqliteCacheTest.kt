@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 package io.github.kormium.samples.sqlitecache
 
 import io.github.kormium.autocommit

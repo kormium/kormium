@@ -46,7 +46,9 @@ db.migrate(
 ## Foreign Keys and Check Constraints
 
 Kormium does not model foreign keys, composite/partial indexes or check constraints in the
-table DSL — declare them in the same raw SQL that creates the table (or in a migration).
+table DSL — declare them in the same raw SQL that creates the table (or in a migration). Raw SQL
+needs `@OptIn(DelicateKormiumApi::class)` in scope, and `executeUpdate` always takes `params` and
+`invalidates` explicitly:
 
 ```kotlin
 db.transaction {
@@ -57,8 +59,14 @@ db.transaction {
              "total" integer NOT NULL CHECK ("total" >= 0),
              PRIMARY KEY ("id")
            )""",
+        params = emptyMap(),
+        invalidates = emptyList(),
     )
-    executeUpdate("""CREATE INDEX IF NOT EXISTS orders_user_idx ON "orders" ("userId")""")
+    executeUpdate(
+        """CREATE INDEX IF NOT EXISTS orders_user_idx ON "orders" ("userId")""",
+        params = emptyMap(),
+        invalidates = emptyList(),
+    )
 }
 ```
 
@@ -186,11 +194,16 @@ Users.find { where { Users.name.lower() eq Users.email.lower() } }
 ```
 
 `LOWER("name")` cannot use a plain index on `name`. If you match on it often, add a functional
-index so the lookup stays fast:
+index so the lookup stays fast (raw SQL, so `@OptIn(DelicateKormiumApi::class)` and explicit
+`params`/`invalidates` apply here too):
 
 ```kotlin
 db.transaction {
-    executeUpdate("""CREATE INDEX IF NOT EXISTS users_name_lower_idx ON "users" (LOWER("name"))""")
+    executeUpdate(
+        """CREATE INDEX IF NOT EXISTS users_name_lower_idx ON "users" (LOWER("name"))""",
+        params = emptyMap(),
+        invalidates = emptyList(),
+    )
 }
 ```
 
@@ -391,6 +404,8 @@ val db: Database<App> = createSqliteDatabase()
 db.transaction {
     executeUpdate(
         """CREATE TABLE IF NOT EXISTS "users" ("id" INTEGER NOT NULL, "name" TEXT NOT NULL, PRIMARY KEY ("id"))""",
+        params = emptyMap(),
+        invalidates = emptyList(),
     )
 }
 ```

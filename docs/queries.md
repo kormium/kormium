@@ -393,7 +393,8 @@ val byAge = db.autocommit {
 ## Raw Expressions
 
 `RawExpression` embeds SQL verbatim. It is useful for controlled SQL fragments, but unsafe
-with untrusted input.
+with untrusted input. Like the other raw-SQL escape hatches, it requires
+`@OptIn(DelicateKormiumApi::class)` in scope.
 
 Prefer:
 
@@ -416,7 +417,8 @@ Kormium covers a deliberate slice of SQL: typed `SELECT`/`WHERE`/`ORDER BY`/`LIM
 predicate vocabulary below. The DSL does not try to model all of SQL. Anything outside that
 slice runs through raw SQL — either a `RawExpression` inside the DSL or `execute(...)` /
 `executeUpdate(...)` on a scope (see [Raw Expressions](#raw-expressions) and the
-[API cookbook](api-cookbook.md)).
+[API cookbook](api-cookbook.md)). All of these require `@OptIn(DelicateKormiumApi::class)`;
+`execute`/`executeUpdate` also require `params` and `invalidates` as explicit arguments.
 
 Not modeled by the typed DSL today:
 

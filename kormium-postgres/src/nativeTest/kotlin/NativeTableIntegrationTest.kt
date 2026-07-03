@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.Catalog
 import io.github.kormium.CheckViolationException
@@ -98,10 +100,10 @@ class NativeTableIntegrationTest {
         }
         nativeDriver(poolSize = 1).use { driver ->
             assertFailsWith<Exception> {
-                driver.autocommit { execute("SELECT * FROM table_that_does_not_exist") { rs -> rs.getInt(0) } }
+                driver.autocommit { execute("SELECT * FROM table_that_does_not_exist", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) } }
             }
             // Same single connection must still be usable after the error above.
-            assertEquals(1, driver.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) } }.single())
+            assertEquals(1, driver.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) } }.single())
         }
     }
 
@@ -115,7 +117,7 @@ class NativeTableIntegrationTest {
         val driver = nativeDriver(poolSize = 1)
         driver.close()
         assertFailsWith<DatabaseClosedException> {
-            driver.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) } }
+            driver.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) } }
         }
     }
 
@@ -224,7 +226,9 @@ class NativeTableIntegrationTest {
         NativeDatabase.transaction {
             executeUpdate(
                 """CREATE TABLE IF NOT EXISTS public.native_upsert (""" +
-                    """tenant uuid NOT NULL, sku text NOT NULL, qty int NOT NULL, UNIQUE (tenant, sku))"""
+                    """tenant uuid NOT NULL, sku text NOT NULL, qty int NOT NULL, UNIQUE (tenant, sku))""",
+                params = emptyMap(),
+                invalidates = emptyList(),
             )
             NativeUpsert.upsert(
                 entity = NativeUpsertRow().apply { this.tenant = tenant; this.sku = sku; qty = 1 },
@@ -259,12 +263,16 @@ class NativeTableIntegrationTest {
         NativeDatabase.transaction {
             executeUpdate(
                 """CREATE TABLE IF NOT EXISTS public.native_check (""" +
-                    """id uuid PRIMARY KEY, amount int NOT NULL CHECK (amount >= 0))"""
+                    """id uuid PRIMARY KEY, amount int NOT NULL CHECK (amount >= 0))""",
+                params = emptyMap(),
+                invalidates = emptyList(),
             )
-            executeUpdate("""CREATE TABLE IF NOT EXISTS public.native_fk_parent (id uuid PRIMARY KEY)""")
+            executeUpdate("""CREATE TABLE IF NOT EXISTS public.native_fk_parent (id uuid PRIMARY KEY)""", params = emptyMap(), invalidates = emptyList())
             executeUpdate(
                 """CREATE TABLE IF NOT EXISTS public.native_fk_child (""" +
-                    """id uuid PRIMARY KEY, parent_id uuid REFERENCES public.native_fk_parent(id))"""
+                    """id uuid PRIMARY KEY, parent_id uuid REFERENCES public.native_fk_parent(id))""",
+                params = emptyMap(),
+                invalidates = emptyList(),
             )
         }
         val check = assertFailsWith<CheckViolationException> {
@@ -277,7 +285,8 @@ class NativeTableIntegrationTest {
             NativeDatabase.transaction {
                 executeUpdate(
                     "INSERT INTO public.native_fk_child (id, parent_id) VALUES (:id::uuid, :p::uuid)",
-                    mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    params = mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    invalidates = emptyList(),
                 )
             }
         }
@@ -298,14 +307,16 @@ class NativeTableIntegrationTest {
         nativeDriver(poolSize = 1).use { driver ->
             driver.transaction {
                 // Pin the session zone so timestamptz prints the bare "+00" form.
-                execute("SET TIME ZONE 'UTC'")
+                executeUpdate("SET TIME ZONE 'UTC'", params = emptyMap(), invalidates = emptyList())
                 val rows = execute(
                     """
                     SELECT '2024-01-15 13:45:30.123456+00'::timestamptz,
                            '2024-01-15 13:45:30'::timestamp,
                            '2024-01-15'::date,
                            '13:45:30'::time
-                    """.trimIndent()
+                    """.trimIndent(),
+                    params = emptyMap(),
+                    invalidates = emptyList(),
                 ) { rs ->
                     assertEquals(Instant.parse("2024-01-15T13:45:30.123456Z"), rs.getInstant(0))
                     assertEquals(LocalDateTime.parse("2024-01-15T13:45:30"), rs.getLocalDateTime(1))
@@ -332,7 +343,7 @@ class NativeTableIntegrationTest {
             val futures = workers.map { worker ->
                 worker.execute(TransferMode.SAFE, { driver }) { db ->
                     var ok = 0
-                    repeat(2_000) { if (db.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) ?: 0 } }.single() == 1) ok++ }
+                    repeat(2_000) { if (db.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) ?: 0 } }.single() == 1) ok++ }
                     ok
                 }
             }
@@ -356,7 +367,7 @@ class NativeTableIntegrationTest {
         nativeDriver(poolSize = 1).use { driver ->
             repeat(10) { i ->
                 val got = driver.autocommit {
-                    execute("SELECT :a::int + :b::int", mapOf("a" to i, "b" to 100)) { rs -> rs.getInt(0) }
+                    execute("SELECT :a::int + :b::int", params = mapOf("a" to i, "b" to 100), invalidates = emptyList()) { rs -> rs.getInt(0) }
                 }.single()
                 assertEquals(i + 100, got)
             }
@@ -375,7 +386,7 @@ class NativeTableIntegrationTest {
             val futures = workers.map { worker ->
                 worker.execute(TransferMode.SAFE, { driver }) { db ->
                     var sum = 0
-                    repeat(50) { sum += db.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) ?: 0 } }.single() }
+                    repeat(50) { sum += db.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) ?: 0 } }.single() }
                     sum
                 }
             }
@@ -457,7 +468,9 @@ object NativeDatabase : Database<NativeCatalog> {
                     note text,
                     rank int
                 )
-                """.trimIndent()
+                """.trimIndent(),
+                params = emptyMap(),
+                invalidates = emptyList(),
             )
         }
     }

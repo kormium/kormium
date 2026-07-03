@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
@@ -474,17 +476,20 @@ class SqliteIntegrationTest {
     @Test
     fun testForeignKeyViolationIsTyped() {
         db.transaction {
-            executeUpdate("CREATE TABLE IF NOT EXISTS fk_parent (id TEXT PRIMARY KEY)")
+            executeUpdate("CREATE TABLE IF NOT EXISTS fk_parent (id TEXT PRIMARY KEY)", params = emptyMap(), invalidates = emptyList())
             executeUpdate(
                 "CREATE TABLE IF NOT EXISTS fk_child (" +
-                    "id TEXT PRIMARY KEY, parent_id TEXT REFERENCES fk_parent(id))"
+                    "id TEXT PRIMARY KEY, parent_id TEXT REFERENCES fk_parent(id))",
+                params = emptyMap(),
+                invalidates = emptyList(),
             )
         }
         assertFailsWith<ForeignKeyViolationException> {
             db.transaction {
                 executeUpdate(
                     "INSERT INTO fk_child (id, parent_id) VALUES (:id, :p)",
-                    mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    params = mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    invalidates = emptyList(),
                 )
             }
         }

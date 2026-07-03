@@ -120,6 +120,7 @@ class SuspendScope<G : Catalog> internal constructor(
         return deleteRows(QueryBuilder().apply(block).build(), exec)
     }
 
+    @DelicateKormiumApi
     suspend fun <T : Entity> Table<G, T>.execSql(sql: String) {
         markWritten()
         runRaw(sql, exec)
@@ -161,38 +162,29 @@ class SuspendScope<G : Catalog> internal constructor(
         hydrateLeftPairs(left, right, runSelect(exec, asJoin(), pairSelectFields(left, right)))
 
     /**
-     * Runs a raw query on the pinned connection, mapping each row with [handler]. Pass any
-     * tables the SQL writes in [invalidates] to notify write listeners on commit; see
+     * Runs a raw query on the pinned connection, mapping each row with [handler]. See
      * [Scope.execute].
      */
+    @DelicateKormiumApi
     suspend fun <R> execute(
         sql: String,
-        params: Map<String, Any?> = emptyMap(),
-        invalidates: List<Table<G, *>> = emptyList(),
+        params: Map<String, Any?>,
+        invalidates: List<Table<G, *>>,
         handler: (ResultSet) -> R,
     ): List<R> {
         invalidates.forEach { it.markWritten() }
         return exec.execute(sql, params, handler)
     }
 
-    /** Runs raw SQL on the pinned connection, returning the row/update count. See [invalidates]. */
-    suspend fun execute(
-        sql: String,
-        params: Map<String, Any?> = emptyMap(),
-        invalidates: List<Table<G, *>> = emptyList(),
-    ): Long {
-        invalidates.forEach { it.markWritten() }
-        return exec.execute(sql, params)
-    }
-
-    /** Runs a raw statement (DDL/DML) on the pinned connection. See [invalidates]. */
+    /** Runs a raw statement (DDL/DML) on the pinned connection, returning the affected row count. See [Scope.executeUpdate]. */
+    @DelicateKormiumApi
     suspend fun executeUpdate(
         sql: String,
-        params: Map<String, Any?> = emptyMap(),
-        invalidates: List<Table<G, *>> = emptyList(),
-    ) {
+        params: Map<String, Any?>,
+        invalidates: List<Table<G, *>>,
+    ): Long {
         invalidates.forEach { it.markWritten() }
-        exec.executeUpdate(sql, params)
+        return exec.executeUpdate(sql, params)
     }
 
     /**

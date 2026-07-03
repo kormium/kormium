@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 package io.github.kormium.sample.todo
 
 import io.github.kormium.database.SuspendDatabase

@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity
@@ -56,7 +58,7 @@ class SqliteQueryObserverTest {
     fun observesRawExecute() {
         db.transaction { ObsItems.execSql(obsItemsDdl) }
         events.clear()
-        db.autocommit { execute("SELECT 1") }
+        db.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { } }
         assertTrue(events.any { it.kind == QueryKind.Select && it.sql == "SELECT 1" })
     }
 

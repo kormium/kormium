@@ -367,4 +367,6 @@ retrying {
   compare against a `RawExpression`), `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
   `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, simple `CASE expr WHEN` (searched
   `case { }` is supported), scalar functions beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`/`length`,
-  `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.
+  `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for
+  those — both require `@OptIn(DelicateKormiumApi::class)`, and `execute`/`executeUpdate` require
+  `params`/`invalidates` explicitly (`emptyMap()`/`emptyList()` when there's nothing to pass).

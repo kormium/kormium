@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 package kormium.bench
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
@@ -79,7 +81,7 @@ open class KormiumBenchmark {
         )
         db.transaction {
             BenchTable.execSql(benchDdl)
-            executeUpdate("""CREATE INDEX IF NOT EXISTS bench_name_idx ON "public"."bench" ("name")""")
+            executeUpdate("""CREATE INDEX IF NOT EXISTS bench_name_idx ON "public"."bench" ("name")""", params = emptyMap(), invalidates = emptyList())
         }
     }
 
@@ -88,7 +90,7 @@ open class KormiumBenchmark {
     @Setup(Level.Iteration)
     fun resetTable() {
         db.transaction {
-            executeUpdate("""TRUNCATE "public"."bench"""")
+            executeUpdate("""TRUNCATE "public"."bench"""", params = emptyMap(), invalidates = emptyList())
             BenchTable.insert(BenchRow().apply { id = seededId; name = "seed"; amount = BigDecimal.fromInt(1) })
         }
     }

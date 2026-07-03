@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 package io.github.kormium.r2dbc
 
 import io.github.kormium.Catalog
@@ -61,10 +63,12 @@ class R2dbcEdgeCaseTest {
                 ECheck.execSql(eCheckDdl)
                 EUpsert.execSql(eUpsertDdl)
                 ENotNull.execSql(eNotNullDdl)
-                executeUpdate("""CREATE TABLE IF NOT EXISTS "e_fk_parent" ("id" uuid PRIMARY KEY)""")
+                executeUpdate("""CREATE TABLE IF NOT EXISTS "e_fk_parent" ("id" uuid PRIMARY KEY)""", params = emptyMap(), invalidates = emptyList())
                 executeUpdate(
                     """CREATE TABLE IF NOT EXISTS "e_fk_child" (""" +
-                        """"id" uuid PRIMARY KEY, "parent_id" uuid REFERENCES "e_fk_parent"("id"))"""
+                        """"id" uuid PRIMARY KEY, "parent_id" uuid REFERENCES "e_fk_parent"("id"))""",
+                    params = emptyMap(),
+                    invalidates = emptyList(),
                 )
             }
         }
@@ -178,7 +182,8 @@ class R2dbcEdgeCaseTest {
                 db!!.suspendTransaction {
                     executeUpdate(
                         """INSERT INTO "e_notnull" ("id") VALUES (:id::uuid)""",
-                        mapOf("id" to Uuid.random().toString()),
+                        params = mapOf("id" to Uuid.random().toString()),
+                        invalidates = emptyList(),
                     )
                 }
             }
@@ -195,7 +200,8 @@ class R2dbcEdgeCaseTest {
                 db!!.suspendTransaction {
                     executeUpdate(
                         """INSERT INTO "e_fk_child" ("id", "parent_id") VALUES (:id::uuid, :p::uuid)""",
-                        mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                        params = mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                        invalidates = emptyList(),
                     )
                 }
             }

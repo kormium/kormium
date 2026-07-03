@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 package io.github.kormium.r2dbc
 
 import io.github.kormium.TransactionIsolation
@@ -52,21 +54,21 @@ class R2dbcTransactionOptionsTest {
         val database = db!!
         runBlocking {
             val level = database.suspendTransaction(isolation = TransactionIsolation.Serializable) {
-                execute("SHOW transaction_isolation") { it.getString(0) }.first()
+                execute("SHOW transaction_isolation", params = emptyMap(), invalidates = emptyList()) { it.getString(0) }.first()
             }
             assertEquals("serializable", level)
 
             val readOnly = database.suspendTransaction(readOnly = true) {
-                execute("SHOW transaction_read_only") { it.getString(0) }.first()
+                execute("SHOW transaction_read_only", params = emptyMap(), invalidates = emptyList()) { it.getString(0) }.first()
             }
             assertEquals("on", readOnly)
 
             database.suspendAutocommit {
-                executeUpdate("""CREATE TABLE IF NOT EXISTS r2_ro_widgets ("id" int PRIMARY KEY)""")
+                executeUpdate("""CREATE TABLE IF NOT EXISTS r2_ro_widgets ("id" int PRIMARY KEY)""", params = emptyMap(), invalidates = emptyList())
             }
             assertFailsWith<Throwable> {
                 database.suspendTransaction(readOnly = true) {
-                    executeUpdate("INSERT INTO r2_ro_widgets (\"id\") VALUES (1)")
+                    executeUpdate("INSERT INTO r2_ro_widgets (\"id\") VALUES (1)", params = emptyMap(), invalidates = emptyList())
                 }
             }
         }

@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 package kormium.bench
 
 import com.zaxxer.hikari.HikariConfig
@@ -151,7 +153,7 @@ open class ComparisonBenchmark {
         kormiumDb.transaction {
             CmpTable.execSql("DROP TABLE IF EXISTS \"cmp_bench\"")
             CmpTable.execSql(cmpBenchDdl)
-            executeUpdate("""CREATE INDEX IF NOT EXISTS cmp_bench_name_idx ON "public"."cmp_bench" ("name")""")
+            executeUpdate("""CREATE INDEX IF NOT EXISTS cmp_bench_name_idx ON "public"."cmp_bench" ("name")""", params = emptyMap(), invalidates = emptyList())
         }
 
         exposedDs = HikariDataSource(HikariConfig().apply {
@@ -181,7 +183,7 @@ open class ComparisonBenchmark {
     @Setup(Level.Iteration)
     fun resetTable() {
         kormiumDb.transaction {
-            executeUpdate("""TRUNCATE "public"."cmp_bench"""")
+            executeUpdate("""TRUNCATE "public"."cmp_bench"""", params = emptyMap(), invalidates = emptyList())
             CmpTable.insert(CmpRow().apply { id = seededKormiumId; name = "seed"; amount = KormiumBigDecimal.fromInt(1) })
             CmpTable.insertAll(List(BULK_ROWS) { newKormiumRow("bulk") })
             CmpTable.insertAll(updateKormiumIds.map { rowId ->

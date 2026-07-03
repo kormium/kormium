@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.Catalog
 import io.github.kormium.CheckViolationException
 import io.github.kormium.Column
@@ -56,10 +58,12 @@ class QueryCoverageTest {
             QcNotNull.execSql(qcNotNullDdl)
             QcCheck.execSql(qcCheckDdl)
             QcUpsert.execSql(qcUpsertDdl)
-            executeUpdate("CREATE TABLE IF NOT EXISTS qc_fk_parent (id uuid PRIMARY KEY)")
+            executeUpdate("CREATE TABLE IF NOT EXISTS qc_fk_parent (id uuid PRIMARY KEY)", params = emptyMap(), invalidates = emptyList())
             executeUpdate(
                 "CREATE TABLE IF NOT EXISTS qc_fk_child (" +
-                    "id uuid PRIMARY KEY, parent_id uuid REFERENCES qc_fk_parent(id))"
+                    "id uuid PRIMARY KEY, parent_id uuid REFERENCES qc_fk_parent(id))",
+                params = emptyMap(),
+                invalidates = emptyList(),
             )
         }
     }
@@ -224,7 +228,8 @@ class QueryCoverageTest {
                 // typed column mapper, and pgjdbc cannot infer a SQL type for kotlin.uuid.Uuid.
                 executeUpdate(
                     "INSERT INTO qc_notnull (id) VALUES (:id::uuid)",
-                    mapOf("id" to Uuid.random().toString()),
+                    params = mapOf("id" to Uuid.random().toString()),
+                    invalidates = emptyList(),
                 )
             }
         }
@@ -238,7 +243,8 @@ class QueryCoverageTest {
             ItDatabase.transaction {
                 executeUpdate(
                     "INSERT INTO qc_fk_child (id, parent_id) VALUES (:id::uuid, :p::uuid)",
-                    mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    params = mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    invalidates = emptyList(),
                 )
             }
         }

@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
@@ -57,7 +59,7 @@ class NativeMySqlTest {
         driver.close()
         assertEquals(true, driver.isClosed)
         driver.close() // idempotent: must not throw
-        assertFailsWith<DatabaseClosedException> { driver.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) } } }
+        assertFailsWith<DatabaseClosedException> { driver.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) } } }
     }
 
     @Test

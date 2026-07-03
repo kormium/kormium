@@ -157,7 +157,8 @@ Kormium does not own schema management. A `Table` describes how rows map to enti
 queries, inserts and updates — not the full database schema. Create and evolve schema with
 a migration tool (Flyway, Liquibase) or raw SQL, which also gives you indexes, foreign
 keys, checks, defaults and generated columns that the mapping layer intentionally does not
-model:
+model. Raw SQL needs `@OptIn(DelicateKormiumApi::class)` in scope, and `executeUpdate` always
+takes `params` and `invalidates` explicitly:
 
 ```kotlin
 db.transaction {
@@ -170,8 +171,14 @@ db.transaction {
             PRIMARY KEY ("id")
         )
         """,
+        params = emptyMap(),
+        invalidates = emptyList(),
     )
-    executeUpdate("""CREATE INDEX IF NOT EXISTS users_name_idx ON "users" ("name")""")
+    executeUpdate(
+        """CREATE INDEX IF NOT EXISTS users_name_idx ON "users" ("name")""",
+        params = emptyMap(),
+        invalidates = emptyList(),
+    )
 }
 ```
 
