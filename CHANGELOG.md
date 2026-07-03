@@ -6,6 +6,16 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.1] — Publish the 0.9.0 web/Node modules
+
+### Fixed
+- **Web/Node engine modules weren't published.** The root `publishableModules` allowlist wasn't
+  updated when the web stack merged into 0.9.0, so `kormium-postgres-dialect`,
+  `kormium-mysql-dialect`, `kormium-sqlite-dialect`, `kormium-wasm-driver`, `kormium-sqlite-wasm`,
+  `kormium-sqlite-node`, `kormium-postgres-node` and `kormium-mysql-node` were built and tested in
+  CI but never uploaded to Maven Central. This release adds them to the allowlist; no source
+  changes.
+
 ## [0.9.0] — Web stack (JS / Wasm / Node), and a pre-1.0 API consolidation
 
 ### Added
