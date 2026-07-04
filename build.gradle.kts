@@ -161,3 +161,18 @@ subprojects {
         }
     }
 }
+
+// BCV's klib ABI inference for host-unsupported targets does not hold up in this build:
+// on a Linux host the extracted golden dump keeps the full target list in its header
+// (incl. the Apple targets the dumps were generated with) while the fresh merge lists
+// only the Linux-buildable ones, so klibApiCheck always diffs. Validate the klib surface
+// on the host profile that can build every declared target — macOS, the same profile
+// that publishes. The JVM ABI checks run on every host; CI runs the full apiCheck
+// (JVM + klib) in its macOS job.
+allprojects {
+    tasks.matching { it.name == "klibApiCheck" }.configureEach {
+        onlyIf("klib ABI is validated on macOS, where every declared target builds") {
+            org.jetbrains.kotlin.konan.target.HostManager.hostIsMac
+        }
+    }
+}
