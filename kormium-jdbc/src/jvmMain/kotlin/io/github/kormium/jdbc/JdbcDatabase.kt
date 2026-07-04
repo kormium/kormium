@@ -178,7 +178,7 @@ private val TransactionIsolation.jdbcLevel: Int
     }
 
 /** An [SqlExecutor] bound to one already-open JDBC connection. */
-public class JdbcExecutor(
+internal class JdbcExecutor(
     private val conn: Connection,
     override val dialect: Dialect,
     override val typeMapper: TypeMapper,

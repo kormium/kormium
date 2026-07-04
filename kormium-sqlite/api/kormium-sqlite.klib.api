@@ -19,4 +19,3 @@ abstract interface io.github.kormium/SqliteDriver : io.github.kormium.database/D
 
 final fun io.github.kormium/createSqliteDatabase(kotlin/String = ..., kotlin/Int = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium/SqliteDriver // io.github.kormium/createSqliteDatabase|createSqliteDatabase(kotlin.String;kotlin.Int;io.github.kormium.KormiumConfig){}[0]
 final fun io.github.kormium/createSqliteDatabase(kotlin/String = ..., kotlin/Int = ..., kotlin/Function1<io.github.kormium/KormiumBuilder, kotlin/Unit>): io.github.kormium/SqliteDriver // io.github.kormium/createSqliteDatabase|createSqliteDatabase(kotlin.String;kotlin.Int;kotlin.Function1<io.github.kormium.KormiumBuilder,kotlin.Unit>){}[0]
-final fun io.github.kormium/sqliteException(kotlin/String, kotlin/Int? = ..., kotlin/Throwable? = ...): io.github.kormium/QueryException // io.github.kormium/sqliteException|sqliteException(kotlin.String;kotlin.Int?;kotlin.Throwable?){}[0]

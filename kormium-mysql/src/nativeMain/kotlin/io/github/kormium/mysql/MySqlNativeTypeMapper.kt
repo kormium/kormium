@@ -19,7 +19,7 @@ import kotlinx.datetime.toLocalDateTime
  * Everything else (UUID, JsonElement, Decimal, primitives, LocalDate/LocalTime) is handled by
  * [StandardTypeMapper] — their `toString()` is already a valid MySQL literal.
  */
-public object MySqlNativeTypeMapper : TypeMapper {
+internal object MySqlNativeTypeMapper : TypeMapper {
     override fun toParameter(value: Any?): Any? = when (value) {
         is Instant -> value.toLocalDateTime(TimeZone.UTC).toMysqlText()
         is LocalDateTime -> value.toMysqlText()

@@ -14,7 +14,7 @@ import java.sql.ResultSetMetaData
  * (`Instant.toString()` etc., already ISO-8601 with a 'T'), so dates/times are parsed
  * as-is — no space→'T' fix-up.
  */
-public class SqliteResultSetWrapper(private val rs: java.sql.ResultSet) : ResultSet {
+internal class SqliteResultSetWrapper(private val rs: java.sql.ResultSet) : ResultSet {
     // Lazy: the hot read path maps columns positionally and never touches this.
     override val columns: Array<String> by lazy { internalGetColumns() }
 

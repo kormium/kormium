@@ -8,7 +8,7 @@ package io.github.kormium.postgres.paramsource
  * easier. The methods return a reference to the [MapSqlParameterSource]
  * itself, so you can chain several method calls together within a single statement.
  */
-public class MapSqlParameterSource : AbstractSqlParameterSource {
+internal class MapSqlParameterSource : AbstractSqlParameterSource {
     private val values: MutableMap<String, Any?> = LinkedHashMap()
 
     /**
