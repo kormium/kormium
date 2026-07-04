@@ -126,6 +126,9 @@ fun createR2dbcDatabase(
             .database(database)
             .username(user)
             .password(password)
+            // numeric → String decoding that survives NaN/±Infinity (the driver's own
+            // path goes through java.math.BigDecimal and throws on them).
+            .codecRegistrar(NumericAsTextCodecRegistrar)
             .build(),
     )
     val poolConfiguration = ConnectionPoolConfiguration.builder(connectionFactory)

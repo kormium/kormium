@@ -33,10 +33,11 @@ How values travel:
   text, which every backend accepts for `numeric` columns.
 - **Non-finite values** (`NaN`, `±Infinity` — PostgreSQL `numeric` stores all three):
   `java.math.BigDecimal` cannot carry them, so on the JVM they bind as `Double` (float8,
-  assignment-cast to `numeric` by the server). One caveat: r2dbc-postgresql cannot *decode*
-  a non-finite `numeric` (its codec goes through `java.math.BigDecimal`) — reading such
-  rows over r2dbc needs a `::text` projection; JDBC and all text-protocol backends
-  round-trip them fine.
+  assignment-cast to `numeric` by the server), and they round-trip on every backend.
+  On r2dbc, kormium installs its own `numeric → text` decoder (`NumericAsTextCodec`),
+  because r2dbc-postgresql's built-in path goes through `java.math.BigDecimal` and throws
+  on non-finite values (the same defect class as
+  [pgjdbc#1941](https://github.com/pgjdbc/pgjdbc/issues/1941)).
 
 The ORM carries values; comparison and arithmetic happen in SQL. For client-side arithmetic
 `Decimal` provides `+`, `-`, `*`, `div(other, scale, roundingMode)` and friends — see the

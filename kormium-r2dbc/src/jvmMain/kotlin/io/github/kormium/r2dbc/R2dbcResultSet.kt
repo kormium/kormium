@@ -34,12 +34,20 @@ internal class R2dbcResultSet(
 
     override fun next(): Boolean = false
 
-    override fun getString(columnIndex: Int): String? = when (val v = row.get(columnIndex)) {
-        null -> null
-        // json/jsonb come back as r2dbc-postgresql's Json wrapper; its toString() isn't the raw
-        // text korm's getJson()/text mapping expects, so unwrap it explicitly.
-        is Json -> v.asString()
-        else -> v.toString()
+    override fun getString(columnIndex: Int): String? {
+        // numeric goes through a TYPED String lookup so [NumericAsTextCodec] serves it —
+        // the untyped path below decodes through java.math.BigDecimal, which throws on the
+        // NaN/±Infinity values PostgreSQL numeric stores.
+        if (metadata.getColumnMetadata(columnIndex).type.name.equals("numeric", ignoreCase = true)) {
+            return row.get(columnIndex, String::class.java)
+        }
+        return when (val v = row.get(columnIndex)) {
+            null -> null
+            // json/jsonb come back as r2dbc-postgresql's Json wrapper; its toString() isn't the raw
+            // text korm's getJson()/text mapping expects, so unwrap it explicitly.
+            is Json -> v.asString()
+            else -> v.toString()
+        }
     }
 
     override fun getBoolean(columnIndex: Int): Boolean? = row.get(columnIndex, Boolean::class.javaObjectType)

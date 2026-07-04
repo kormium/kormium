@@ -18,6 +18,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -81,12 +82,9 @@ class R2dbcDecimalInstantTest {
     }
 
     @Test
-    fun nonFiniteDecimalWritesReachTheServer() {
-        // Non-finite decimals WRITE correctly over r2dbc (Double → float8 → numeric), but
-        // r2dbc-postgresql cannot DECODE a numeric NaN/Infinity back (its codec goes through
-        // java.math.BigDecimal and throws) — a driver limitation, so this test verifies the
-        // stored value through a ::text projection instead of an entity read. The full
-        // round-trip is covered on the JDBC path (EdgeCaseTest.nonFiniteDecimalRoundTrips).
+    fun nonFiniteDecimalRoundTrip() {
+        // Writes go as Double (float8, assignment-cast to numeric); reads come back through
+        // NumericAsTextCodec — the driver's own numeric path would throw on NaN/±Infinity.
         if (!dockerAvailable) return
         val database = db!!
         runBlocking {
@@ -100,14 +98,54 @@ class R2dbcDecimalInstantTest {
                     })
                 }
             }
-            val stored = database.suspendAutocommit {
+            val values = database.suspendAutocommit {
+                Measurements.find { where { Measurements.at eq Instant.parse("2026-07-04T00:00:00Z") } }
+            }.map { it.total }
+            assertEquals(3, values.size, "expected all three non-finite rows, got $values")
+            assertTrue(values.contains(Decimal.NaN), "NaN must round-trip, got $values")
+            assertTrue(values.contains(Decimal.POSITIVE_INFINITY), "Infinity must round-trip, got $values")
+            assertTrue(values.contains(Decimal.NEGATIVE_INFINITY), "-Infinity must round-trip, got $values")
+        }
+    }
+
+    @Test
+    fun decimalCorpusMatchesServerText() {
+        // Oracle check for the binary numeric renderer: for every stored value the entity
+        // read (NumericAsTextCodec → Decimal.parse) must equal the server's own ::text.
+        if (!dockerAvailable) return
+        val database = db!!
+        val corpus = listOf(
+            "0", "0.00", "42", "-42", "12.34", "-12.34", "12.340000", "0.0001", "-0.0001",
+            "0.00000001", "100000000", "10000", "10000.5", "12345678.90",
+            "99999999999999999999999999.999999", "1.000000000000000000000000000001",
+            "-73786976294838206464.5",
+        )
+        runBlocking {
+            database.suspendTransaction {
+                Measurements.execSql(measurementsDdl)
+                corpus.forEach { text ->
+                    Measurements.insert(Measurement().apply {
+                        id = Uuid.random()
+                        total = Decimal.parse(text)
+                        at = Instant.parse("2026-07-04T01:00:00Z")
+                    })
+                }
+            }
+            val byText = database.suspendAutocommit {
                 execute(
-                    sql = """SELECT "total"::text AS t FROM "measurements" ORDER BY "total"::text""",
+                    // Fixed literal, no untrusted input: raw params bypass the ColumnType
+                    // seam, so an Instant would arrive at the driver unmapped.
+                    sql = """SELECT "total"::text AS t FROM "measurements" WHERE "at" = '2026-07-04T01:00:00Z'::timestamptz""",
                     params = emptyMap(),
                     invalidates = emptyList(),
-                ) { rs -> rs.getString(0) }
-            }
-            assertEquals(listOf("-Infinity", "Infinity", "NaN"), stored)
+                ) { rs -> rs.getString(0)!! }
+            }.sorted()
+            val byEntity = database.suspendAutocommit {
+                Measurements.find { where { Measurements.at eq Instant.parse("2026-07-04T01:00:00Z") } }
+                // toPlainString: server ::text is always plain, while Decimal.toString()
+                // switches to scientific notation below 1E-7 (java.math semantics).
+            }.map { it.total.toPlainString() }.sorted()
+            assertEquals(byText, byEntity)
         }
     }
 }
