@@ -14,7 +14,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.runBlocking
 
-actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
+public actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
     SqliteAndroidDriver(path, poolSize, config)
 
 // Android can't use the Kotlin/Native sqlite3 cinterop (it runs on the JVM/ART), so it
