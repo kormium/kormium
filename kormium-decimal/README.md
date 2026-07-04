@@ -31,6 +31,12 @@ How values travel:
   drivers declare a real `numeric`/`DECIMAL` parameter type (no server re-inference).
 - **Bind, everywhere else** (Native, JS, Wasm, Node engines): parameters travel as decimal
   text, which every backend accepts for `numeric` columns.
+- **Non-finite values** (`NaN`, `±Infinity` — PostgreSQL `numeric` stores all three):
+  `java.math.BigDecimal` cannot carry them, so on the JVM they bind as `Double` (float8,
+  assignment-cast to `numeric` by the server). One caveat: r2dbc-postgresql cannot *decode*
+  a non-finite `numeric` (its codec goes through `java.math.BigDecimal`) — reading such
+  rows over r2dbc needs a `::text` projection; JDBC and all text-protocol backends
+  round-trip them fine.
 
 The ORM carries values; comparison and arithmetic happen in SQL. For client-side arithmetic
 `Decimal` provides `+`, `-`, `*`, `div(other, scale, roundingMode)` and friends — see the

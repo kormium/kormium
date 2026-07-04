@@ -4,7 +4,6 @@ import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.PostgresDialect
-import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
 import io.github.kormium.TypeMapper
@@ -135,7 +134,7 @@ fun createR2dbcDatabase(
     return R2dbcDatabase(
         ConnectionPool(poolConfiguration),
         PostgresDialect,
-        StandardTypeMapper,
+        PostgresR2dbcTypeMapper,
         PostgresParamMarker,
         StandardR2dbcExceptionTranslator,
         config,

@@ -35,6 +35,9 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                // Decimal + Instant round-trips over r2dbc (the two types the JDBC/native
+                // suites cover but this backend otherwise would not).
+                implementation(project(":kormium-decimal"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
                 implementation("org.testcontainers:postgresql:1.20.4")
                 implementation("org.testcontainers:mysql:1.20.4")

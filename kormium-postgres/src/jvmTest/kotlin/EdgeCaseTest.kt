@@ -167,6 +167,20 @@ class EdgeCaseTest {
         ItDatabase.transaction { Reserved.insert(ReservedRow().apply { this.id = id; order = 7 }) }
         assertEquals(7, ItDatabase.autocommit { Reserved.findOne { where { Reserved.id eq id } } }?.order)
     }
+
+    @Test
+    fun nonFiniteDecimalRoundTrips() {
+        // PostgreSQL numeric stores NaN and ±Infinity; java.math.BigDecimal cannot carry
+        // them, so the JVM bind path sends a Double instead (assignment-cast to numeric).
+        for (value in listOf(Decimal.NaN, Decimal.POSITIVE_INFINITY, Decimal.NEGATIVE_INFINITY)) {
+            val id = Uuid.random()
+            ItDatabase.transaction {
+                EdgeTable.insert(EdgeRow().apply { this.id = id; big = value; num = 1 })
+            }
+            val row = ItDatabase.autocommit { EdgeTable.findOne { where { EdgeTable.id eq id } } }!!
+            assertEquals(value, row.big, "non-finite decimal $value must round-trip")
+        }
+    }
 }
 
 class EdgeRow : Entity() {
