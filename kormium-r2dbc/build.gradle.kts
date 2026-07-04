@@ -29,7 +29,7 @@ kotlin {
                 implementation("io.asyncer:r2dbc-mysql:1.3.0")
                 implementation("io.r2dbc:r2dbc-pool:1.0.2.RELEASE")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.10.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val jvmTest by getting {

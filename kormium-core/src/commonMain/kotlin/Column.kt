@@ -155,7 +155,7 @@ sealed class Column<Z, T: Table<*, N>, N: Entity>(
     class Int(name: String? = null) : Spec<kotlin.Int>(name, IntColumnType)
     class Boolean(name: String? = null) : Spec<kotlin.Boolean>(name, BooleanColumnType)
     class Text(name: String? = null) : Spec<kotlin.String>(name, TextColumnType)
-    class Instant(name: String? = null) : Spec<kotlinx.datetime.Instant>(name, InstantColumnType)
+    class Instant(name: String? = null) : Spec<kotlin.time.Instant>(name, InstantColumnType)
     class Json(name: String? = null) : Spec<JsonElement>(name, JsonColumnType)
     class Long(name: String? = null) : Spec<kotlin.Long>(name, LongColumnType)
     class Float(name: String? = null) : Spec<kotlin.Float>(name, FloatColumnType)

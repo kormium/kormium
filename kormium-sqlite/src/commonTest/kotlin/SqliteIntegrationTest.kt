@@ -272,7 +272,7 @@ class SqliteIntegrationTest {
     @Test
     fun testAllColumnTypesRoundTrip() {
         val id = Uuid.random()
-        val instant = kotlinx.datetime.Instant.parse("2024-01-02T03:04:05Z")
+        val instant = kotlin.time.Instant.parse("2024-01-02T03:04:05Z")
         val json = kotlinx.serialization.json.JsonPrimitive("hi")
         val date = kotlinx.datetime.LocalDate.parse("2024-01-02")
         val time = kotlinx.datetime.LocalTime.parse("03:04:05")

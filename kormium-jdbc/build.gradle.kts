@@ -21,7 +21,7 @@ kotlin {
                 // The generic JDBC driver returns core's ResultSet and binds core's
                 // SqlParameterSource, so :kormium-core is part of the public API.
                 api(project(":kormium-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 implementation("com.zaxxer:HikariCP:6.2.1")
             }
         }

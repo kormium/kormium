@@ -20,7 +20,7 @@ import io.github.kormium.resultset.ResultSet
 import io.github.kormium.transaction
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.toKString
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime

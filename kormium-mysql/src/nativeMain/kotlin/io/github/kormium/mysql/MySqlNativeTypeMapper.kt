@@ -2,7 +2,7 @@ package io.github.kormium.mysql
 
 import io.github.kormium.StandardTypeMapper
 import io.github.kormium.TypeMapper
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime

@@ -1,7 +1,7 @@
 package io.github.kormium
 
 import io.github.kormium.resultset.ResultSet
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import java.sql.ResultSetMetaData
 
@@ -48,7 +48,7 @@ class PgResultSetWrapper(private val pgResultSet: java.sql.ResultSet) : ResultSe
     override fun getLocalDateTime(columnIndex: Int): kotlinx.datetime.LocalDateTime? =
         pgResultSet.getString(columnIndex + 1)?.fixIso8601()?.let { kotlinx.datetime.LocalDateTime.parse(it) }
 
-    override fun getInstant(columnIndex: Int): kotlinx.datetime.Instant? {
+    override fun getInstant(columnIndex: Int): kotlin.time.Instant? {
         return pgResultSet.getString(columnIndex + 1)?.fixIso8601()?.let { Instant.parse(it) }
     }
 

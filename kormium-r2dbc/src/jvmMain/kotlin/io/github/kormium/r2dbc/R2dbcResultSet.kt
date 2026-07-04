@@ -4,11 +4,11 @@ import io.github.kormium.resultset.ResultSet
 import io.r2dbc.postgresql.codec.Json
 import io.r2dbc.spi.Row
 import io.r2dbc.spi.RowMetadata
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.toKotlinInstant
+import kotlin.time.toKotlinInstant
 import kotlinx.datetime.toKotlinLocalDate
 import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.datetime.toKotlinLocalTime

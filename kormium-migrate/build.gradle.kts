@@ -50,7 +50,7 @@ kotlin {
                 // appear in the public `migrate` / `Migration` signatures, so :kormium-core is api.
                 api(project(":kormium-core"))
                 // Instant for the migration journal's applied_at timestamp (internal use only).
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val commonTest by getting {

@@ -15,7 +15,7 @@ import io.github.kormium.database.createDatabase
 import io.github.kormium.eq
 import io.github.kormium.transaction
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime

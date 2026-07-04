@@ -1,7 +1,7 @@
 package io.github.kormium.postgres.paramsource
 
 import io.github.kormium.postgres.exception.AnonymousClassException
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime

@@ -3,7 +3,7 @@ import io.github.kormium.convert
 import io.github.kormium.enumColumnType
 import io.github.kormium.jsonColumnType
 import io.github.kormium.resultset.ResultSet
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime

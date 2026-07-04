@@ -90,7 +90,7 @@ kotlin {
                 // compile to js/wasm). `api` keeps `io.github.kormium.PostgresDialect` visible to
                 // existing consumers exactly as before.
                 api(project(":kormium-postgres-dialect"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
                 implementation("io.github.oshai:kotlin-logging:7.0.3")
             }
@@ -107,7 +107,7 @@ kotlin {
                 // pgjdbc URL + PgResultSetWrapper (which uses kotlinx-datetime).
                 implementation(project(":kormium-jdbc"))
                 implementation("org.postgresql:postgresql:42.7.4")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 // PostgresJvmTypeMapper converts ionspin BigDecimal to java.math.BigDecimal.
                 implementation("com.ionspin.kotlin:bignum:0.3.10")
             }
@@ -119,14 +119,14 @@ kotlin {
                 implementation("org.testcontainers:postgresql:1.20.4")
                 implementation("org.postgresql:postgresql:42.7.4")
                 // For the all-column-types round-trip test (Instant / Json columns).
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
             }
         }
         val nativeMain by getting {
             dependencies {
                 // The native libpq driver (formerly :pgkn).
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("io.github.oshai:kotlin-logging:7.0.3")
             }

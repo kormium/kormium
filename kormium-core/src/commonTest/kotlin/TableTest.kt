@@ -135,7 +135,7 @@ class TableTest {
         db.transaction {
             Named.insert(NamedEntity().apply {
                 id = Uuid.random()
-                createdAt = kotlinx.datetime.Clock.System.now()
+                createdAt = kotlin.time.Clock.System.now()
             })
         }
         assertTrue(

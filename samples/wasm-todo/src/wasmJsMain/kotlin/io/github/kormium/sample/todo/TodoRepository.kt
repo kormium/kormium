@@ -7,7 +7,7 @@ import io.github.kormium.eq
 import io.github.kormium.sqlite.wasm.createSqliteWasmDatabase
 import io.github.kormium.suspendAutocommit
 import io.github.kormium.suspendTransaction
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 /**

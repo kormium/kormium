@@ -5,7 +5,7 @@ import io.github.kormium.resultset.ResultSet
 import io.github.kormium.sql.getBigDecimal
 import io.github.kormium.sql.getJson
 import io.github.kormium.sql.getUUID
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime

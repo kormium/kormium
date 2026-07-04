@@ -1,11 +1,11 @@
 package io.github.kormium
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.toJavaInstant
+import kotlin.time.toJavaInstant
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toJavaLocalTime
