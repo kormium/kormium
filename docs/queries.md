@@ -109,7 +109,7 @@ Users.find { where { Users.nickname.coalesce(Users.handle, Users.name) eq "Ada" 
 select(Users.nickname.coalesce(Users.handle, Users.name).coalesce("anonymous")) // COALESCE(nick, handle, name, 'anonymous')
 ```
 
-The default binds through the column's converter, so an enum/`Instant`/`BigDecimal` fallback maps
+The default binds through the column's converter, so an enum/`Instant`/`Decimal` fallback maps
 the same way a comparison literal does. When the fallback is non-null the result is non-null —
 read it with `row[...]`; for a `coalesce` of two nullable columns, use `getOrNull`.
 
@@ -134,7 +134,7 @@ Users.find { where { case { whenever(Users.age gtEq 18) then true; otherwise(fal
 ```
 
 The result type is inferred from the branch values for the built-in types (String, the integer and
-floating types, Boolean, `BigDecimal`, `Instant`, the date/time types, `Uuid`). For an enum or other
+floating types, Boolean, `Instant`, the date/time types, `Uuid`). For an enum or other
 custom-mapped result, pass the `ColumnType` so the value can be read and bound:
 
 ```kotlin
@@ -289,7 +289,7 @@ rows.forEach { row ->
 You can project rows into your own type:
 
 ```kotlin
-data class UserSpend(val name: String, val total: BigDecimal)
+data class UserSpend(val name: String, val total: Decimal)
 
 val spend: List<UserSpend> = db.autocommit {
     (Users innerJoin Orders on (Users.id eq Orders.userId))
@@ -360,7 +360,7 @@ val total = Orders.total.sum()
 val result = db.autocommit {
     (Users innerJoin Orders on (Users.id eq Orders.userId))
         .groupBy(Users.id)
-        .having(total gt BigDecimal.fromInt(100))
+        .having(total gt Decimal.of(100))
         .select(Users.name, orders, total)
 }
 
@@ -376,7 +376,7 @@ Available aggregates:
 - `column.min()` / `column.max()` → the column's own type
 - `column.sum()` → `Long` for integer columns (`Int`/`Short`/`Long`), since `SUM` widens to
   `bigint` server-side and could otherwise overflow; the column's own type otherwise (e.g.
-  `BigDecimal`, `Double`)
+  `Decimal`, `Double`)
 - `column.avg()` → `Double`
 
 For single-table grouping, start from `Table.query()`:

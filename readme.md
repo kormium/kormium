@@ -143,6 +143,7 @@ dependencies {
 
     // implementation("io.github.kormium:kormium-observe")  // reactive Flow queries
     // implementation("io.github.kormium:kormium-migrate")  // SQL migration runner
+    // implementation("io.github.kormium:kormium-decimal")  // exact decimal columns (Column.decimal())
 
     // optional Ktor integration
     // implementation("io.github.kormium:kormium-ktor")

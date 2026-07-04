@@ -204,7 +204,7 @@ val total  = Orders.total.sum()
 db.autocommit {
     (Users innerJoin Orders on (Users.id eq Orders.userId))
         .groupBy(Users.id)
-        .having(total gt BigDecimal.fromInt(100))   // aggregate vs a typed literal, no Value(...) wrapper
+        .having(total gt Decimal.of(100))   // aggregate vs a typed literal, no Value(...) wrapper
         .select(Users.name, orders, total)
 }.forEach { row ->
     println("${row[Users.name]}: ${row[orders]} orders, ${row[total]}")
@@ -213,6 +213,9 @@ db.autocommit {
 
 Aggregates: `count()` → `Long`, `col.count()` → `Long`, `col.min()` / `col.max()` → the
 column's type, `col.sum()` (integer columns widen to `Long`), `col.avg()` → `Double`.
+Exact decimal columns (`Column.decimal()`, values of type `Decimal`) come from the
+`kormium-decimal` artifact — `import io.github.kormium.decimal.Decimal` and
+`import io.github.kormium.decimal.decimal`.
 Single-table grouping starts from `Table.query()`:
 `Users.query().groupBy(Users.age).distinct().select(Users.age)`.
 

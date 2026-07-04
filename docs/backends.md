@@ -145,7 +145,7 @@ SQLite notes:
 - `poolSize` defaults to `1` because SQLite allows one writer.
 - File databases are opened in WAL mode.
 - Foreign keys are enabled with `PRAGMA foreign_keys=ON`.
-- `UUID`, `BigDecimal`, `Json` and temporal values are stored as text and parsed back.
+- `UUID`, `Decimal`, `Json` and temporal values are stored as text and parsed back.
 
 ## r2dbc PostgreSQL
 
@@ -247,7 +247,7 @@ Kormium's common column types map through backend-specific SQL types:
 | `Boolean` | `BOOLEAN` | `INTEGER` |
 | `Short`, `Int`, `Long` | integer types | `INTEGER` |
 | `Float`, `Double` | floating types | `REAL` |
-| `BigDecimal` | numeric | `TEXT` |
+| `Decimal` (kormium-decimal) | numeric | `TEXT` |
 | `Instant` and local date/time types | temporal/text depending on backend mapper | `TEXT` |
 | `Json` | JSON/JSONB-compatible binding | `TEXT` |
 | `Bytes` | `bytea` | `BLOB` |

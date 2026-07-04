@@ -6,6 +6,32 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING: `Instant` is now `kotlin.time.Instant`.** `Column.Instant`, `InstantColumnType`
+  and `ResultSet.getInstant` use the stdlib `kotlin.time.Instant` instead of
+  `kotlinx.datetime.Instant`, which no longer exists in kotlinx-datetime 0.7+. Kormium now
+  depends on kotlinx-datetime **0.8.0**, exposed as an `api` dependency of `kormium-core`
+  (the `LocalDate`/`LocalTime`/`LocalDateTime` column types are part of the public API).
+  Migration: replace `kotlinx.datetime.Instant`/`Clock` imports with `kotlin.time.Instant`/
+  `kotlin.time.Clock`; `Local*` imports are unchanged.
+- **BREAKING: decimal support moved out of core into `kormium-decimal`.** `Column.BigDecimal`,
+  `BigDecimalColumnType` and `ResultSet.getBigDecimal` are removed from `kormium-core`, and the
+  `com.ionspin.kotlin:bignum` dependency is gone from every module — core now ships no type
+  implementations, and 1.0 exposes no third-party 0.x types in its API. Decimal columns come
+  from the new `kormium-decimal` artifact, which bridges
+  [`io.github.kormium:decimal`](https://github.com/kormium/decimal) through the open
+  `ColumnType` seam. Migration: add `io.github.kormium:kormium-decimal`, replace
+  `Column.BigDecimal()` with `Column.decimal()` (import `io.github.kormium.decimal.decimal`)
+  and ionspin's `BigDecimal` values with `io.github.kormium.decimal.Decimal`
+  (`Decimal.parse("10.50")`, `Decimal.of(100)`). On the JVM parameters now bind as
+  `java.math.BigDecimal` (typed `numeric` bind); on all other targets values travel as
+  decimal text, as before. `case { }` no longer infers a decimal result type — pass
+  `DecimalColumnType` explicitly: `case(DecimalColumnType) { ... }`.
+
+### Added
+- **`kormium-decimal` module** — `Column.decimal()` / `DecimalColumnType` for exact decimal
+  columns, published for the full target matrix and pinned by the BOM.
+
 ## [0.9.1] — Publish the 0.9.0 web/Node modules
 
 ### Fixed
