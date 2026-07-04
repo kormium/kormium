@@ -234,6 +234,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # kormium-mysql's klib ABI can only be validated where all its targets build (its one
+      # Linux-buildable target trips a BCV inference edge case on the Linux runner — see the
+      # note in kormium-mysql/build.gradle.kts). Everything else is checked in the Linux job.
+      - name: API compatibility check (kormium-mysql klib)
+        run: ./gradlew :kormium-mysql:klibApiCheck --console=plain
+
       # Compile the Android and iOS variants of every Compose-Multiplatform-enabled module.
       # sqlite3.h is vendored and iOS/macOS ship libsqlite3, so no extra system deps are needed.
       - name: Build Android + iOS targets

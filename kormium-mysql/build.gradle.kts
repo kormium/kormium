@@ -96,3 +96,15 @@ kotlin {
         }
     }
 }
+
+// BCV's klib ABI inference for host-unsupported targets fails for this module's degenerate
+// case: after filtering on a Linux host exactly ONE supported target remains (linuxX64 —
+// mingw is deliberately absent, Windows is served by the JDBC driver), and the extracted
+// golden dump keeps the full macOS target list in its header while the fresh merge lists
+// only linuxX64. Validate the klib ABI where every declared target is buildable (macOS);
+// CI runs this in the macOS job. The JVM ABI check runs on every host regardless.
+tasks.matching { it.name == "klibApiCheck" }.configureEach {
+    onlyIf("kormium-mysql klib targets are only all-buildable on macOS") {
+        org.jetbrains.kotlin.konan.target.HostManager.hostIsMac
+    }
+}
