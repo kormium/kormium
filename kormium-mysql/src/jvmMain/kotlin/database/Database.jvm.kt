@@ -16,7 +16,7 @@ import io.github.kormium.jdbc.JdbcDatabase
  *  - `cachePrepStmts` + `useServerPrepStmts` make repeated statements server-prepared and cached,
  *    so each execution is one round-trip (the MySQL analogue of pgjdbc's prepareThreshold=1).
  *  - `connectionTimeZone=UTC` + `forceConnectionTimeZoneToSession=true` pin the session to UTC so
- *    an [kotlinx.datetime.Instant] bound as a UTC `OffsetDateTime` round-trips through a
+ *    an [kotlin.time.Instant] bound as a UTC `OffsetDateTime` round-trips through a
  *    `TIMESTAMP` unchanged, and is read back correctly by [MySqlResultSetWrapper.getInstant].
  *
  * Integrity violations are mapped by vendor code through [MySqlExceptionTranslator] (MySQL reports

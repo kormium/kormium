@@ -1,6 +1,6 @@
 @file:OptIn(io.github.kormium.DelicateKormiumApi::class)
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import io.github.kormium.decimal.Decimal
 import io.github.kormium.BatchInsertMode
 import io.github.kormium.autocommit
 import io.github.kormium.createSqliteDatabase
@@ -31,7 +31,7 @@ class SqliteBuilderTest {
             db.transaction {
                 Products.insert(Product().apply {
                     this.id = id
-                    this.price = BigDecimal.fromInt(5)
+                    this.price = Decimal.of(5)
                     this.qty = 1
                     this.displayName = "from-builder"
                     this.note = null

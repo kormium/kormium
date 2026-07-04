@@ -1,6 +1,6 @@
 import io.github.kormium.postgres.resultset.parsePgInstant
 import io.github.kormium.postgres.resultset.parsePgLocalDateTime
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals

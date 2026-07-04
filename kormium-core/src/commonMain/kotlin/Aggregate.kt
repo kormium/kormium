@@ -26,12 +26,12 @@ fun Column<*, *, *>.count(): Operand<Long> {
 // still that integer. SUM is different: SUM over an integer column returns a wider type
 // server-side (Postgres: bigint), so reading it back through the Int mapping would overflow
 // (toInt() throws). The integer-family sum() overloads below therefore return Operand<Long>
-// and read the aggregate as a Long; SUM of a BigDecimal/Double column keeps the column type
+// and read the aggregate as a Long; SUM of a Decimal/Double column keeps the column type
 // via the generic sum().
 fun <Z> Column<Z, *, *>.min(): Operand<Z> = ColumnAggregate("MIN", this)
 fun <Z> Column<Z, *, *>.max(): Operand<Z> = ColumnAggregate("MAX", this)
 
-/** `SUM(column)` for a non-integer column (e.g. BigDecimal/Double), read through its type. */
+/** `SUM(column)` for a non-integer column (e.g. Decimal/Double), read through its type. */
 fun <Z> Column<Z, *, *>.sum(): Operand<Z> = ColumnAggregate("SUM", this)
 
 // More-specific sum() overloads for integer columns: they win overload resolution over the

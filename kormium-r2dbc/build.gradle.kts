@@ -29,12 +29,15 @@ kotlin {
                 implementation("io.asyncer:r2dbc-mysql:1.3.0")
                 implementation("io.r2dbc:r2dbc-pool:1.0.2.RELEASE")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.10.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                // Decimal + Instant round-trips over r2dbc (the two types the JDBC/native
+                // suites cover but this backend otherwise would not).
+                implementation(project(":kormium-decimal"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
                 implementation("org.testcontainers:postgresql:1.20.4")
                 implementation("org.testcontainers:mysql:1.20.4")

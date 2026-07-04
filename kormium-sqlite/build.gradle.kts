@@ -131,15 +131,15 @@ kotlin {
                 // to js/wasm). `api` keeps `io.github.kormium.SqliteDialect` visible to existing
                 // consumers exactly as before.
                 api(project(":kormium-sqlite-dialect"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":kormium-observe"))
-                implementation("com.ionspin.kotlin:bignum:0.3.10")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation(project(":kormium-decimal"))
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
             }
@@ -158,12 +158,12 @@ kotlin {
                 // so the driver works on-device without relying on the framework's sqlite.
                 implementation("androidx.sqlite:sqlite:2.6.2")
                 implementation("androidx.sqlite:sqlite-bundled:2.6.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
             }
         }

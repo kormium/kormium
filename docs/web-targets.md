@@ -9,7 +9,7 @@ that the browser gets a real embedded database — not a thin remote client.
 The core is already portable: `commonMain` has no `runBlocking`, no `Thread`, no `java.*`,
 and mapping is DSL-based (`Table`/`Column`/`Expression`), not reflection. It already
 compiles to Kotlin/Native, which proves it is free of JVM reflection and blocking IO. All
-core dependencies (coroutines, serialization-json, datetime, ionspin-bignum) ship both
+core dependencies (coroutines, serialization-json, datetime) ship both
 `wasmJs` and `wasmWasi` artifacts. The one exception is `kotlin-logging` (no `wasmWasi`
 artifact as of 7.0.3), which is why logging now goes through an internal facade.
 

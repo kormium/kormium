@@ -56,7 +56,7 @@ jobs:
       # JVM unit tests. kormium-sqlite runs against an in-memory database (no Docker); it covers
       # both the blocking and the suspend (offload) paths.
       - name: JVM tests
-        run: ./gradlew :kormium-core:jvmTest :kormium-sqlite:jvmTest :kormium-migrate:jvmTest --console=plain
+        run: ./gradlew :kormium-core:jvmTest :kormium-decimal:jvmTest :kormium-sqlite:jvmTest :kormium-migrate:jvmTest --console=plain
 
       # Native (libpq) tests against the Postgres service above. The host native test task
       # on a Linux runner is linuxX64Test (the modules now declare real native targets).
@@ -74,7 +74,7 @@ jobs:
           MYSQL_DB: kormium_test
           MYSQL_USER: kormium
           MYSQL_PASSWORD: kormium
-        run: ./gradlew :kormium-core:linuxX64Test :kormium-postgres:linuxX64Test :kormium-sqlite:linuxX64Test :kormium-migrate:linuxX64Test :kormium-mysql:linuxX64Test --console=plain
+        run: ./gradlew :kormium-core:linuxX64Test :kormium-decimal:linuxX64Test :kormium-postgres:linuxX64Test :kormium-sqlite:linuxX64Test :kormium-migrate:linuxX64Test :kormium-mysql:linuxX64Test --console=plain
 
       # The ktor integration libraries are libraries (no native exe link), so assemble
       # builds their JVM + native artifacts to verify they compile on every target.

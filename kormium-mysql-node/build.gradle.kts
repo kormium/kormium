@@ -28,7 +28,7 @@ kotlin {
                 // Shared Wasm driver layer: named-param parser, text ResultSet, binding helper.
                 implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 // mysql2: pure-JS MySQL/MariaDB client with a promise API. https://sidorares.github.io/node-mysql2
                 implementation(npm("mysql2", "3.22.5"))
             }

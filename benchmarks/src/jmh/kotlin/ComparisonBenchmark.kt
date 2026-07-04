@@ -40,7 +40,8 @@ import org.openjdk.jmh.annotations.Warmup
 import org.testcontainers.containers.PostgreSQLContainer
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
-import com.ionspin.kotlin.bignum.decimal.BigDecimal as KormiumBigDecimal
+import io.github.kormium.decimal.Decimal as KormiumDecimal
+import io.github.kormium.decimal.decimal
 import org.jetbrains.exposed.v1.jdbc.Database as ExposedDatabase
 import org.jetbrains.exposed.v1.core.Table as ExposedSqlTable
 import kotlin.uuid.Uuid as KormiumUuid
@@ -63,7 +64,7 @@ class CmpRow : Entity() {
 object CmpTable : Table<Cmp, CmpRow>("cmp_bench", ::CmpRow) {
     val id by Column.UUID().primaryKey()
     val name by Column.Text()
-    val amount by Column.BigDecimal()
+    val amount by Column.decimal()
 
     init { id; name; amount }
 }
@@ -184,10 +185,10 @@ open class ComparisonBenchmark {
     fun resetTable() {
         kormiumDb.transaction {
             executeUpdate("""TRUNCATE "public"."cmp_bench"""", params = emptyMap(), invalidates = emptyList())
-            CmpTable.insert(CmpRow().apply { id = seededKormiumId; name = "seed"; amount = KormiumBigDecimal.fromInt(1) })
+            CmpTable.insert(CmpRow().apply { id = seededKormiumId; name = "seed"; amount = KormiumDecimal.of(1) })
             CmpTable.insertAll(List(BULK_ROWS) { newKormiumRow("bulk") })
             CmpTable.insertAll(updateKormiumIds.map { rowId ->
-                CmpRow().apply { id = rowId; name = "upd"; amount = KormiumBigDecimal.fromInt(1) }
+                CmpRow().apply { id = rowId; name = "upd"; amount = KormiumDecimal.of(1) }
             })
         }
     }
@@ -221,7 +222,7 @@ open class ComparisonBenchmark {
     @Benchmark
     fun kormiumUpdateById(): Any? = kormiumDb.transaction {
         CmpTable.update(
-            CmpRow().apply { amount = KormiumBigDecimal.fromInt(2) },
+            CmpRow().apply { amount = KormiumDecimal.of(2) },
             Query(CmpTable.id eq updateKormiumIds[randomUpdateIndex()]),
         )
     }
@@ -308,7 +309,7 @@ open class ComparisonBenchmark {
     }
 
     private fun newKormiumRow(rowName: String) =
-        CmpRow().apply { id = KormiumUuid.random(); name = rowName; amount = KormiumBigDecimal.fromInt(1) }
+        CmpRow().apply { id = KormiumUuid.random(); name = rowName; amount = KormiumDecimal.of(1) }
 
     private fun randomUpdateIndex(): Int = ThreadLocalRandom.current().nextInt(UPDATE_ROWS)
 

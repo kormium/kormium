@@ -1,11 +1,10 @@
 package io.github.kormium
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.toJavaInstant
+import kotlin.time.toJavaInstant
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toJavaLocalTime
@@ -33,7 +32,9 @@ object PostgresJvmTypeMapper : TypeMapper {
         // pass them through so they bind as real float4 / int2.
         is Float, is Short -> value
         is Uuid -> value.toJavaUuid()
-        is BigDecimal -> java.math.BigDecimal(value.toString())
+        // kormium-decimal's toParam already yields java.math.BigDecimal on the JVM; pass it
+        // through so pgjdbc binds a typed numeric parameter.
+        is java.math.BigDecimal -> value
         // pgjdbc has no java.time.Instant binding; OffsetDateTime at UTC is the same instant
         // and binds as timestamptz.
         is Instant -> value.toJavaInstant().atOffset(ZoneOffset.UTC)

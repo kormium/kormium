@@ -68,8 +68,7 @@ Supported column types:
 | `Column.Long` | `Long` |
 | `Column.Float` | `Float` |
 | `Column.Double` | `Double` |
-| `Column.BigDecimal` | `com.ionspin.kotlin.bignum.decimal.BigDecimal` |
-| `Column.Instant` | `kotlinx.datetime.Instant` |
+| `Column.Instant` | `kotlin.time.Instant` |
 | `Column.LocalDate` | `kotlinx.datetime.LocalDate` |
 | `Column.LocalTime` | `kotlinx.datetime.LocalTime` |
 | `Column.LocalDateTime` | `kotlinx.datetime.LocalDateTime` |
@@ -78,6 +77,12 @@ Supported column types:
 
 These are the built-ins; the type list is open — see [Custom column types](#custom-column-types)
 for enums, JSON-mapped values and your own types.
+
+Exact decimals live in the `kormium-decimal` artifact (kept out of core so core carries no
+type implementations): add `io.github.kormium:kormium-decimal` and declare
+`val price by Column.decimal()` — the entity property is `io.github.kormium.decimal.Decimal`.
+Values are read as text and parsed; on the JVM parameters bind as `java.math.BigDecimal` so
+JDBC/r2dbc declare a real `numeric` parameter.
 
 Every column accepts:
 

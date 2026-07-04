@@ -3,7 +3,7 @@ package io.github.kormium.migrate
 import io.github.kormium.Catalog
 import io.github.kormium.SqlExecutor
 import io.github.kormium.database.Database
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * A named, ordered schema change expressed as raw SQL. Kormium does not own schema, so a migration

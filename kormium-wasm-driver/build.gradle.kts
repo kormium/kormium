@@ -26,7 +26,7 @@ kotlin {
         val wasmJsMain by getting {
             dependencies {
                 api(project(":kormium-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val wasmJsTest by getting {

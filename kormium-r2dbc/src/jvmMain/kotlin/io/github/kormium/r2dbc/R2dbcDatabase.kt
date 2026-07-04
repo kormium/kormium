@@ -4,7 +4,6 @@ import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.PostgresDialect
-import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
 import io.github.kormium.TypeMapper
@@ -127,6 +126,9 @@ fun createR2dbcDatabase(
             .database(database)
             .username(user)
             .password(password)
+            // numeric → String decoding that survives NaN/±Infinity (the driver's own
+            // path goes through java.math.BigDecimal and throws on them).
+            .codecRegistrar(NumericAsTextCodecRegistrar)
             .build(),
     )
     val poolConfiguration = ConnectionPoolConfiguration.builder(connectionFactory)
@@ -135,7 +137,7 @@ fun createR2dbcDatabase(
     return R2dbcDatabase(
         ConnectionPool(poolConfiguration),
         PostgresDialect,
-        StandardTypeMapper,
+        PostgresR2dbcTypeMapper,
         PostgresParamMarker,
         StandardR2dbcExceptionTranslator,
         config,

@@ -147,15 +147,14 @@ sealed class Column<Z, T: Table<*, N>, N: Entity>(
         }
     }
 
-    // ---- the 14 typed column declarations ----
+    // ---- the 13 typed column declarations (decimal columns live in kormium-decimal) ----
 
     class UUID(name: String? = null) : Spec<kotlin.uuid.Uuid>(name, UuidColumnType)
-    class BigDecimal(name: String? = null) : Spec<com.ionspin.kotlin.bignum.decimal.BigDecimal>(name, BigDecimalColumnType)
     class Double(name: String? = null) : Spec<kotlin.Double>(name, DoubleColumnType)
     class Int(name: String? = null) : Spec<kotlin.Int>(name, IntColumnType)
     class Boolean(name: String? = null) : Spec<kotlin.Boolean>(name, BooleanColumnType)
     class Text(name: String? = null) : Spec<kotlin.String>(name, TextColumnType)
-    class Instant(name: String? = null) : Spec<kotlinx.datetime.Instant>(name, InstantColumnType)
+    class Instant(name: String? = null) : Spec<kotlin.time.Instant>(name, InstantColumnType)
     class Json(name: String? = null) : Spec<JsonElement>(name, JsonColumnType)
     class Long(name: String? = null) : Spec<kotlin.Long>(name, LongColumnType)
     class Float(name: String? = null) : Spec<kotlin.Float>(name, FloatColumnType)

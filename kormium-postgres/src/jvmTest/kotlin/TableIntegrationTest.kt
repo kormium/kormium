@@ -1,6 +1,7 @@
 @file:OptIn(io.github.kormium.DelicateKormiumApi::class)
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import io.github.kormium.decimal.Decimal
+import io.github.kormium.decimal.decimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.DatabaseClosedException
@@ -49,7 +50,7 @@ class TableIntegrationTest {
         ItDatabase.transaction {
         ItProducts.insert(ItProduct().apply {
             this.id = id
-            this.price = BigDecimal.fromInt(100)
+            this.price = Decimal.of(100)
             this.qty = 5
             this.displayName = "widget"
             this.note = null
@@ -63,7 +64,7 @@ class TableIntegrationTest {
         assertNull(found?.note)
         // Regression: a nullable numeric column that is NULL must read back as null, not 0.
         assertNull(found?.rank)
-        assertEquals(0, BigDecimal.fromInt(100).compareTo(found?.price!!))
+        assertEquals(0, Decimal.of(100).compareTo(found?.price!!))
 
         // Found via a parameterized WHERE on a value.
         val byQty = ItProducts.find(Query(ItProducts.qty eq 5)).filter { it.id == id }
@@ -90,7 +91,7 @@ class TableIntegrationTest {
         ItDatabase.transaction {
         ItProducts.insert(ItProduct().apply {
             this.id = id
-            this.price = BigDecimal.fromInt(1)
+            this.price = Decimal.of(1)
             this.qty = 1
             this.displayName = tricky
             this.note = null
@@ -125,7 +126,7 @@ class TableIntegrationTest {
             ItDatabase.transaction {
             ItProducts.insert(ItProduct().apply {
                 this.id = id
-                this.price = BigDecimal.fromInt(i)
+                this.price = Decimal.of(i)
                 this.qty = i
                 this.displayName = "n$i"
                 this.note = null
@@ -204,7 +205,7 @@ class TableIntegrationTest {
             ItDatabase.transaction {
                 ItProducts.insert(ItProduct().apply {
                     this.id = id
-                    this.price = BigDecimal.fromInt(1)
+                    this.price = Decimal.of(1)
                     this.qty = 1
                     this.displayName = "rollback"
                     this.note = null
@@ -229,7 +230,7 @@ class TableIntegrationTest {
         ItDatabase.transaction {
             ItProducts.insert(ItProduct().apply {
                 this.id = kept
-                this.price = BigDecimal.fromInt(1)
+                this.price = Decimal.of(1)
                 this.qty = 1
                 this.displayName = "kept"
                 this.note = null
@@ -239,7 +240,7 @@ class TableIntegrationTest {
                 savepoint {
                     ItProducts.insert(ItProduct().apply {
                         this.id = rolled
-                        this.price = BigDecimal.fromInt(2)
+                        this.price = Decimal.of(2)
                         this.qty = 2
                         this.displayName = "rolled"
                         this.note = null
@@ -262,7 +263,7 @@ class TableIntegrationTest {
             ItProducts.insert(
                 ItProduct().apply {
                     this.id = id
-                    this.price = BigDecimal.fromInt(7)
+                    this.price = Decimal.of(7)
                     this.qty = 7
                     this.displayName = "ret"
                     this.note = null
@@ -285,7 +286,7 @@ class TableIntegrationTest {
             ItProducts.insertAll(ids.mapIndexed { i, id ->
                 ItProduct().apply {
                     this.id = id
-                    this.price = BigDecimal.fromInt(i)
+                    this.price = Decimal.of(i)
                     this.qty = i
                     this.displayName = "batch$i"
                     this.note = null
@@ -331,7 +332,7 @@ class TableIntegrationTest {
     fun testAllColumnTypesRoundTrip() {
         assumeDockerAvailable()
         val id = Uuid.random()
-        val instant = kotlinx.datetime.Instant.parse("2024-01-02T03:04:05Z")
+        val instant = kotlin.time.Instant.parse("2024-01-02T03:04:05Z")
         val json = kotlinx.serialization.json.JsonPrimitive("hi")
         val date = kotlinx.datetime.LocalDate.parse("2024-01-02")
         val time = kotlinx.datetime.LocalTime.parse("03:04:05")
@@ -344,7 +345,7 @@ class TableIntegrationTest {
                 this.aDouble = 2.5
                 this.aBool = true
                 this.aText = "txt"
-                this.aDecimal = BigDecimal.fromInt(123)
+                this.aDecimal = Decimal.of(123)
                 this.anInstant = instant
                 this.aJson = json
                 this.aLong = 9_000_000_000L
@@ -360,7 +361,7 @@ class TableIntegrationTest {
         assertEquals(2.5, row.aDouble)
         assertEquals(true, row.aBool)
         assertEquals("txt", row.aText)
-        assertEquals(0, BigDecimal.fromInt(123).compareTo(row.aDecimal!!))
+        assertEquals(0, Decimal.of(123).compareTo(row.aDecimal!!))
         assertEquals(instant, row.anInstant)
         assertEquals(json, row.aJson)
         assertEquals(9_000_000_000L, row.aLong)
@@ -437,7 +438,7 @@ class TableIntegrationTest {
             ItProducts.insertAll(ids.mapIndexed { i, id ->
                 ItProduct().apply {
                     this.id = id
-                    this.price = BigDecimal.fromInt(10)
+                    this.price = Decimal.of(10)
                     this.qty = if (i == 0) 5 else 7
                     this.displayName = "agg"
                     this.note = null
@@ -464,14 +465,14 @@ class TableIntegrationTest {
         val id = Uuid.random()
         ItDatabase.transaction {
             ItProducts.insert(ItProduct().apply {
-                this.id = id; this.price = BigDecimal.fromInt(1); this.qty = 1
+                this.id = id; this.price = Decimal.of(1); this.qty = 1
                 this.displayName = "dup"; this.note = null; this.rank = null
             })
         }
         assertFailsWith<UniqueViolationException> {
             ItDatabase.transaction {
                 ItProducts.insert(ItProduct().apply {
-                    this.id = id; this.price = BigDecimal.fromInt(2); this.qty = 2
+                    this.id = id; this.price = Decimal.of(2); this.qty = 2
                     this.displayName = "dup2"; this.note = null; this.rank = null
                 })
             }
@@ -545,7 +546,7 @@ object AllTypes : Table<ItCatalog, AllTypesEntity>("all_types", ::AllTypesEntity
     val aDouble by Column.Double()
     val aBool by Column.Boolean()
     val aText by Column.Text()
-    val aDecimal by Column.BigDecimal()
+    val aDecimal by Column.decimal()
     val anInstant by Column.Instant()
     val aJson by Column.Json()
     val aLong by Column.Long()
@@ -563,7 +564,7 @@ object AllTypes : Table<ItCatalog, AllTypesEntity>("all_types", ::AllTypesEntity
 
 object ItProducts : Table<ItCatalog, ItProduct>("it_products", ::ItProduct) {
     val id by Column.UUID()
-    val price by Column.BigDecimal()
+    val price by Column.decimal()
     val qty by Column.Int()
     val displayName by Column.Text()
     val note by Column.Text().nullable()
