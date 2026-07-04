@@ -138,7 +138,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(project(":kormium-observe"))
-                implementation("com.ionspin.kotlin:bignum:0.3.10")
+                implementation(project(":kormium-decimal"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")

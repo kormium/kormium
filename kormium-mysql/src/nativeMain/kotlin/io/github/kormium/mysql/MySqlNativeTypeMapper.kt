@@ -16,7 +16,7 @@ import kotlinx.datetime.toLocalDateTime
  *    they become `"yyyy-MM-dd HH:mm:ss"` (the Instant first projected to UTC, matching the
  *    `SET time_zone = '+00:00'` the driver issues on connect).
  *
- * Everything else (UUID, JsonElement, BigDecimal, primitives, LocalDate/LocalTime) is handled by
+ * Everything else (UUID, JsonElement, Decimal, primitives, LocalDate/LocalTime) is handled by
  * [StandardTypeMapper] — their `toString()` is already a valid MySQL literal.
  */
 object MySqlNativeTypeMapper : TypeMapper {

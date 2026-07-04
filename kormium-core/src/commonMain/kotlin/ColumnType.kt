@@ -1,8 +1,6 @@
 package io.github.kormium
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.resultset.ResultSet
-import io.github.kormium.sql.getBigDecimal
 import io.github.kormium.sql.getJson
 import io.github.kormium.sql.getUUID
 import kotlin.time.Instant
@@ -56,10 +54,9 @@ fun <Domain, Stored> ColumnType<Stored>.convert(
     override val description: String get() = "${this@convert.description} (converted)"
 }
 
-// ---- built-in column types (the 14 Kormium ships) ----
+// ---- built-in column types (the 13 Kormium ships; decimal lives in kormium-decimal) ----
 
 object UuidColumnType : ColumnType<Uuid> { override fun read(rs: ResultSet, index: Int) = rs.getUUID(index) }
-object BigDecimalColumnType : ColumnType<BigDecimal> { override fun read(rs: ResultSet, index: Int) = rs.getBigDecimal(index) }
 object DoubleColumnType : ColumnType<Double> { override fun read(rs: ResultSet, index: Int) = rs.getDouble(index) }
 object IntColumnType : ColumnType<Int> { override fun read(rs: ResultSet, index: Int) = rs.getInt(index) }
 object BooleanColumnType : ColumnType<Boolean> { override fun read(rs: ResultSet, index: Int) = rs.getBoolean(index) }

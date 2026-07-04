@@ -1,6 +1,7 @@
 @file:OptIn(io.github.kormium.DelicateKormiumApi::class)
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import io.github.kormium.decimal.Decimal
+import io.github.kormium.decimal.decimal
 import io.github.kormium.Catalog
 import io.github.kormium.CheckViolationException
 import io.github.kormium.Column
@@ -51,13 +52,13 @@ private fun nativeDriver(poolSize: Int) = createDatabase(
  * skipped when they are not set. Run via the CI workflow (.github/workflows).
  *
  * Exercises the type-binding path that the JVM driver fixed via
- * stringtype=unspecified: a BigDecimal into a numeric column, plus a camelCase
+ * stringtype=unspecified: a Decimal into a numeric column, plus a camelCase
  * column and a nullable int.
  */
 class NativeTableIntegrationTest {
 
     @Test
-    fun testBigDecimalAndCamelCaseRoundTrip() {
+    fun testDecimalAndCamelCaseRoundTrip() {
         if (env("KORMIUM_DB_HOST") == null) {
             println("KORMIUM_DB_HOST not set — skipping native integration test")
             return
@@ -67,7 +68,7 @@ class NativeTableIntegrationTest {
         NativeDatabase.transaction {
         NativeProducts.insert(NativeProduct().apply {
             this.id = id
-            this.price = BigDecimal.fromInt(100)
+            this.price = Decimal.of(100)
             this.qty = 5
             this.displayName = "widget"
             this.note = null
@@ -80,7 +81,7 @@ class NativeTableIntegrationTest {
         assertEquals("widget", found?.displayName)
         assertNull(found?.note)
         assertNull(found?.rank)
-        assertEquals(0, BigDecimal.fromInt(100).compareTo(found?.price!!))
+        assertEquals(0, Decimal.of(100).compareTo(found?.price!!))
 
         NativeProducts.deleteWhere(Query(NativeProducts.id eq id))
         assertNull(NativeProducts.findOne { where { NativeProducts.id eq id } })
@@ -148,7 +149,7 @@ class NativeTableIntegrationTest {
             NativeDatabase.transaction {
                 NativeProducts.insert(NativeProduct().apply {
                     this.id = id
-                    this.price = BigDecimal.fromInt(1)
+                    this.price = Decimal.of(1)
                     this.qty = 1
                     this.displayName = "rollback"
                     this.note = null
@@ -170,14 +171,14 @@ class NativeTableIntegrationTest {
         val id = Uuid.random()
         NativeDatabase.transaction {
             NativeProducts.insert(NativeProduct().apply {
-                this.id = id; this.price = BigDecimal.fromInt(1); this.qty = 1
+                this.id = id; this.price = Decimal.of(1); this.qty = 1
                 this.displayName = "dup"; this.note = null; this.rank = null
             })
         }
         assertFailsWith<UniqueViolationException> {
             NativeDatabase.transaction {
                 NativeProducts.insert(NativeProduct().apply {
-                    this.id = id; this.price = BigDecimal.fromInt(2); this.qty = 2
+                    this.id = id; this.price = Decimal.of(2); this.qty = 2
                     this.displayName = "dup2"; this.note = null; this.rank = null
                 })
             }
@@ -196,13 +197,13 @@ class NativeTableIntegrationTest {
         val inner = Uuid.random()
         NativeDatabase.transaction {
             NativeProducts.insert(NativeProduct().apply {
-                this.id = keep; this.price = BigDecimal.fromInt(1); this.qty = 1
+                this.id = keep; this.price = Decimal.of(1); this.qty = 1
                 this.displayName = "keep"; this.note = null; this.rank = null
             })
             runCatching {
                 savepoint {
                     NativeProducts.insert(NativeProduct().apply {
-                        this.id = inner; this.price = BigDecimal.fromInt(1); this.qty = 2
+                        this.id = inner; this.price = Decimal.of(1); this.qty = 2
                         this.displayName = "doomed"; this.note = null; this.rank = null
                     })
                     throw RuntimeException("boom")
@@ -436,7 +437,7 @@ object NativeCheck : Table<NativeCatalog, NativeCheckRow>("native_check", ::Nati
 
 object NativeProducts : Table<NativeCatalog, NativeProduct>("native_products", ::NativeProduct) {
     val id by Column.UUID()
-    val price by Column.BigDecimal()
+    val price by Column.decimal()
     val qty by Column.Int()
     val displayName by Column.Text()
     val note by Column.Text().nullable()

@@ -53,8 +53,6 @@ kotlin {
                 // Public suspend API (suspendTransaction/suspendAutocommit) is coroutine-based.
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-                // BigDecimal
-                implementation("com.ionspin.kotlin:bignum:0.3.10")
                 // LocalDate/LocalTime/LocalDateTime appear in the public API (ColumnType,
                 // ResultSet), so consumers need the types on their compile classpath.
                 api("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")

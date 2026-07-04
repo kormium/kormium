@@ -8,6 +8,7 @@ dependencies {
     constraints {
         listOf(
             "kormium-core",
+            "kormium-decimal",
             "kormium-postgres",
             "kormium-mysql",
             "kormium-jdbc",

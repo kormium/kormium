@@ -19,7 +19,7 @@ dependencies {
     jmhImplementation(project(":kormium-postgres"))
     jmhImplementation("org.testcontainers:postgresql:1.21.3")
     jmhImplementation("org.postgresql:postgresql:42.7.7")
-    jmhImplementation("com.ionspin.kotlin:bignum:0.3.10")
+    jmhImplementation(project(":kormium-decimal"))
     jmhImplementation("com.zaxxer:HikariCP:6.3.0")
 
     // For the cross-ORM comparison benchmark.

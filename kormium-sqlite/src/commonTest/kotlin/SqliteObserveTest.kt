@@ -1,6 +1,6 @@
 @file:OptIn(io.github.kormium.DelicateKormiumApi::class)
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import io.github.kormium.decimal.Decimal
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.SuspendDatabase
 import io.github.kormium.eq
@@ -46,7 +46,7 @@ class SqliteObserveTest {
         db.suspendTransaction {
             Products.insert(Product().apply {
                 id = myId
-                price = BigDecimal.fromInt(7)
+                price = Decimal.of(7)
                 qty = 1
                 displayName = "observed"
                 note = null

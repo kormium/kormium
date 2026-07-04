@@ -1,6 +1,7 @@
 @file:OptIn(io.github.kormium.DelicateKormiumApi::class)
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import io.github.kormium.decimal.Decimal
+import io.github.kormium.decimal.decimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity
@@ -180,7 +181,7 @@ object EdgeTable : Table<ItCatalog, EdgeRow>("edge", ::EdgeRow) {
     val id by Column.UUID().primaryKey()
     val n by Column.Int().nullable()
     val t by Column.Text().nullable()
-    val big by Column.BigDecimal().nullable()
+    val big by Column.decimal().nullable()
     val num by Column.Int()
 
     init { id; n; t; big; num }

@@ -81,6 +81,7 @@ allprojects {
 // out-of-band — see gradle.properties for the property names.
 val publishableModules = setOf(
     "kormium-core",
+    "kormium-decimal",
     "kormium-postgres",
     "kormium-postgres-dialect",
     "kormium-mysql",

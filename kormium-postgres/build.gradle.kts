@@ -98,7 +98,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("com.ionspin.kotlin:bignum:0.3.10")
+                implementation(project(":kormium-decimal"))
             }
         }
         val jvmMain by getting {
@@ -108,8 +108,6 @@ kotlin {
                 implementation(project(":kormium-jdbc"))
                 implementation("org.postgresql:postgresql:42.7.4")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                // PostgresJvmTypeMapper converts ionspin BigDecimal to java.math.BigDecimal.
-                implementation("com.ionspin.kotlin:bignum:0.3.10")
             }
         }
         val jvmTest by getting {

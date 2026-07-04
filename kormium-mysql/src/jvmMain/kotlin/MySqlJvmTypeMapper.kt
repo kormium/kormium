@@ -1,6 +1,5 @@
 package io.github.kormium
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -27,7 +26,9 @@ object MySqlJvmTypeMapper : TypeMapper {
         // StandardTypeMapper would toString() these; pass them through so they bind as real types.
         is Float, is Short -> value
         is Uuid -> value.toString()
-        is BigDecimal -> java.math.BigDecimal(value.toString())
+        // kormium-decimal's toParam already yields java.math.BigDecimal on the JVM; pass it
+        // through so the connector binds a typed DECIMAL parameter.
+        is java.math.BigDecimal -> value
         is Instant -> value.toJavaInstant().atOffset(ZoneOffset.UTC)
         is LocalDate -> value.toJavaLocalDate()
         is LocalTime -> value.toJavaLocalTime()

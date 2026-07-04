@@ -1,6 +1,5 @@
 package io.github.kormium
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import io.github.kormium.resultset.ResultSet
 import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
@@ -471,7 +470,7 @@ fun <Z> case(columnType: ColumnType<Z>, block: CaseBuilder<Z>.() -> Unit): CaseO
 
 /**
  * A searched `CASE` whose result type is inferred from the branch values for the built-in types
- * (String, the integer and floating types, Boolean, BigDecimal, Instant, the date/time types, Uuid):
+ * (String, the integer and floating types, Boolean, Instant, the date/time types, Uuid):
  *
  * ```kotlin
  * val tier = case {
@@ -493,7 +492,6 @@ inline fun <reified Z> case(noinline block: CaseBuilder<Z>.() -> Unit): CaseOp<Z
         Boolean::class -> BooleanColumnType
         Double::class -> DoubleColumnType
         Float::class -> FloatColumnType
-        BigDecimal::class -> BigDecimalColumnType
         Instant::class -> InstantColumnType
         LocalDate::class -> LocalDateColumnType
         LocalTime::class -> LocalTimeColumnType

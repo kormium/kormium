@@ -1,4 +1,3 @@
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import kotlin.uuid.Uuid
 import io.github.kormium.*
 import io.github.kormium.database.Database
@@ -21,7 +20,7 @@ object TestCatalog : Catalog
 
 object TestTable : Table<TestCatalog, TestEntity>("products", ::TestEntity) {
     val id by Column.UUID()
-    val price by Column.BigDecimal()
+    val price by Column.Double()
     val position by Column.Int()
     val text by Column.Text()
     val nullableTest by Column.Text().nullable()
@@ -146,7 +145,7 @@ class TableTest {
 
     @Test
     fun testFindBlockDslMatchesQuery() {
-        val price = BigDecimal.fromInt(100)
+        val price = 100.0
         // Block DSL: two where{} blocks AND together, ordering + limit/offset.
         db.transaction {
             TestTable.find {
@@ -177,7 +176,7 @@ class TableTest {
         assertTrue(blockSql.contains("""ORDERBY"position"DESC"""), blockSql)
         assertTrue(blockSql.contains("LIMIT50"), blockSql)
         assertTrue(blockSql.contains("OFFSET10"), blockSql)
-        assertEquals(mapOf("p0" to "100", "p1" to 1), blockParams)
+        assertEquals(mapOf("p0" to 100.0, "p1" to 1), blockParams)
     }
 
     @Test
@@ -218,7 +217,7 @@ class TableTest {
         // nullableTest is never assigned → it must not appear in the INSERT.
         db.transaction {
             TestTable.insert(TestEntity().apply {
-                id = Uuid.random(); price = BigDecimal.fromInt(1); position = 1; text = "x"
+                id = Uuid.random(); price = 1.0; position = 1; text = "x"
             })
         }
         val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
@@ -329,8 +328,8 @@ class TableTest {
             db.transaction {
                 TestTable.insertAll(
                     listOf(
-                        TestEntity().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); position = 1; text = "a" },
-                        TestEntity().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); position = 2; text = "b"; nullableTest = "x" },
+                        TestEntity().apply { id = Uuid.random(); price = 1.0; position = 1; text = "a" },
+                        TestEntity().apply { id = Uuid.random(); price = 1.0; position = 2; text = "b"; nullableTest = "x" },
                     ),
                     batchInsertMode = BatchInsertMode.Strict,
                 )
@@ -343,8 +342,8 @@ class TableTest {
         db.transaction {
             TestTable.insertAll(
                 listOf(
-                    TestEntity().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); position = 1; text = "a" },
-                    TestEntity().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); position = 2; text = "b"; nullableTest = "x" },
+                    TestEntity().apply { id = Uuid.random(); price = 1.0; position = 1; text = "a" },
+                    TestEntity().apply { id = Uuid.random(); price = 1.0; position = 2; text = "b"; nullableTest = "x" },
                 ),
                 batchInsertMode = BatchInsertMode.UnionNulls,
             )
@@ -359,7 +358,7 @@ class TableTest {
     fun testUpsertSql() {
         db.transaction {
             TestTable.upsert(
-                entity = TestEntity().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); position = 1; text = "a" },
+                entity = TestEntity().apply { id = Uuid.random(); price = 1.0; position = 1; text = "a" },
                 onConflict = TestTable.id,
                 update = TestEntity().apply { position = 2 },
             )
@@ -373,7 +372,7 @@ class TableTest {
         databaseMockObj.result = 1L
         val n = db.transaction {
             TestTable.insertOrIgnore(
-                TestEntity().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); position = 1; text = "a" },
+                TestEntity().apply { id = Uuid.random(); price = 1.0; position = 1; text = "a" },
                 onConflict = TestTable.id,
             )
         }
@@ -388,7 +387,7 @@ class TableTest {
         assertFailsWith<IllegalArgumentException> {
             db.transaction {
                 TestTable.upsert(
-                    entity = TestEntity().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); position = 1; text = "a" },
+                    entity = TestEntity().apply { id = Uuid.random(); price = 1.0; position = 1; text = "a" },
                     onConflict = emptyList(),
                     update = TestEntity().apply { position = 2 },
                 )
@@ -401,7 +400,7 @@ class TableTest {
         assertFailsWith<IllegalArgumentException> {
             db.transaction {
                 TestTable.insertOrIgnore(
-                    TestEntity().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); position = 1; text = "a" },
+                    TestEntity().apply { id = Uuid.random(); price = 1.0; position = 1; text = "a" },
                     onConflict = emptyList(),
                 )
             }
@@ -456,7 +455,7 @@ class TableTest {
     @Test
     fun testInsert() {
         val uuid = Uuid.random()
-        val price = BigDecimal.fromInt(100)
+        val price = 100.0
         val position = 1
         val text = "hello world"
         val expectedResult = """INSERT INTO "products"
@@ -475,7 +474,7 @@ class TableTest {
         assertEquals(
             mapOf(
                 "p0" to uuid.toString(),
-                "p1" to "100",
+                "p1" to 100.0,
                 "p2" to position,
                 "p3" to text,
                 "p4" to null,
@@ -492,7 +491,7 @@ class TableTest {
                         RETURNING "id", "price", "position", "text", "nullableTest""""
         val entity = TestEntity().apply {
             this.id = Uuid.random()
-            this.price = BigDecimal.fromInt(1)
+            this.price = 1.0
             this.position = 1
             this.text = "x"
             this.nullableTest = null
@@ -510,7 +509,7 @@ class TableTest {
     @Test
     fun testUpdate() {
         val uuid = Uuid.random()
-        val price = BigDecimal.fromInt(100)
+        val price = 100.0
         val position = 1
         val text = "hello world"
         val expectedResult = """
@@ -531,7 +530,7 @@ class TableTest {
         assertEquals(
             mapOf(
                 "p0" to uuid.toString(),
-                "p1" to "100",
+                "p1" to 100.0,
                 "p2" to position,
                 "p3" to text,
                 "p4" to null,
@@ -558,7 +557,7 @@ class TableTest {
 
     @Test
     fun testSelect() {
-        val price = BigDecimal.fromInt(100)
+        val price = 100.0
         val count = 10u
         val from = 5u
         val expectedResult = """
@@ -576,7 +575,7 @@ class TableTest {
             )
         }
         assertEquals(remoteNewLinesAndSpaces(expectedResult), remoteNewLinesAndSpaces(databaseMockObj.internalSql))
-        assertEquals(mapOf("p0" to "100"), databaseMockObj.internalParams)
+        assertEquals(mapOf("p0" to 100.0), databaseMockObj.internalParams)
     }
 
     @Test
@@ -769,14 +768,14 @@ class TableTest {
         db.autocommit {
             TestTable.query()
                 .groupBy(TestTable.position)
-                .having(total gt Value(BigDecimal.fromInt(100)))
+                .having(total gt Value(100.0))
                 .select(TestTable.position, count(), total)
         }
         val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
         assertTrue(sql.contains("""SELECT"products"."position",COUNT(*),SUM("products"."price")"""), sql)
         assertTrue(sql.contains("""GROUPBY"products"."position""""), sql)
         assertTrue(sql.contains("""HAVINGSUM("products"."price")>:p0"""), sql)
-        assertEquals(mapOf("p0" to "100"), databaseMockObj.internalParams)
+        assertEquals(mapOf("p0" to 100.0), databaseMockObj.internalParams)
     }
 
     @Test
