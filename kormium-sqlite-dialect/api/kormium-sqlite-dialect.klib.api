@@ -1,0 +1,27 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs, wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-sqlite-dialect>
+final object io.github.kormium/SqliteDialect : io.github.kormium/Dialect { // io.github.kormium/SqliteDialect|null[0]
+    final val readOnlyToggle // io.github.kormium/SqliteDialect.readOnlyToggle|{}readOnlyToggle[0]
+        final fun <get-readOnlyToggle>(): io.github.kormium/ReadOnlyToggle // io.github.kormium/SqliteDialect.readOnlyToggle.<get-readOnlyToggle>|<get-readOnlyToggle>(){}[0]
+    final val supportsReturning // io.github.kormium/SqliteDialect.supportsReturning|{}supportsReturning[0]
+        final fun <get-supportsReturning>(): kotlin/Boolean // io.github.kormium/SqliteDialect.supportsReturning.<get-supportsReturning>|<get-supportsReturning>(){}[0]
+    final val supportsTransactionIsolation // io.github.kormium/SqliteDialect.supportsTransactionIsolation|{}supportsTransactionIsolation[0]
+        final fun <get-supportsTransactionIsolation>(): kotlin/Boolean // io.github.kormium/SqliteDialect.supportsTransactionIsolation.<get-supportsTransactionIsolation>|<get-supportsTransactionIsolation>(){}[0]
+
+    final fun advisoryLockSql(kotlin/Long): kotlin/String? // io.github.kormium/SqliteDialect.advisoryLockSql|advisoryLockSql(kotlin.Long){}[0]
+    final fun quoteIdentifier(kotlin/String): kotlin/String // io.github.kormium/SqliteDialect.quoteIdentifier|quoteIdentifier(kotlin.String){}[0]
+    final fun renderBind(kotlin/String, kotlin/Any?): kotlin/String // io.github.kormium/SqliteDialect.renderBind|renderBind(kotlin.String;kotlin.Any?){}[0]
+    final fun renderCharLength(kotlin/String): kotlin/String // io.github.kormium/SqliteDialect.renderCharLength|renderCharLength(kotlin.String){}[0]
+    final fun renderInsertDefaultValues(kotlin/String): kotlin/String // io.github.kormium/SqliteDialect.renderInsertDefaultValues|renderInsertDefaultValues(kotlin.String){}[0]
+    final fun renderInsertOrIgnoreSuffix(kotlin.collections/List<kotlin/String>): kotlin/String // io.github.kormium/SqliteDialect.renderInsertOrIgnoreSuffix|renderInsertOrIgnoreSuffix(kotlin.collections.List<kotlin.String>){}[0]
+    final fun renderLimit(kotlin/UInt): kotlin/String // io.github.kormium/SqliteDialect.renderLimit|renderLimit(kotlin.UInt){}[0]
+    final fun renderLimitOffset(kotlin/UInt, kotlin/UInt): kotlin/String // io.github.kormium/SqliteDialect.renderLimitOffset|renderLimitOffset(kotlin.UInt;kotlin.UInt){}[0]
+    final fun renderOffset(kotlin/UInt): kotlin/String // io.github.kormium/SqliteDialect.renderOffset|renderOffset(kotlin.UInt){}[0]
+    final fun renderUpsertSuffix(kotlin.collections/List<kotlin/String>, kotlin/String): kotlin/String // io.github.kormium/SqliteDialect.renderUpsertSuffix|renderUpsertSuffix(kotlin.collections.List<kotlin.String>;kotlin.String){}[0]
+}

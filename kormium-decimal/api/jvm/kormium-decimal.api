@@ -1,0 +1,14 @@
+public final class io/github/kormium/decimal/DecimalColumnType : io/github/kormium/ColumnType {
+	public static final field INSTANCE Lio/github/kormium/decimal/DecimalColumnType;
+	public fun getDescription ()Ljava/lang/String;
+	public fun read (Lio/github/kormium/resultset/ResultSet;I)Lio/github/kormium/decimal/Decimal;
+	public synthetic fun read (Lio/github/kormium/resultset/ResultSet;I)Ljava/lang/Object;
+	public fun toParam (Lio/github/kormium/decimal/Decimal;)Ljava/lang/Object;
+	public synthetic fun toParam (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/decimal/DecimalColumnTypeKt {
+	public static final fun decimal (Lio/github/kormium/Column$Companion;Ljava/lang/String;)Lio/github/kormium/Column$Spec;
+	public static synthetic fun decimal$default (Lio/github/kormium/Column$Companion;Ljava/lang/String;ILjava/lang/Object;)Lio/github/kormium/Column$Spec;
+}
+

@@ -1,0 +1,22 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-sqlite>
+abstract interface io.github.kormium/SqliteDriver : io.github.kormium.database/Database<kotlin/Nothing>, io.github.kormium.database/SuspendDatabase<kotlin/Nothing>, kotlin/AutoCloseable { // io.github.kormium/SqliteDriver|null[0]
+    abstract val config // io.github.kormium/SqliteDriver.config|{}config[0]
+        abstract fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium/SqliteDriver.config.<get-config>|<get-config>(){}[0]
+    abstract val dialect // io.github.kormium/SqliteDriver.dialect|{}dialect[0]
+        abstract fun <get-dialect>(): io.github.kormium/Dialect // io.github.kormium/SqliteDriver.dialect.<get-dialect>|<get-dialect>(){}[0]
+    abstract val isClosed // io.github.kormium/SqliteDriver.isClosed|{}isClosed[0]
+        abstract fun <get-isClosed>(): kotlin/Boolean // io.github.kormium/SqliteDriver.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+    abstract val writeListeners // io.github.kormium/SqliteDriver.writeListeners|{}writeListeners[0]
+        abstract fun <get-writeListeners>(): io.github.kormium/WriteListeners // io.github.kormium/SqliteDriver.writeListeners.<get-writeListeners>|<get-writeListeners>(){}[0]
+}
+
+final fun io.github.kormium/createSqliteDatabase(kotlin/String = ..., kotlin/Int = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium/SqliteDriver // io.github.kormium/createSqliteDatabase|createSqliteDatabase(kotlin.String;kotlin.Int;io.github.kormium.KormiumConfig){}[0]
+final fun io.github.kormium/createSqliteDatabase(kotlin/String = ..., kotlin/Int = ..., kotlin/Function1<io.github.kormium/KormiumBuilder, kotlin/Unit>): io.github.kormium/SqliteDriver // io.github.kormium/createSqliteDatabase|createSqliteDatabase(kotlin.String;kotlin.Int;kotlin.Function1<io.github.kormium.KormiumBuilder,kotlin.Unit>){}[0]
+final fun io.github.kormium/sqliteException(kotlin/String, kotlin/Int? = ..., kotlin/Throwable? = ...): io.github.kormium/QueryException // io.github.kormium/sqliteException|sqliteException(kotlin.String;kotlin.Int?;kotlin.Throwable?){}[0]

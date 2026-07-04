@@ -1,0 +1,39 @@
+public final class io/github/kormium/ktor/HandleKt {
+	public static final fun autocommit-dyLudls (Lio/github/kormium/database/SuspendDatabase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun transaction-4omT0h8 (Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun transaction-4omT0h8$default (Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/ktor/KormiumConfig {
+	public fun <init> ()V
+	public final fun manage (Ljava/lang/AutoCloseable;)V
+}
+
+public final class io/github/kormium/ktor/KormiumHandle {
+	public static final synthetic fun box-impl (Lio/github/kormium/database/SuspendDatabase;)Lio/github/kormium/ktor/KormiumHandle;
+	public static fun constructor-impl (Lio/github/kormium/database/SuspendDatabase;)Lio/github/kormium/database/SuspendDatabase;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lio/github/kormium/database/SuspendDatabase;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/database/SuspendDatabase;)Z
+	public final fun getDatabase ()Lio/github/kormium/database/SuspendDatabase;
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lio/github/kormium/database/SuspendDatabase;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lio/github/kormium/database/SuspendDatabase;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lio/github/kormium/database/SuspendDatabase;
+}
+
+public final class io/github/kormium/ktor/KormiumPluginKt {
+	public static final fun getKormium ()Lio/ktor/server/application/ApplicationPlugin;
+}
+
+public final class io/github/kormium/ktor/StatusCodesKt {
+	public static final fun httpStatusCode (Lio/github/kormium/KormiumException;)Lio/ktor/http/HttpStatusCode;
+}
+
+public final class io/github/kormium/ktor/TransactionsKt {
+	public static final fun autocommit (Lio/ktor/server/application/ApplicationCall;Lio/github/kormium/database/SuspendDatabase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun transaction (Lio/ktor/server/application/ApplicationCall;Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/ktor/server/application/ApplicationCall;Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+

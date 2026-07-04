@@ -1,0 +1,10 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs, wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-observe>
+final fun <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity> (io.github.kormium/Table<#A, #B>).io.github.kormium.observe/observe(io.github.kormium.database/SuspendDatabase<#A>, kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit> = ...): kotlinx.coroutines.flow/Flow<kotlin.collections/List<#B>> // io.github.kormium.observe/observe|observe@io.github.kormium.Table<0:0,0:1>(io.github.kormium.database.SuspendDatabase<0:0>;kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Catalog>;1§<io.github.kormium.Entity>}[0]
+final fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.github.kormium.database/SuspendDatabase<#A>).io.github.kormium.observe/observe(kotlin.collections/Set<kotlin/String>, kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): kotlinx.coroutines.flow/Flow<#B> // io.github.kormium.observe/observe|observe@io.github.kormium.database.SuspendDatabase<0:0>(kotlin.collections.Set<kotlin.String>;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]

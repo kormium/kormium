@@ -1,0 +1,30 @@
+// Klib ABI Dump
+// Targets: [wasmJs]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-sqlite-node>
+final class io.github.kormium.sqlite.node/Database : kotlin.js/JsAny { // io.github.kormium.sqlite.node/Database|null[0]
+    constructor <init>(kotlin/String) // io.github.kormium.sqlite.node/Database.<init>|<init>(kotlin.String){}[0]
+
+    final fun close() // io.github.kormium.sqlite.node/Database.close|close(){}[0]
+    final fun exec(kotlin/String) // io.github.kormium.sqlite.node/Database.exec|exec(kotlin.String){}[0]
+}
+
+final class io.github.kormium.sqlite.node/NodeSqliteDatabase : io.github.kormium.database/SuspendDatabase<kotlin/Nothing> { // io.github.kormium.sqlite.node/NodeSqliteDatabase|null[0]
+    final val config // io.github.kormium.sqlite.node/NodeSqliteDatabase.config|{}config[0]
+        final fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium.sqlite.node/NodeSqliteDatabase.config.<get-config>|<get-config>(){}[0]
+    final val dialect // io.github.kormium.sqlite.node/NodeSqliteDatabase.dialect|{}dialect[0]
+        final fun <get-dialect>(): io.github.kormium/SqliteDialect // io.github.kormium.sqlite.node/NodeSqliteDatabase.dialect.<get-dialect>|<get-dialect>(){}[0]
+    final val isClosed // io.github.kormium.sqlite.node/NodeSqliteDatabase.isClosed|{}isClosed[0]
+        final fun <get-isClosed>(): kotlin/Boolean // io.github.kormium.sqlite.node/NodeSqliteDatabase.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+    final val writeListeners // io.github.kormium.sqlite.node/NodeSqliteDatabase.writeListeners|{}writeListeners[0]
+        final fun <get-writeListeners>(): io.github.kormium/WriteListeners // io.github.kormium.sqlite.node/NodeSqliteDatabase.writeListeners.<get-writeListeners>|<get-writeListeners>(){}[0]
+
+    final fun close() // io.github.kormium.sqlite.node/NodeSqliteDatabase.close|close(){}[0]
+    final suspend fun <#A1: kotlin/Any?> useConnection(kotlin/Boolean, io.github.kormium/TransactionIsolation?, kotlin/Boolean, kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendSqlExecutor, #A1>): #A1 // io.github.kormium.sqlite.node/NodeSqliteDatabase.useConnection|useConnection(kotlin.Boolean;io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendSqlExecutor,0:0>){0§<kotlin.Any?>}[0]
+}
+
+final fun io.github.kormium.sqlite.node/createNodeSqliteDatabase(kotlin/String = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium.sqlite.node/NodeSqliteDatabase // io.github.kormium.sqlite.node/createNodeSqliteDatabase|createNodeSqliteDatabase(kotlin.String;io.github.kormium.KormiumConfig){}[0]

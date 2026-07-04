@@ -1,0 +1,17 @@
+public final class io/github/kormium/migrate/Migration {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public final fun getId ()Ljava/lang/String;
+}
+
+public final class io/github/kormium/migrate/MigrationChecksumException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getCurrent ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getRecorded ()Ljava/lang/String;
+}
+
+public final class io/github/kormium/migrate/MigrationKt {
+	public static final fun migrate (Lio/github/kormium/database/Database;Ljava/util/List;)V
+}
+

@@ -1,0 +1,42 @@
+public class io/github/kormium/jdbc/JdbcDatabase : io/github/kormium/database/Database, io/github/kormium/database/SuspendDatabase {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ljava/lang/String;Lio/github/kormium/KormiumConfig;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ljava/lang/String;Lio/github/kormium/KormiumConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public fun getConfig ()Lio/github/kormium/KormiumConfig;
+	public fun getDialect ()Lio/github/kormium/Dialect;
+	public fun getWriteListeners ()Lio/github/kormium/WriteListeners;
+	public fun isClosed ()Z
+	public fun useConnection (ZLio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun usePinned (ZLio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/jdbc/JdbcDatabaseKt {
+	public static final fun getStandardSqlExceptionTranslator ()Lkotlin/jvm/functions/Function1;
+}
+
+public final class io/github/kormium/jdbc/JdbcExecutor : io/github/kormium/SqlExecutor {
+	public fun <init> (Ljava/sql/Connection;Lio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/sql/Connection;Lio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun execute (Ljava/lang/String;Lio/github/kormium/SqlParameterSource;)J
+	public fun execute (Ljava/lang/String;Lio/github/kormium/SqlParameterSource;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public fun execute (Ljava/lang/String;Ljava/util/Map;)J
+	public fun execute (Ljava/lang/String;Ljava/util/Map;Lkotlin/jvm/functions/Function1;)Ljava/util/List;
+	public fun executeUpdate (Ljava/lang/String;Ljava/util/Map;)J
+	public fun getDialect ()Lio/github/kormium/Dialect;
+	public fun getTypeMapper ()Lio/github/kormium/TypeMapper;
+}
+
+public final class io/github/kormium/jdbc/NamedParamStatement : java/lang/AutoCloseable {
+	public static final field Companion Lio/github/kormium/jdbc/NamedParamStatement$Companion;
+	public fun <init> (Ljava/sql/Connection;Ljava/lang/String;)V
+	public final fun bind (Lio/github/kormium/SqlParameterSource;)V
+	public fun close ()V
+	public final fun executeQuery ()Ljava/sql/ResultSet;
+	public final fun executeUpdate ()I
+	public final fun getPreparedStatement ()Ljava/sql/PreparedStatement;
+	public final fun setAny (Ljava/lang/String;Ljava/lang/Object;)V
+}
+
+public final class io/github/kormium/jdbc/NamedParamStatement$Companion {
+}
+

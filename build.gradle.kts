@@ -3,6 +3,26 @@ import com.vanniktech.maven.publish.MavenPublishBaseExtension
 plugins {
     // Applied to the publishable subprojects below (not to the root itself).
     id("com.vanniktech.maven.publish") version "0.36.0" apply false
+    // Applied at the root: validates the public ABI of every published module (JVM + klib).
+    // API changes require `./gradlew apiDump` and a review of the .api diffs.
+    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.1"
+}
+
+apiValidation {
+    // Track the Kotlin/Native + js/wasm ABI too, not just the JVM one.
+    @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
+    klib {
+        enabled = true
+    }
+    // Consumers, not published API surfaces. (Sample project names are their leaf names;
+    // the "r2dbc" here is samples:r2dbc — the library module is named kormium-r2dbc.)
+    ignoredProjects.addAll(
+        listOf(
+            "benchmarks", "kormium-bom",
+            "ktor-di", "ktor-koin", "crud-sqlite", "repository", "sharding",
+            "sqlite-cache", "cross-instance-cache", "r2dbc", "wasm-todo",
+        ),
+    )
 }
 
 buildscript {

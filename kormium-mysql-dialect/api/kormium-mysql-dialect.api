@@ -1,0 +1,17 @@
+public final class io/github/kormium/MySqlDialect : io/github/kormium/Dialect {
+	public static final field INSTANCE Lio/github/kormium/MySqlDialect;
+	public fun advisoryLockSql (J)Ljava/lang/String;
+	public fun getReadOnlyToggle ()Lio/github/kormium/ReadOnlyToggle;
+	public fun getSupportsReturning ()Z
+	public fun getSupportsTransactionIsolation ()Z
+	public fun quoteIdentifier (Ljava/lang/String;)Ljava/lang/String;
+	public fun renderBind (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;
+	public fun renderCharLength (Ljava/lang/String;)Ljava/lang/String;
+	public fun renderInsertDefaultValues (Ljava/lang/String;)Ljava/lang/String;
+	public fun renderInsertOrIgnoreSuffix (Ljava/util/List;)Ljava/lang/String;
+	public fun renderLimit-WZ4Q5Ns (I)Ljava/lang/String;
+	public fun renderLimitOffset-feOb9K0 (II)Ljava/lang/String;
+	public fun renderOffset-WZ4Q5Ns (I)Ljava/lang/String;
+	public fun renderUpsertSuffix (Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
+}
+
