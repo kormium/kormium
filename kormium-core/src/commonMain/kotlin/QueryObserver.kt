@@ -4,12 +4,12 @@ import io.github.kormium.resultset.ResultSet
 import kotlin.time.TimeSource
 
 /** Coarse classification of a statement, derived from its leading SQL keyword. */
-enum class QueryKind {
+public enum class QueryKind {
     Select, Insert, Update, Delete, Other;
 
-    companion object {
+    public companion object {
         /** Classifies [sql] by its first keyword. Cheap: scans only the leading token. */
-        fun of(sql: String): QueryKind {
+        public fun of(sql: String): QueryKind {
             var i = 0
             val n = sql.length
             // Skip leading whitespace and a single line comment / leading parenthesis (CTEs, etc.).
@@ -35,27 +35,27 @@ enum class QueryKind {
  * Intended as the single seam for query-level metrics and tracing: tag a timer by [backend] and
  * [kind], count failures by [sqlState], log [sql] for slow queries, etc.
  */
-class QueryEvent(
+public class QueryEvent(
     /** Backend/dialect tag (the dialect implementation's simple name, e.g. "SqliteDialect"). */
-    val backend: String,
+    public val backend: String,
     /** The parameterized SQL template as sent to the driver. Contains placeholders, not values. */
-    val sql: String,
+    public val sql: String,
     /** Coarse operation kind derived from [sql]. */
-    val kind: QueryKind,
+    public val kind: QueryKind,
     /** Wall-clock duration of the statement, measured with a monotonic clock. */
-    val durationNanos: Long,
+    public val durationNanos: Long,
     /**
      * Rows returned (for queries) or rows affected (for INSERT/UPDATE/DELETE), when the backend
      * reports one; `null` when not applicable or unknown.
      */
-    val rowCount: Long?,
+    public val rowCount: Long?,
     /** The failure that ended the statement, or `null` on success. */
-    val error: Throwable?,
+    public val error: Throwable?,
     /** SQLSTATE / backend error code when the failure carried one (see [QueryException.sqlState]). */
-    val sqlState: String?,
+    public val sqlState: String?,
 ) {
     /** Whether the statement completed without throwing. */
-    val succeeded: Boolean get() = error == null
+    public val succeeded: Boolean get() = error == null
 }
 
 /**
@@ -66,8 +66,8 @@ class QueryEvent(
  * The callback runs synchronously on the executing thread, so keep it cheap (record a metric,
  * enqueue, log). Exceptions thrown by the observer are swallowed and never affect the query.
  */
-fun interface QueryObserver {
-    fun onQuery(event: QueryEvent)
+public fun interface QueryObserver {
+    public fun onQuery(event: QueryEvent)
 }
 
 /** Backend tag for an executor: the dialect implementation's simple name, stable enough to group by. */

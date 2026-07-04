@@ -15,28 +15,28 @@ import kotlin.uuid.Uuid
  * quoting and placeholder rendering are delegated to [dialect]; value conversion
  * to [typeMapper].
  */
-class ParamBuilder private constructor(
-    val dialect: Dialect,
+public class ParamBuilder private constructor(
+    public val dialect: Dialect,
     private val typeMapper: TypeMapper?,
     private val keyMode: Boolean,
     qualifyColumns: Boolean,
 ) {
     /** The normal builder: binds values as real parameters through [typeMapper]. */
-    constructor(dialect: Dialect, typeMapper: TypeMapper, qualifyColumns: Boolean = false) :
+    public constructor(dialect: Dialect, typeMapper: TypeMapper, qualifyColumns: Boolean = false) :
         this(dialect, typeMapper, keyMode = false, qualifyColumns = qualifyColumns)
 
     /** When true, a [Column] renders as `"table"."col"` (needed to disambiguate joins / subqueries). */
-    var qualifyColumns: Boolean = qualifyColumns
+    public var qualifyColumns: Boolean = qualifyColumns
         private set
 
     private var counter = 0
     private val collected = LinkedHashMap<String, Any?>()
 
     /** The bind values gathered so far, keyed by their generated placeholder name. */
-    val params: Map<String, Any?> get() = collected
+    public val params: Map<String, Any?> get() = collected
 
     /** Registers [value] as a bind parameter and returns the placeholder to embed in the SQL. */
-    fun bind(value: Any?): String {
+    public fun bind(value: Any?): String {
         // Key mode inlines the literal instead of binding it (and never touches the type mapper),
         // so an expression can render a stable structural key that distinguishes its literals.
         if (keyMode) return "lit($value)"
@@ -60,7 +60,7 @@ class ParamBuilder private constructor(
         }
     }
 
-    companion object {
+    public companion object {
         // A builder that inlines literals instead of binding them, used to derive an expression's
         // structural result key (see CaseOp) — never executed, so the dialect only needs to be
         // deterministic (any fixed one), and no type mapper is required.
@@ -76,12 +76,12 @@ class ParamBuilder private constructor(
  * verbatim [RawExpression]. [toSql] registers any compared values as bind parameters on the builder
  * rather than inlining them.
  */
-interface Expression {
-    fun toSql(builder: ParamBuilder): String
+public interface Expression {
+    public fun toSql(builder: ParamBuilder): String
 }
 
 /** A bound literal value: renders as a bind-parameter placeholder, never inlined into the SQL. */
-class Value(internal val value: Any?) : Expression {
+public class Value(internal val value: Any?) : Expression {
     override fun toSql(builder: ParamBuilder): String = builder.bind(value)
 }
 
@@ -101,7 +101,7 @@ internal fun structuralKey(expr: Expression): Any = when (expr) {
  * fully control.
  */
 @DelicateKormiumApi
-class RawExpression(val expression: String) : Expression {
+public class RawExpression(public val expression: String) : Expression {
     override fun toSql(builder: ParamBuilder): String = expression
 }
 
@@ -126,14 +126,14 @@ internal sealed class CompoundBooleanOp(
 
 internal class AndOp(first: Expression, second: Expression) : CompoundBooleanOp(" AND ", first, second)
 
-infix fun <T : Expression, T2 : Expression> T.and(other: T2): Expression = AndOp(this, other)
+public infix fun <T : Expression, T2 : Expression> T.and(other: T2): Expression = AndOp(this, other)
 
 /**
  * Represents a logical operator that performs an `or` operation between all the specified [expressions].
  */
 internal class OrOp(first: Expression, second: Expression) : CompoundBooleanOp(" OR ", first, second)
 
-infix fun <T : Expression, T2 : Expression> T.or(other: T2): Expression = OrOp(this, other)
+public infix fun <T : Expression, T2 : Expression> T.or(other: T2): Expression = OrOp(this, other)
 
 
 internal abstract class ComparisonOp(
@@ -154,44 +154,44 @@ internal abstract class ComparisonOp(
 
 internal class EqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "=")
 
-infix fun <T : Expression, T2 : Expression> T.eq(other: T2): Expression = EqOp(this, other)
+public infix fun <T : Expression, T2 : Expression> T.eq(other: T2): Expression = EqOp(this, other)
 
 /** Checks that the operands are not equal. */
 internal class NeqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<>")
 
-infix fun <T : Expression, T2 : Expression> T.neq(other: T2): Expression = NeqOp(this, other)
+public infix fun <T : Expression, T2 : Expression> T.neq(other: T2): Expression = NeqOp(this, other)
 
 /** Checks that the left operand is less than the right. */
 internal class LessOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<")
 
-infix fun <T : Expression, T2 : Expression> T.lt(other: T2): Expression = LessOp(this, other)
+public infix fun <T : Expression, T2 : Expression> T.lt(other: T2): Expression = LessOp(this, other)
 
 /** Checks that the left operand is less than or equal to the right. */
 internal class LessEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, "<=")
 
-infix fun <T : Expression, T2 : Expression> T.ltEq(other: T2): Expression = LessEqOp(this, other)
+public infix fun <T : Expression, T2 : Expression> T.ltEq(other: T2): Expression = LessEqOp(this, other)
 
 /** Checks that the left operand is greater than the right. */
 internal class GreaterOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, ">")
 
-infix fun <T : Expression, T2 : Expression> T.gt(other: T2): Expression = GreaterOp(this, other)
+public infix fun <T : Expression, T2 : Expression> T.gt(other: T2): Expression = GreaterOp(this, other)
 
 /** Checks that the left operand is greater than or equal to the right. */
 internal class GreaterEqOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1, expr2, ">=")
 
-infix fun <T : Expression, T2 : Expression> T.gtEq(other: T2): Expression = GreaterEqOp(this, other)
+public infix fun <T : Expression, T2 : Expression> T.gtEq(other: T2): Expression = GreaterEqOp(this, other)
 
 // The typed-value forms of the comparison and membership operators are defined ONCE over [Operand]
 // (a [Selectable] that carries its [ColumnType] — a Column, aggregate, arithmetic, COALESCE, CASE or
 // string function), so every operand compares to a same-typed literal the same way, the literal binds
 // through the operand's column type, and a new operand type composes for free. Operand-to-operand and
 // column-to-column comparisons go through the generic `Expression` operators above.
-infix fun <Z> Operand<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
-infix fun <Z> Operand<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
-infix fun <Z> Operand<Z>.lt(value: Z): Expression = LessOp(this, columnType.lit(value))
-infix fun <Z> Operand<Z>.ltEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
-infix fun <Z> Operand<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
-infix fun <Z> Operand<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
+public infix fun <Z> Operand<Z>.eq(value: Z): Expression = EqOp(this, columnType.lit(value))
+public infix fun <Z> Operand<Z>.neq(value: Z): Expression = NeqOp(this, columnType.lit(value))
+public infix fun <Z> Operand<Z>.lt(value: Z): Expression = LessOp(this, columnType.lit(value))
+public infix fun <Z> Operand<Z>.ltEq(value: Z): Expression = LessEqOp(this, columnType.lit(value))
+public infix fun <Z> Operand<Z>.gt(value: Z): Expression = GreaterOp(this, columnType.lit(value))
+public infix fun <Z> Operand<Z>.gtEq(value: Z): Expression = GreaterEqOp(this, columnType.lit(value))
 
 /** `column IN (v1, v2, ...)`. An empty list renders to `FALSE` (matches nothing). */
 internal class InListOp(private val column: Expression, private val values: List<*>) : Expression {
@@ -200,7 +200,7 @@ internal class InListOp(private val column: Expression, private val values: List
         else "${column.toSql(builder)} IN (${values.joinToString(", ") { builder.bind(it) }})"
 }
 
-infix fun <Z> Operand<Z>.inList(values: List<Z>): Expression = InListOp(this, values.map { columnType.lit(it).value })
+public infix fun <Z> Operand<Z>.inList(values: List<Z>): Expression = InListOp(this, values.map { columnType.lit(it).value })
 
 /** The SQL `FALSE` literal — what a predicate over an empty set (`inList`, `between`) renders to. */
 internal object FalseExpression : Expression {
@@ -217,7 +217,7 @@ internal class BetweenOp(private val expr: Expression, private val low: Expressi
 // admits exactly the orderable types (numbers, dates, text) and rejects Json/Bytes/Uuid at compile
 // time, where BETWEEN is meaningless. A reversed/empty range (lo > hi) renders to FALSE, like an
 // empty `inList`. Bounds bind through the operand's column type, as in `eq` / `gtEq`.
-infix fun <Z : Comparable<Z>> Operand<Z>.between(range: ClosedRange<Z>): Expression =
+public infix fun <Z : Comparable<Z>> Operand<Z>.between(range: ClosedRange<Z>): Expression =
     if (range.isEmpty()) FalseExpression
     else BetweenOp(this, columnType.lit(range.start), columnType.lit(range.endInclusive))
 
@@ -227,8 +227,8 @@ internal class LikeOp(expr1: Expression, expr2: Expression) : ComparisonOp(expr1
 // `like` has no generic Expression form, so both the literal-pattern and operand-to-operand forms
 // live here. A bare string comparison follows the engine collation (see docs) — wrap both sides in
 // `lower()` for deterministic case folding.
-infix fun Operand<String>.like(pattern: String): Expression = LikeOp(this, Value(pattern))
-infix fun Operand<String>.like(other: Operand<String>): Expression = LikeOp(this, other)
+public infix fun Operand<String>.like(pattern: String): Expression = LikeOp(this, Value(pattern))
+public infix fun Operand<String>.like(other: Operand<String>): Expression = LikeOp(this, other)
 
 /** `column IS NULL` / `column IS NOT NULL`. */
 internal class IsNullOp(private val column: Expression, private val negated: Boolean) : Expression {
@@ -239,8 +239,8 @@ internal class IsNullOp(private val column: Expression, private val negated: Boo
 // `IS [NOT] NULL` on any operand — a column or a computed expression (`COALESCE` of nullable columns,
 // a `CASE`, an aggregate, …). This is the general form; nullable columns also get the `eq null` sugar
 // below. (A non-null column's `.isNull()` is allowed but always false — use it on the nullable ones.)
-fun Operand<*>.isNull(): Expression = IsNullOp(this, false)
-fun Operand<*>.isNotNull(): Expression = IsNullOp(this, true)
+public fun Operand<*>.isNull(): Expression = IsNullOp(this, false)
+public fun Operand<*>.isNotNull(): Expression = IsNullOp(this, true)
 
 // `column eq null` / `column neq null` render as IS [NOT] NULL. The `Nothing?` parameter makes the
 // null literal bind here instead of the typed `eq(value: Z)` overload, so the comparison vocabulary
@@ -248,8 +248,8 @@ fun Operand<*>.isNotNull(): Expression = IsNullOp(this, true)
 // column is never NULL, so `eq null` on one is a bug — and keeping this overload off non-null columns
 // means a typed mismatch (`age eq "x"`) reports against the real `eq(value: Z)` candidate ("Int
 // expected") instead of this one ("Nothing? expected"). A computed nullable expression uses `.isNull()`.
-infix fun Column.NullableColumn<*, *, *>.eq(value: Nothing?): Expression = IsNullOp(this, false)
-infix fun Column.NullableColumn<*, *, *>.neq(value: Nothing?): Expression = IsNullOp(this, true)
+public infix fun Column.NullableColumn<*, *, *>.eq(value: Nothing?): Expression = IsNullOp(this, false)
+public infix fun Column.NullableColumn<*, *, *>.neq(value: Nothing?): Expression = IsNullOp(this, true)
 
 /**
  * A typed SQL operand: a [Selectable] that knows the [ColumnType] of the value it yields. Every
@@ -258,8 +258,8 @@ infix fun Column.NullableColumn<*, *, *>.neq(value: Nothing?): Expression = IsNu
  * defined once over `Operand<Z>` instead of per type, and reading a row defaults to the column type.
  * Carrying [columnType] also lets a compared literal bind through the originating column's converter.
  */
-interface Operand<Z> : Selectable<Z> {
-    val columnType: ColumnType<Z>
+public interface Operand<Z> : Selectable<Z> {
+    public val columnType: ColumnType<Z>
     override fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z? = columnType.read(rs, index)
 }
 
@@ -267,7 +267,7 @@ interface Operand<Z> : Selectable<Z> {
  * A typed numeric operand: every arithmetic result is itself a [NumericExpr] of the same type [Z],
  * so expressions chain and nest while staying type-checked (`(base + bonus) * 2`).
  */
-interface NumericExpr<Z> : Operand<Z>
+public interface NumericExpr<Z> : Operand<Z>
 
 /**
  * Arithmetic node: renders `left op right`, binding any literal as a parameter. A nested
@@ -298,40 +298,40 @@ private fun <Z> ColumnType<Z>.lit(value: Z): Value = Value(if (value == null) nu
 // a same-typed literal `Z`, a same-typed `Column`, or another `NumericExpr<Z>`, and returns a
 // `NumericExpr<Z>`. So a wrong-typed operand is a compile error, and results nest (the left operand
 // always carries the result's column type). Usable in `WHERE` or an `update { }` `set`.
-operator fun <Z> Column<Z, *, *>.plus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "+", columnType)
-operator fun <Z> Column<Z, *, *>.plus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
-operator fun <Z> Column<Z, *, *>.plus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
-operator fun <Z> NumericExpr<Z>.plus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "+", columnType)
-operator fun <Z> NumericExpr<Z>.plus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
-operator fun <Z> NumericExpr<Z>.plus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
+public operator fun <Z> Column<Z, *, *>.plus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "+", columnType)
+public operator fun <Z> Column<Z, *, *>.plus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
+public operator fun <Z> Column<Z, *, *>.plus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
+public operator fun <Z> NumericExpr<Z>.plus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "+", columnType)
+public operator fun <Z> NumericExpr<Z>.plus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
+public operator fun <Z> NumericExpr<Z>.plus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "+", columnType)
 
-operator fun <Z> Column<Z, *, *>.minus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "-", columnType)
-operator fun <Z> Column<Z, *, *>.minus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
-operator fun <Z> Column<Z, *, *>.minus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
-operator fun <Z> NumericExpr<Z>.minus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "-", columnType)
-operator fun <Z> NumericExpr<Z>.minus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
-operator fun <Z> NumericExpr<Z>.minus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
+public operator fun <Z> Column<Z, *, *>.minus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "-", columnType)
+public operator fun <Z> Column<Z, *, *>.minus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
+public operator fun <Z> Column<Z, *, *>.minus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
+public operator fun <Z> NumericExpr<Z>.minus(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "-", columnType)
+public operator fun <Z> NumericExpr<Z>.minus(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
+public operator fun <Z> NumericExpr<Z>.minus(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "-", columnType)
 
-operator fun <Z> Column<Z, *, *>.times(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "*", columnType)
-operator fun <Z> Column<Z, *, *>.times(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
-operator fun <Z> Column<Z, *, *>.times(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
-operator fun <Z> NumericExpr<Z>.times(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "*", columnType)
-operator fun <Z> NumericExpr<Z>.times(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
-operator fun <Z> NumericExpr<Z>.times(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
+public operator fun <Z> Column<Z, *, *>.times(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "*", columnType)
+public operator fun <Z> Column<Z, *, *>.times(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
+public operator fun <Z> Column<Z, *, *>.times(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
+public operator fun <Z> NumericExpr<Z>.times(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "*", columnType)
+public operator fun <Z> NumericExpr<Z>.times(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
+public operator fun <Z> NumericExpr<Z>.times(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "*", columnType)
 
-operator fun <Z> Column<Z, *, *>.div(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "/", columnType)
-operator fun <Z> Column<Z, *, *>.div(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
-operator fun <Z> Column<Z, *, *>.div(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
-operator fun <Z> NumericExpr<Z>.div(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "/", columnType)
-operator fun <Z> NumericExpr<Z>.div(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
-operator fun <Z> NumericExpr<Z>.div(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
+public operator fun <Z> Column<Z, *, *>.div(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "/", columnType)
+public operator fun <Z> Column<Z, *, *>.div(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
+public operator fun <Z> Column<Z, *, *>.div(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
+public operator fun <Z> NumericExpr<Z>.div(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "/", columnType)
+public operator fun <Z> NumericExpr<Z>.div(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
+public operator fun <Z> NumericExpr<Z>.div(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "/", columnType)
 
-operator fun <Z> Column<Z, *, *>.rem(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "%", columnType)
-operator fun <Z> Column<Z, *, *>.rem(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
-operator fun <Z> Column<Z, *, *>.rem(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
-operator fun <Z> NumericExpr<Z>.rem(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "%", columnType)
-operator fun <Z> NumericExpr<Z>.rem(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
-operator fun <Z> NumericExpr<Z>.rem(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
+public operator fun <Z> Column<Z, *, *>.rem(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "%", columnType)
+public operator fun <Z> Column<Z, *, *>.rem(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
+public operator fun <Z> Column<Z, *, *>.rem(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
+public operator fun <Z> NumericExpr<Z>.rem(value: Z): NumericExpr<Z> = ArithmeticOp(this, columnType.lit(value), "%", columnType)
+public operator fun <Z> NumericExpr<Z>.rem(other: Column<Z, *, *>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
+public operator fun <Z> NumericExpr<Z>.rem(other: NumericExpr<Z>): NumericExpr<Z> = ArithmeticOp(this, other, "%", columnType)
 
 /**
  * A typed string-valued SQL expression. A string [Column] yields one via the scalar functions
@@ -341,7 +341,7 @@ operator fun <Z> NumericExpr<Z>.rem(other: NumericExpr<Z>): NumericExpr<Z> = Ari
  * `lt` / `ltEq` against a `String` literal, or — through the generic expression operators —
  * against another [StringExpr] (`a.lower() eq b.lower()`).
  */
-interface StringExpr : Operand<String> {
+public interface StringExpr : Operand<String> {
     override val columnType: ColumnType<String> get() = TextColumnType
 }
 
@@ -359,16 +359,16 @@ internal class StringFunction(private val fn: String, private val args: List<Exp
 // Scalar string functions, defined on both Column<String> and StringExpr so they chain like the
 // arithmetic operators do. LOWER/UPPER/TRIM/LTRIM/RTRIM are standard and render identically on
 // PostgreSQL, MySQL and SQLite, so no dialect hook is needed.
-fun Column<String, *, *>.lower(): StringExpr = StringFunction("LOWER", listOf(this))
-fun StringExpr.lower(): StringExpr = StringFunction("LOWER", listOf(this))
-fun Column<String, *, *>.upper(): StringExpr = StringFunction("UPPER", listOf(this))
-fun StringExpr.upper(): StringExpr = StringFunction("UPPER", listOf(this))
-fun Column<String, *, *>.trim(): StringExpr = StringFunction("TRIM", listOf(this))
-fun StringExpr.trim(): StringExpr = StringFunction("TRIM", listOf(this))
-fun Column<String, *, *>.ltrim(): StringExpr = StringFunction("LTRIM", listOf(this))
-fun StringExpr.ltrim(): StringExpr = StringFunction("LTRIM", listOf(this))
-fun Column<String, *, *>.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
-fun StringExpr.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
+public fun Column<String, *, *>.lower(): StringExpr = StringFunction("LOWER", listOf(this))
+public fun StringExpr.lower(): StringExpr = StringFunction("LOWER", listOf(this))
+public fun Column<String, *, *>.upper(): StringExpr = StringFunction("UPPER", listOf(this))
+public fun StringExpr.upper(): StringExpr = StringFunction("UPPER", listOf(this))
+public fun Column<String, *, *>.trim(): StringExpr = StringFunction("TRIM", listOf(this))
+public fun StringExpr.trim(): StringExpr = StringFunction("TRIM", listOf(this))
+public fun Column<String, *, *>.ltrim(): StringExpr = StringFunction("LTRIM", listOf(this))
+public fun StringExpr.ltrim(): StringExpr = StringFunction("LTRIM", listOf(this))
+public fun Column<String, *, *>.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
+public fun StringExpr.rtrim(): StringExpr = StringFunction("RTRIM", listOf(this))
 
 /**
  * The number of **characters** in a string, as an `Int` (a [NumericExpr], so it compares, does
@@ -381,8 +381,8 @@ internal class LengthOp(private val arg: Expression) : NumericExpr<Int> {
     override fun resultKey(): Any = "CHAR_LENGTH(${structuralKey(arg)})"
 }
 
-fun Column<String, *, *>.length(): NumericExpr<Int> = LengthOp(this)
-fun StringExpr.length(): NumericExpr<Int> = LengthOp(this)
+public fun Column<String, *, *>.length(): NumericExpr<Int> = LengthOp(this)
+public fun StringExpr.length(): NumericExpr<Int> = LengthOp(this)
 
 /**
  * `COALESCE(a, b, ...)` — the first non-null argument. It is a [Selectable] (readable from a
@@ -392,7 +392,7 @@ fun StringExpr.length(): NumericExpr<Int> = LengthOp(this)
  * value is non-null when the last argument is (e.g. a literal default), so `row[...]` is safe then;
  * otherwise read it with `getOrNull`.
  */
-class CoalesceOp<Z> internal constructor(
+public class CoalesceOp<Z> internal constructor(
     internal val args: List<Expression>,
     override val columnType: ColumnType<Z>,
 ) : Operand<Z> {
@@ -401,18 +401,18 @@ class CoalesceOp<Z> internal constructor(
 }
 
 /** `COALESCE("col", default)` — read a nullable column with a fallback; the default binds through the column's converter. */
-fun <Z> Column<Z, *, *>.coalesce(default: Z): CoalesceOp<Z> = CoalesceOp(listOf(this, Value(bindParam(default))), columnType)
+public fun <Z> Column<Z, *, *>.coalesce(default: Z): CoalesceOp<Z> = CoalesceOp(listOf(this, Value(bindParam(default))), columnType)
 
 /** `COALESCE("col", "c2", "c3", ...)` — the first non-null of this column and the [others], in order. */
-fun <Z> Column<Z, *, *>.coalesce(vararg others: Column<Z, *, *>): CoalesceOp<Z> =
+public fun <Z> Column<Z, *, *>.coalesce(vararg others: Column<Z, *, *>): CoalesceOp<Z> =
     CoalesceOp(listOf(this, *others), columnType)
 
 /** Extends a `COALESCE` with more columns: `a.coalesce(b).coalesce(c, d)` → `COALESCE(a, b, c, d)`. */
-fun <Z> CoalesceOp<Z>.coalesce(vararg others: Column<Z, *, *>): CoalesceOp<Z> =
+public fun <Z> CoalesceOp<Z>.coalesce(vararg others: Column<Z, *, *>): CoalesceOp<Z> =
     CoalesceOp(args + others, columnType)
 
 /** Appends a literal fallback to a `COALESCE`, typically last: `a.coalesce(b).coalesce("default")`. */
-fun <Z> CoalesceOp<Z>.coalesce(default: Z): CoalesceOp<Z> =
+public fun <Z> CoalesceOp<Z>.coalesce(default: Z): CoalesceOp<Z> =
     CoalesceOp(args + columnType.lit(default), columnType)
 
 /**
@@ -422,7 +422,7 @@ fun <Z> CoalesceOp<Z>.coalesce(default: Z): CoalesceOp<Z> =
  * identical `case { … }` reads back from a row — a `val` is handy for reuse, not required. Compare
  * it to a typed literal with the operators below, or to another expression through the generic ones.
  */
-class CaseOp<Z> internal constructor(
+public class CaseOp<Z> internal constructor(
     private val branches: List<Pair<Expression, Expression>>,
     private val elseValue: Expression?,
     override val columnType: ColumnType<Z>,
@@ -440,19 +440,19 @@ class CaseOp<Z> internal constructor(
 }
 
 /** Builds the branches of a [case]. `whenever(cond) then value` adds a branch; `otherwise(value)` sets the ELSE. */
-class CaseBuilder<Z> internal constructor(private val columnType: ColumnType<Z>) {
+public class CaseBuilder<Z> internal constructor(private val columnType: ColumnType<Z>) {
     internal val branches = mutableListOf<Pair<Expression, Expression>>()
     internal var elseValue: Expression? = null
 
-    fun whenever(condition: Expression): WhenStep = WhenStep(condition)
+    public fun whenever(condition: Expression): WhenStep = WhenStep(condition)
 
-    inner class WhenStep internal constructor(private val condition: Expression) {
-        infix fun then(value: Z) {
+    public inner class WhenStep internal constructor(private val condition: Expression) {
+        public infix fun then(value: Z) {
             branches += condition to columnType.lit(value)
         }
     }
 
-    fun otherwise(value: Z) {
+    public fun otherwise(value: Z) {
         elseValue = columnType.lit(value)
     }
 }
@@ -462,7 +462,7 @@ class CaseBuilder<Z> internal constructor(private val columnType: ColumnType<Z>)
  * types, where the reader cannot be inferred from [Z]:
  * `case(StatusColumnType) { whenever(...) then Status.ACTIVE; otherwise Status.INACTIVE }`.
  */
-fun <Z> case(columnType: ColumnType<Z>, block: CaseBuilder<Z>.() -> Unit): CaseOp<Z> {
+public fun <Z> case(columnType: ColumnType<Z>, block: CaseBuilder<Z>.() -> Unit): CaseOp<Z> {
     val builder = CaseBuilder(columnType).apply(block)
     require(builder.branches.isNotEmpty()) { "case { } needs at least one `whenever(...) then ...`" }
     return CaseOp(builder.branches, builder.elseValue, columnType)
@@ -482,7 +482,7 @@ fun <Z> case(columnType: ColumnType<Z>, block: CaseBuilder<Z>.() -> Unit): CaseO
  *
  * For an enum or other custom-mapped result, use the [case] overload that takes a `ColumnType`.
  */
-inline fun <reified Z> case(noinline block: CaseBuilder<Z>.() -> Unit): CaseOp<Z> {
+public inline fun <reified Z> case(noinline block: CaseBuilder<Z>.() -> Unit): CaseOp<Z> {
     @Suppress("UNCHECKED_CAST")
     val columnType = when (Z::class) {
         String::class -> TextColumnType
@@ -515,4 +515,4 @@ internal class NotOp(private val expr: Expression) : Expression {
     override fun toSql(builder: ParamBuilder): String = "NOT (${expr.toSql(builder)})"
 }
 
-fun not(expr: Expression): Expression = NotOp(expr)
+public fun not(expr: Expression): Expression = NotOp(expr)

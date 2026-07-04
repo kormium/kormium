@@ -12,6 +12,8 @@ repositories {
 // any web engine (PGlite, node-postgres) reuse this one copy. Targets mirror the driver's reach
 // (jvm + the four native targets) plus the web stack.
 kotlin {
+    explicitApi()
+
     jvmToolchain(21)
 
     jvm()

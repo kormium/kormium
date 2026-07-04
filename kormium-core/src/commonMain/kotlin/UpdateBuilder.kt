@@ -16,22 +16,22 @@ package io.github.kormium
  * `UPDATE` takes no `ORDER BY` / `LIMIT` / `OFFSET`, so this builder exposes only `set` and `where`.
  */
 @KormiumDsl
-class UpdateBuilder {
+public class UpdateBuilder {
     private val assignments = LinkedHashMap<Column<*, *, *>, Expression>()
     private val conditions = mutableListOf<Expression>()
 
     /** `Posts.views set (Posts.views + 1)`: assigns a SQL [Expression] to this column. */
-    infix fun <Z> Column<Z, *, *>.set(value: Expression) {
+    public infix fun <Z> Column<Z, *, *>.set(value: Expression) {
         assignments[this] = value
     }
 
     /** `Posts.pinned set false`: assigns a literal value, bound as a parameter. */
-    infix fun <Z> Column<Z, *, *>.set(value: Z) {
+    public infix fun <Z> Column<Z, *, *>.set(value: Z) {
         assignments[this] = Value(bindParam(value))
     }
 
     /** Adds a predicate; multiple `where { ... }` calls combine with `AND` (see [QueryBuilder.where]). */
-    fun where(block: () -> Expression) {
+    public fun where(block: () -> Expression) {
         conditions += block()
     }
 

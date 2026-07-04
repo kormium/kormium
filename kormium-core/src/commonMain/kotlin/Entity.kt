@@ -17,7 +17,7 @@ package io.github.kormium
  * implementation detail: it is not part of the public API and entities are not
  * serializable. Map entities to your own DTOs for transport.
  */
-abstract class Entity protected constructor() {
+public abstract class Entity protected constructor() {
     internal var fields: MutableMap<String, Any?> = mutableMapOf()
 
     /** Replaces the backing field storage. Used by Kormium when hydrating a row from the database. */
@@ -32,7 +32,7 @@ abstract class Entity protected constructor() {
  *
  * The column must belong to this entity's type: `user.isSet(Orders.id)` is a compile error.
  */
-fun <N : Entity> N.isSet(column: Column<*, *, N>): Boolean = fields.containsKey(column.fieldKey)
+public fun <N : Entity> N.isSet(column: Column<*, *, N>): Boolean = fields.containsKey(column.fieldKey)
 
 /**
  * Removes [column]'s value, returning it to absent state (so it is omitted from
@@ -41,6 +41,6 @@ fun <N : Entity> N.isSet(column: Column<*, *, N>): Boolean = fields.containsKey(
  *
  * The column must belong to this entity's type: `user.unset(Orders.id)` is a compile error.
  */
-fun <N : Entity> N.unset(column: Column<*, *, N>) {
+public fun <N : Entity> N.unset(column: Column<*, *, N>) {
     fields.remove(column.fieldKey)
 }

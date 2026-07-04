@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.channelFlow
  * Observation only fires on backends whose driver enables it (all shipped drivers do); on a
  * backend with notification disabled the flow emits the initial value and nothing more.
  */
-fun <G : Catalog, R> SuspendDatabase<G>.observe(
+public fun <G : Catalog, R> SuspendDatabase<G>.observe(
     tables: Set<String>,
     fetch: suspend SuspendScope<G>.() -> R,
 ): Flow<R> = channelFlow {
@@ -50,7 +50,7 @@ fun <G : Catalog, R> SuspendDatabase<G>.observe(
  * the table. `Users.observe(db) { where { Users.age gtEq 18 } }` emits the matching users now
  * and again whenever the `users` table changes. With no [query] block it observes every row.
  */
-fun <G : Catalog, T : Entity> Table<G, T>.observe(
+public fun <G : Catalog, T : Entity> Table<G, T>.observe(
     db: SuspendDatabase<G>,
     query: QueryBuilder.() -> Unit = {},
 ): Flow<List<T>> {

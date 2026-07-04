@@ -4,7 +4,7 @@ package io.github.kormium
  * How [insertAll] handles a batch whose entities do not all have the same set of assigned
  * fields (their "shape" — the ordered set of present fields).
  */
-enum class BatchInsertMode {
+public enum class BatchInsertMode {
     /** All entities must share one shape; otherwise [insertAll] fails fast. Most explicit. */
     Strict,
 
@@ -28,7 +28,7 @@ enum class BatchInsertMode {
  * Per-database Kormium configuration, supplied to the `createDatabase` / `createSqliteDatabase` /
  * `createR2dbcDatabase` factories and carried on the resulting database handle.
  */
-data class KormiumConfig(
+public data class KormiumConfig(
     /** Default [BatchInsertMode] for [insertAll] when no per-call override is given. */
     val batchInsertMode: BatchInsertMode = BatchInsertMode.GroupByAssignedFields,
 

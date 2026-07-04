@@ -23,14 +23,14 @@ import kotlinx.coroutines.withContext
  * single effective isolation level, so a requested [TransactionIsolation] is ignored (as the
  * SqliteDialect already declares).
  */
-class SqliteWasmDatabase internal constructor(
+public class SqliteWasmDatabase internal constructor(
     private val api: SQLiteAPI,
     private val db: JsNumber,
     override val config: KormiumConfig,
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
-    override val dialect = SqliteDialect
+    override val dialect: SqliteDialect = SqliteDialect
 
     private val lifecycle = DatabaseLifecycle { api.close(db) }
     private val connectionLock = Mutex()
@@ -61,7 +61,7 @@ class SqliteWasmDatabase internal constructor(
         }
     }
 
-    override fun close() = lifecycle.close()
+    override fun close(): Unit = lifecycle.close()
 }
 
 /**
@@ -71,7 +71,7 @@ class SqliteWasmDatabase internal constructor(
  *   database persisted to IndexedDB under that name (browser only) via wa-sqlite's
  *   `IDBBatchAtomicVFS`, so data survives a page reload.
  */
-suspend fun createSqliteWasmDatabase(
+public suspend fun createSqliteWasmDatabase(
     dataDir: String? = null,
     config: KormiumConfig = KormiumConfig(),
     // Advanced/Node: Emscripten module overrides passed to the wa-sqlite factory. In the browser the

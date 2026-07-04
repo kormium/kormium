@@ -12,14 +12,14 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
  * [onCommit] is called synchronously on the thread that ran the transaction, so keep it
  * cheap and non-blocking — fan out to a coroutine/`Flow` off the hot path if you need to.
  */
-fun interface WriteListener {
+public fun interface WriteListener {
     /** [tables] is the non-empty set of table names written by the just-committed block. */
-    fun onCommit(tables: Set<String>)
+    public fun onCommit(tables: Set<String>)
 }
 
 /** Handle returned by [WriteListeners.add]; call [remove] to unregister the listener. */
-fun interface Registration {
-    fun remove()
+public fun interface Registration {
+    public fun remove()
 }
 
 /**
@@ -35,7 +35,7 @@ fun interface Registration {
  * collection, which can happen from many coroutines at once.
  */
 @OptIn(ExperimentalAtomicApi::class)
-open class WriteListeners {
+public open class WriteListeners {
     private val listeners = AtomicReference<List<WriteListener>>(emptyList())
 
     // The cross-process publish hook, set by `connectNotifications`. Kept SEPARATE from the
@@ -44,7 +44,7 @@ open class WriteListeners {
     private val commitPublish = AtomicReference<((Set<String>) -> Unit)?>(null)
 
     /** Registers [listener]; returns a [Registration] that removes it again. */
-    open fun add(listener: WriteListener): Registration {
+    public open fun add(listener: WriteListener): Registration {
         listeners.swap { it + listener }
         return Registration {
             listeners.swap { list -> list.filterNot { it === listener } }
@@ -52,17 +52,17 @@ open class WriteListeners {
     }
 
     /** Delivers [tables] to every registered listener. No-op when [tables] is empty. */
-    fun fire(tables: Set<String>) {
+    public fun fire(tables: Set<String>) {
         if (tables.isEmpty()) return
         val snapshot = listeners.load()
         for (l in snapshot) l.onCommit(tables)
     }
 
     /** True if at least one listener is registered (lets callers skip dirty-set bookkeeping). */
-    val isActive: Boolean get() = listeners.load().isNotEmpty()
+    public val isActive: Boolean get() = listeners.load().isNotEmpty()
 
     /** Installs (or clears, with `null`) the cross-process publish hook. Used by `connectNotifications`. */
-    open fun setCommitPublish(hook: ((Set<String>) -> Unit)?) {
+    public open fun setCommitPublish(hook: ((Set<String>) -> Unit)?) {
         commitPublish.swap { hook }
     }
 
@@ -71,13 +71,13 @@ open class WriteListeners {
      * commit path (after [fire]); the inbound/remote path uses [fire] alone, so remote signals are
      * never echoed back out.
      */
-    fun publishCommit(tables: Set<String>) {
+    public fun publishCommit(tables: Set<String>) {
         if (tables.isEmpty()) return
         commitPublish.load()?.invoke(tables)
     }
 
     /** The shared no-op registry for backends that don't support write notification. */
-    object Disabled : WriteListeners() {
+    public object Disabled : WriteListeners() {
         override fun add(listener: WriteListener): Registration = Registration {}
         override fun setCommitPublish(hook: ((Set<String>) -> Unit)?) {}
     }

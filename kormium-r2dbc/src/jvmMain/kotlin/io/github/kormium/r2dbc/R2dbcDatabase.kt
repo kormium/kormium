@@ -30,7 +30,7 @@ import kotlinx.coroutines.withContext
  * The phantom catalog tag is [Nothing], so by covariance it fits any
  * `SuspendDatabase<G>`; pin the tag at the call site (`val db: SuspendDatabase<MyCatalog>`).
  */
-class R2dbcDatabase internal constructor(
+public class R2dbcDatabase internal constructor(
     private val pool: ConnectionPool,
     override val dialect: Dialect,
     private val typeMapper: TypeMapper,
@@ -78,7 +78,7 @@ class R2dbcDatabase internal constructor(
         }
     }
 
-    override fun close() = lifecycle.close()
+    override fun close(): Unit = lifecycle.close()
 }
 
 /**
@@ -110,7 +110,7 @@ private val TransactionIsolation.r2dbcLevel: IsolationLevel
  * Opens an async Postgres database over r2dbc with a reactive connection pool of
  * [poolSize]. Returns it tagged [Nothing] (covariance pins the catalog at the call site).
  */
-fun createR2dbcDatabase(
+public fun createR2dbcDatabase(
     host: String,
     port: Int = 5432,
     database: String,

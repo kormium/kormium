@@ -10,7 +10,7 @@ import io.github.kormium.WriteListeners
  * released (or used via a `use { }` block). Blocking query methods come from [Database];
  * the suspend path (suspendTransaction/suspendAutocommit) comes from [SuspendDatabase].
  */
-interface PostgresDriver : Database<Nothing>, SuspendDatabase<Nothing>, AutoCloseable {
+public interface PostgresDriver : Database<Nothing>, SuspendDatabase<Nothing>, AutoCloseable {
     // Resolves the config default inherited from both Database and SuspendDatabase; concrete
     // drivers supply it (from the createDatabase config argument).
     override val config: KormiumConfig

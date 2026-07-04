@@ -8,6 +8,6 @@ import io.github.kormium.jdbc.SqlExceptionTranslator
  * branch on the vendor error code (`SQLException.getErrorCode`) via the shared [mysqlVendorException]
  * table.
  */
-val MySqlExceptionTranslator: SqlExceptionTranslator = { e ->
+public val MySqlExceptionTranslator: SqlExceptionTranslator = { e ->
     mysqlVendorException(e.message ?: "SQL error", e.errorCode, e.sqlState, e)
 }

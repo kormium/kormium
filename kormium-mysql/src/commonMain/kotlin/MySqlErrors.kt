@@ -12,7 +12,7 @@ package io.github.kormium
  * 1048/1364 NOT NULL (column cannot be null / has no default), 3819 CHECK (MySQL 8.0.16+ /
  * MariaDB 10.2+). Unknown codes fall back to the standard SQLSTATE mapping.
  */
-fun mysqlVendorException(
+public fun mysqlVendorException(
     message: String,
     vendorCode: Int,
     sqlState: String? = null,

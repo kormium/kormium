@@ -7,6 +7,8 @@ repositories {
 }
 
 kotlin {
+    explicitApi()
+
     // wa-sqlite is SQLite compiled to WASM, reached through JS interop, so this engine is
     // Kotlin/Wasm (JS) only. nodejs() runs the tests against an in-memory database (`:memory:`);
     // the browser uses the IndexedDB VFS for persistence (see the todo sample).

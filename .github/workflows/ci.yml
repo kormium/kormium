@@ -53,6 +53,11 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Public-ABI guard (JVM + klib dumps in <module>/api/). Fails in seconds when a change
+      # alters the API surface without a reviewed `./gradlew apiDump`.
+      - name: API compatibility check
+        run: ./gradlew apiCheck --console=plain
+
       # JVM unit tests. kormium-sqlite runs against an in-memory database (no Docker); it covers
       # both the blocking and the suspend (offload) paths.
       - name: JVM tests

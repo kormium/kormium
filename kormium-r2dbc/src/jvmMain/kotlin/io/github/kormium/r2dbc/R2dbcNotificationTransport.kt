@@ -24,7 +24,7 @@ import kotlinx.coroutines.reactive.awaitSingle
  * connection per call to `NOTIFY`. The wire format is shared with the JDBC/libpq transports, so an
  * r2dbc instance interoperates with them on the same [channel].
  */
-fun r2dbcListenNotifyTransport(
+public fun r2dbcListenNotifyTransport(
     host: String,
     port: Int = 5432,
     database: String,

@@ -14,7 +14,7 @@ package io.github.kormium
  *   default is 1 (everything serialised, no `database is locked`); raise it for
  *   concurrent reads (WAL permits many readers alongside one writer).
  */
-expect fun createSqliteDatabase(
+public expect fun createSqliteDatabase(
     path: String = ":memory:",
     poolSize: Int = 1,
     config: KormiumConfig = KormiumConfig(),
@@ -24,7 +24,7 @@ expect fun createSqliteDatabase(
  * Opens a SQLite database with a configuration block: `createSqliteDatabase("app.db") {`
  * `config { … }; beforeStart { migrate(appMigrations) } }`. See [KormiumBuilder].
  */
-fun createSqliteDatabase(
+public fun createSqliteDatabase(
     path: String = ":memory:",
     poolSize: Int = 1,
     block: KormiumBuilder.() -> Unit,

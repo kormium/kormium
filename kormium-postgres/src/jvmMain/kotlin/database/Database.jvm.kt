@@ -39,7 +39,7 @@ private class PostgresJdbcDriver(
     config = config,
 ), PostgresDriver
 
-actual fun createDatabase(
+public actual fun createDatabase(
     host: String,
     port: Int,
     database: String,

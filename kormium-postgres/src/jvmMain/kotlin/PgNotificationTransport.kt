@@ -22,7 +22,7 @@ import java.sql.DriverManager
  *
  * [channel] must be a valid SQL identifier; the default is fine.
  */
-fun postgresListenNotifyTransport(
+public fun postgresListenNotifyTransport(
     host: String,
     port: Int = 5432,
     database: String,

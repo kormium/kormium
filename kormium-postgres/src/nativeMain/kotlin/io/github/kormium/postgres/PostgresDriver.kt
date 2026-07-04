@@ -50,7 +50,7 @@ private fun pgBeginSql(isolation: TransactionIsolation?, readOnly: Boolean): Str
 }
 
 @OptIn(ExperimentalForeignApi::class)
-fun FPostgresDriver(
+public fun FPostgresDriver(
     host: String,
     port: Int = 5432,
     database: String,

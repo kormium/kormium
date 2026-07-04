@@ -15,7 +15,7 @@ import kotlin.contracts.contract
  * the same pinned connection.
  */
 @KormiumDsl
-class SuspendScope<G : Catalog> internal constructor(
+public class SuspendScope<G : Catalog> internal constructor(
     private val exec: SuspendSqlExecutor,
     /** The owning database's configuration (e.g. the default [BatchInsertMode]). */
     internal val config: KormiumConfig = KormiumConfig(),
@@ -31,13 +31,13 @@ class SuspendScope<G : Catalog> internal constructor(
     }
 
     /** Inserts [entity]; see [Scope.insert]. */
-    suspend fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T {
+    public suspend fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): T {
         markWritten()
         return insert(entity, exec, returning)
     }
 
     /** Inserts all [entities] in one statement; see [Scope.insertAll]. */
-    suspend fun <T : Entity> Table<G, T>.insertAll(
+    public suspend fun <T : Entity> Table<G, T>.insertAll(
         entities: List<T>,
         returning: Boolean = false,
         batchInsertMode: BatchInsertMode = config.batchInsertMode,
@@ -47,118 +47,118 @@ class SuspendScope<G : Catalog> internal constructor(
     }
 
     /** Insert-or-update on a single-column conflict target; see [Scope.upsert]. */
-    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T {
+    public suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: Column<*, *, T>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, listOf(onConflict), update, exec, returning)
     }
 
     /** Insert-or-update on a composite conflict target; see [Scope.upsert]. */
-    suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T {
+    public suspend fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): T {
         markWritten()
         return upsert(entity, onConflict, update, exec, returning)
     }
 
     /** Insert-or-do-nothing on a single-column conflict target; see [Scope.insertOrIgnore]. */
-    suspend fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: Column<*, *, T>): Long {
+    public suspend fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: Column<*, *, T>): Long {
         markWritten()
         return insertOrIgnore(entity, listOf(onConflict), exec)
     }
 
     /** Insert-or-do-nothing on a composite conflict target; see [Scope.insertOrIgnore]. */
-    suspend fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: List<Column<*, *, T>>): Long {
+    public suspend fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: List<Column<*, *, T>>): Long {
         markWritten()
         return insertOrIgnore(entity, onConflict, exec)
     }
 
     /** Counts rows matching [query] (all rows by default). */
-    suspend fun <T : Entity> Table<G, T>.count(query: Query = Query()): Long = count(query, exec)
+    public suspend fun <T : Entity> Table<G, T>.count(query: Query = Query()): Long = count(query, exec)
 
     /** Block form of [count]; see [Scope.count]. */
-    suspend fun <T : Entity> Table<G, T>.count(block: QueryBuilder.() -> Unit): Long =
+    public suspend fun <T : Entity> Table<G, T>.count(block: QueryBuilder.() -> Unit): Long =
         count(QueryBuilder().apply(block).build(), exec)
 
-    suspend fun <T : Entity> Table<G, T>.find(query: Query): List<T> = select(query, exec)
+    public suspend fun <T : Entity> Table<G, T>.find(query: Query): List<T> = select(query, exec)
 
     /** Block form of [find]; see [Scope.find]. */
-    suspend fun <T : Entity> Table<G, T>.find(block: QueryBuilder.() -> Unit): List<T> =
+    public suspend fun <T : Entity> Table<G, T>.find(block: QueryBuilder.() -> Unit): List<T> =
         select(QueryBuilder().apply(block).build(), exec)
     /** The first row matching [query] (typically a unique predicate), or null. Applies `LIMIT 1`. */
-    suspend fun <T : Entity> Table<G, T>.findOne(query: Query): T? = select(query.copy(limit = 1u), exec).firstOrNull()
+    public suspend fun <T : Entity> Table<G, T>.findOne(query: Query): T? = select(query.copy(limit = 1u), exec).firstOrNull()
 
     /** Block form of [findOne]: `Users.findOne { where { Users.id eq id } }`. */
-    suspend fun <T : Entity> Table<G, T>.findOne(block: QueryBuilder.() -> Unit): T? =
+    public suspend fun <T : Entity> Table<G, T>.findOne(block: QueryBuilder.() -> Unit): T? =
         findOne(QueryBuilder().apply(block).build())
-    suspend fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
+    public suspend fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
     /** Updates rows matching [query] with the present fields of [entity]; returns the affected row count. */
-    suspend fun <T : Entity> Table<G, T>.update(entity: T, query: Query): Long {
+    public suspend fun <T : Entity> Table<G, T>.update(entity: T, query: Query): Long {
         markWritten()
         return updateRows(query, entity, exec)
     }
 
     /** Block form of [update]; see [Scope.update]. */
-    suspend fun <T : Entity> Table<G, T>.update(entity: T, block: QueryBuilder.() -> Unit): Long {
+    public suspend fun <T : Entity> Table<G, T>.update(entity: T, block: QueryBuilder.() -> Unit): Long {
         markWritten()
         return updateRows(QueryBuilder().apply(block).build(), entity, exec)
     }
 
     /** Expression form of [update]: `Posts.views set (Posts.views + 1)`; see [Scope.update]. */
-    suspend fun <T : Entity> Table<G, T>.update(block: UpdateBuilder.() -> Unit): Long {
+    public suspend fun <T : Entity> Table<G, T>.update(block: UpdateBuilder.() -> Unit): Long {
         markWritten()
         val builder = UpdateBuilder().apply(block)
         return updateRows(builder.buildWhere(), builder.buildAssignments(), exec)
     }
 
     /** Deletes rows matching [query]; returns the affected row count. */
-    suspend fun <T : Entity> Table<G, T>.deleteWhere(query: Query): Long {
+    public suspend fun <T : Entity> Table<G, T>.deleteWhere(query: Query): Long {
         markWritten()
         return deleteRows(query, exec)
     }
 
     /** Block form of [deleteWhere]; see [Scope.deleteWhere]. */
-    suspend fun <T : Entity> Table<G, T>.deleteWhere(block: QueryBuilder.() -> Unit): Long {
+    public suspend fun <T : Entity> Table<G, T>.deleteWhere(block: QueryBuilder.() -> Unit): Long {
         markWritten()
         return deleteRows(QueryBuilder().apply(block).build(), exec)
     }
 
     @DelicateKormiumApi
-    suspend fun <T : Entity> Table<G, T>.execSql(sql: String) {
+    public suspend fun <T : Entity> Table<G, T>.execSql(sql: String) {
         markWritten()
         runRaw(sql, exec)
     }
 
     /** Runs the query, selecting the given fields (or all columns if none are given). */
-    suspend fun Join<G>.select(vararg fields: Selectable<*>): List<ResultRow> =
+    public suspend fun Join<G>.select(vararg fields: Selectable<*>): List<ResultRow> =
         runSelect(exec, this, if (fields.isEmpty()) allColumns() else fields.toList())
 
     /** Runs the query, mapping each [ResultRow] with [map] (a projection into your own type). */
-    suspend fun <R> Join<G>.select(vararg fields: Selectable<*>, map: (ResultRow) -> R): List<R> =
+    public suspend fun <R> Join<G>.select(vararg fields: Selectable<*>, map: (ResultRow) -> R): List<R> =
         select(*fields).map(map)
 
     /** Runs a two-table join, selecting the given fields (or all columns if none are given). */
-    suspend fun <A : Entity, B : Entity> JoinPair<G, A, B>.select(vararg fields: Selectable<*>): List<ResultRow> =
+    public suspend fun <A : Entity, B : Entity> JoinPair<G, A, B>.select(vararg fields: Selectable<*>): List<ResultRow> =
         asJoin().select(*fields)
 
     /** Runs a two-table join, mapping each [ResultRow] with [map]. */
-    suspend fun <A : Entity, B : Entity, R> JoinPair<G, A, B>.select(vararg fields: Selectable<*>, map: (ResultRow) -> R): List<R> =
+    public suspend fun <A : Entity, B : Entity, R> JoinPair<G, A, B>.select(vararg fields: Selectable<*>, map: (ResultRow) -> R): List<R> =
         asJoin().select(*fields, map = map)
 
     /** Runs a two-table join, reconstructing both sides as a `Pair` of entities. */
-    suspend fun <A : Entity, B : Entity> JoinPair<G, A, B>.find(): List<Pair<A, B>> =
+    public suspend fun <A : Entity, B : Entity> JoinPair<G, A, B>.find(): List<Pair<A, B>> =
         hydrateInnerPairs(left, right, runSelect(exec, asJoin(), pairSelectFields(left, right)))
 
     /** Runs a two-table LEFT join, selecting the given fields (or all columns if none are given). */
-    suspend fun <A : Entity, B : Entity> LeftJoinPair<G, A, B>.select(vararg fields: Selectable<*>): List<ResultRow> =
+    public suspend fun <A : Entity, B : Entity> LeftJoinPair<G, A, B>.select(vararg fields: Selectable<*>): List<ResultRow> =
         asJoin().select(*fields)
 
     /** Runs a two-table LEFT join, mapping each [ResultRow] with [map]. */
-    suspend fun <A : Entity, B : Entity, R> LeftJoinPair<G, A, B>.select(vararg fields: Selectable<*>, map: (ResultRow) -> R): List<R> =
+    public suspend fun <A : Entity, B : Entity, R> LeftJoinPair<G, A, B>.select(vararg fields: Selectable<*>, map: (ResultRow) -> R): List<R> =
         asJoin().select(*fields, map = map)
 
     /**
      * Runs a two-table LEFT join, reconstructing both sides as entity pairs. The right side
      * is `null` for left rows with no match (detected by a NULL right-side primary key).
      */
-    suspend fun <A : Entity, B : Entity> LeftJoinPair<G, A, B>.find(): List<Pair<A, B?>> =
+    public suspend fun <A : Entity, B : Entity> LeftJoinPair<G, A, B>.find(): List<Pair<A, B?>> =
         hydrateLeftPairs(left, right, runSelect(exec, asJoin(), pairSelectFields(left, right)))
 
     /**
@@ -166,7 +166,7 @@ class SuspendScope<G : Catalog> internal constructor(
      * [Scope.execute].
      */
     @DelicateKormiumApi
-    suspend fun <R> execute(
+    public suspend fun <R> execute(
         sql: String,
         params: Map<String, Any?>,
         invalidates: List<Table<G, *>>,
@@ -178,7 +178,7 @@ class SuspendScope<G : Catalog> internal constructor(
 
     /** Runs a raw statement (DDL/DML) on the pinned connection, returning the affected row count. See [Scope.executeUpdate]. */
     @DelicateKormiumApi
-    suspend fun executeUpdate(
+    public suspend fun executeUpdate(
         sql: String,
         params: Map<String, Any?>,
         invalidates: List<Table<G, *>>,
@@ -197,7 +197,7 @@ class SuspendScope<G : Catalog> internal constructor(
      * error on PostgreSQL and backend-dependent elsewhere).
      */
     @OptIn(ExperimentalContracts::class)
-    suspend fun <R> savepoint(block: suspend SuspendScope<G>.() -> R): R {
+    public suspend fun <R> savepoint(block: suspend SuspendScope<G>.() -> R): R {
         contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         check(transactional) { "savepoint { } requires a transaction; use suspendTransaction { }, not suspendAutocommit { }" }
         val name = "korm_sp_${savepointCounter++}"
@@ -222,7 +222,7 @@ class SuspendScope<G : Catalog> internal constructor(
  * where the backend supports it.
  */
 @OptIn(ExperimentalContracts::class)
-suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(
+public suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(
     isolation: TransactionIsolation? = null,
     readOnly: Boolean = false,
     block: suspend SuspendScope<G>.() -> R,
@@ -240,7 +240,7 @@ suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(
  * suspend counterpart of [autocommit], the cheap path for reads / single statements.
  */
 @OptIn(ExperimentalContracts::class)
-suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendAutocommit(block: suspend SuspendScope<G>.() -> R): R {
+public suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendAutocommit(block: suspend SuspendScope<G>.() -> R): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
     val result = useConnection(transactional = false) { SuspendScope<G>(it.observed(config), config, dirty, transactional = false).block() }

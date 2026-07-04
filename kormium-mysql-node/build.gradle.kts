@@ -7,6 +7,8 @@ repositories {
 }
 
 kotlin {
+    explicitApi()
+
     // A MySQL/MariaDB engine for Kotlin running on Node, over the async mysql2 package talking to a
     // real server. Node only.
     compilerOptions {

@@ -403,3 +403,11 @@ is validated on write. See [docs/queries.md](docs/queries.md#vector-search-pgvec
   `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for
   those — both require `@OptIn(DelicateKormiumApi::class)`, and `execute`/`executeUpdate` require
   `params`/`invalidates` explicitly (`emptyMap()`/`emptyList()` when there's nothing to pass).
+
+## Changing kormium's own public API (contributors)
+
+Every published module compiles with Kotlin `explicitApi()` — new public declarations need
+explicit visibility and return types (the compiler errors until they do; prefer `internal`
+unless the symbol is meant for consumers). The public ABI is dumped per module in
+`<module>/api/` and checked by CI: after any deliberate API change run `./gradlew apiDump`
+and commit the `.api` diffs — they are the review artifact for the change.

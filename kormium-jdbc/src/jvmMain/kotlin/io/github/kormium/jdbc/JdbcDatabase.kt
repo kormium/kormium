@@ -25,17 +25,17 @@ import java.sql.PreparedStatement
 import java.sql.SQLException
 
 /** Wraps a driver [java.sql.ResultSet] in core's backend-agnostic [ResultSet]. */
-typealias ResultSetWrapper = (java.sql.ResultSet) -> ResultSet
+public typealias ResultSetWrapper = (java.sql.ResultSet) -> ResultSet
 
 /**
  * Translates a JDBC [SQLException] into a korm exception. Backends differ in how
  * they report constraint violations (Postgres via SQLSTATE, SQLite via result
  * codes), so each supplies its own mapping. The default maps the standard SQLSTATE.
  */
-typealias SqlExceptionTranslator = (SQLException) -> Throwable
+public typealias SqlExceptionTranslator = (SQLException) -> Throwable
 
 /** The default translator: maps the JDBC SQLSTATE to a typed core exception. */
-val StandardSqlExceptionTranslator: SqlExceptionTranslator =
+public val StandardSqlExceptionTranslator: SqlExceptionTranslator =
     { e -> sqlException(e.message ?: "SQL error", e.sqlState, e) }
 
 /**
@@ -47,7 +47,7 @@ val StandardSqlExceptionTranslator: SqlExceptionTranslator =
  * Open so a backend can subclass it purely to add its marker interface (e.g.
  * `class PostgresJdbcDriver(...) : JdbcDatabase(...), PostgresDriver`).
  */
-open class JdbcDatabase(
+public open class JdbcDatabase(
     jdbcUrl: String,
     username: String? = null,
     password: String? = null,
@@ -82,7 +82,7 @@ open class JdbcDatabase(
 
     override val isClosed: Boolean get() = lifecycle.isClosed
 
-    override fun close() = lifecycle.close()
+    override fun close(): Unit = lifecycle.close()
 
     override fun <R> usePinned(
         transactional: Boolean,
@@ -178,7 +178,7 @@ private val TransactionIsolation.jdbcLevel: Int
     }
 
 /** An [SqlExecutor] bound to one already-open JDBC connection. */
-class JdbcExecutor(
+public class JdbcExecutor(
     private val conn: Connection,
     override val dialect: Dialect,
     override val typeMapper: TypeMapper,

@@ -16,7 +16,7 @@ private val logger = kormiumLogger()
  * and the suspend runner (taking [SuspendSqlExecutor]) share the same `*Sql`
  * helper and differ only in how they execute it.
  */
-abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: () -> T) {
+public abstract class Table<G: Catalog, T: Entity>(public val tableName: String, public val factory: () -> T) {
     /**
      * Builds an entity from a loaded field map (the database read path). Fails fast at the
      * database boundary when a column the entity declares non-null came back as SQL NULL — that
@@ -52,13 +52,13 @@ abstract class Table<G: Catalog, T: Entity>(val tableName: String, val factory: 
     private val fieldDisplayName: MutableMap<String, Column<*, *, T>> = mutableMapOf()
 
     /** The table's columns keyed by entity field name (Kotlin property name), in declaration order. */
-    fun getFieldDisplayNames(): Map<String, Column<*, *, *>> = fieldDisplayName
+    public fun getFieldDisplayNames(): Map<String, Column<*, *, *>> = fieldDisplayName
 
     /**
      * The primary-key column(s): those declared with `primaryKey = true`, or the column
      * named "id" if none are marked.
      */
-    val primaryKey: List<Column<*, *, T>>
+    public val primaryKey: List<Column<*, *, T>>
         get() = fieldDisplayName.values.filter { it.isPrimaryKey }
             .ifEmpty { fieldDisplayName.values.filter { it.fieldKey == "id" } }
     internal fun addColumn(fieldName: String, column: Column<*, *, T>) {

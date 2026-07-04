@@ -9,7 +9,7 @@ import kotlin.uuid.Uuid
  * The casts are explicit (not reliant on `stringtype=unspecified`), so they're correct
  * for the truly-typed r2dbc driver as well as the text-based JDBC/libpq paths.
  */
-object PostgresDialect : Dialect by StandardDialect {
+public object PostgresDialect : Dialect by StandardDialect {
     override fun renderBind(name: String, value: Any?): String = when (value) {
         is Uuid -> ":$name::uuid"
         is JsonElement -> ":$name::jsonb"

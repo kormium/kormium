@@ -7,6 +7,8 @@ repositories {
 }
 
 kotlin {
+    explicitApi()
+
     // A Postgres engine for Kotlin running on Node, over the async node-postgres (`pg`) package
     // talking to a real Postgres server. Node only.
     compilerOptions {

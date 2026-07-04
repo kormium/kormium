@@ -14,4 +14,4 @@ package io.github.kormium
     level = RequiresOptIn.Level.ERROR,
 )
 @Retention(AnnotationRetention.BINARY)
-annotation class DelicateKormiumApi
+public annotation class DelicateKormiumApi

@@ -14,14 +14,14 @@ import io.github.kormium.resultset.ResultSet
  * subtype — one object can't be both (a `suspend` and a non-`suspend` `execute`
  * with the same parameters clash).
  */
-interface SuspendSqlExecutor {
-    val dialect: Dialect
-    val typeMapper: TypeMapper
+public interface SuspendSqlExecutor {
+    public val dialect: Dialect
+    public val typeMapper: TypeMapper
 
-    suspend fun <T> execute(sql: String, namedParameters: Map<String, Any?> = emptyMap(), handler: (ResultSet) -> T): List<T>
-    suspend fun <T> execute(sql: String, paramSource: SqlParameterSource, handler: (ResultSet) -> T): List<T>
-    suspend fun execute(sql: String, namedParameters: Map<String, Any?> = emptyMap()): Long
-    suspend fun execute(sql: String, paramSource: SqlParameterSource): Long
+    public suspend fun <T> execute(sql: String, namedParameters: Map<String, Any?> = emptyMap(), handler: (ResultSet) -> T): List<T>
+    public suspend fun <T> execute(sql: String, paramSource: SqlParameterSource, handler: (ResultSet) -> T): List<T>
+    public suspend fun execute(sql: String, namedParameters: Map<String, Any?> = emptyMap()): Long
+    public suspend fun execute(sql: String, paramSource: SqlParameterSource): Long
     /** Runs an INSERT/UPDATE/DELETE/DDL statement and returns the backend-reported affected row count. */
-    suspend fun executeUpdate(sql: String, namedParameters: Map<String, Any?> = emptyMap()): Long
+    public suspend fun executeUpdate(sql: String, namedParameters: Map<String, Any?> = emptyMap()): Long
 }

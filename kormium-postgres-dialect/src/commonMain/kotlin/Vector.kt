@@ -15,15 +15,15 @@ import io.github.kormium.resultset.ResultSet
  * Kormium does not own DDL, so the SQL column (`CREATE EXTENSION vector; ... embedding vector(1536)`)
  * is declared in raw SQL / a migration; [Column.Companion.Vector] only describes how a value round-trips.
  */
-class Vector(val data: FloatArray) {
+public class Vector(public val data: FloatArray) {
     /** The number of dimensions (array length). */
-    val size: Int get() = data.size
+    public val size: Int get() = data.size
 
     /** Builds a vector from a list of floats (e.g. the output of an embedding library). */
-    constructor(values: List<Float>) : this(values.toFloatArray())
+    public constructor(values: List<Float>) : this(values.toFloatArray())
 
     /** The i-th component. */
-    operator fun get(index: Int): Float = data[index]
+    public operator fun get(index: Int): Float = data[index]
 
     override fun equals(other: Any?): Boolean = this === other || (other is Vector && data.contentEquals(other.data))
 
@@ -32,12 +32,12 @@ class Vector(val data: FloatArray) {
     /** The pgvector text form `[1.0,2.0,3.0]` — also the value bound as a parameter. */
     override fun toString(): String = data.joinToString(separator = ",", prefix = "[", postfix = "]")
 
-    companion object {
+    public companion object {
         /** `Vector.of(0.1f, 0.2f, 0.3f)` — a vector from its components. */
-        fun of(vararg values: Float): Vector = Vector(values)
+        public fun of(vararg values: Float): Vector = Vector(values)
 
         /** Parses the pgvector text form `[1,2,3]` (as read back from a row) into a [Vector]. */
-        fun parse(text: String): Vector {
+        public fun parse(text: String): Vector {
             val trimmed = text.trim()
             require(trimmed.length >= 2 && trimmed.first() == '[' && trimmed.last() == ']') {
                 "not a pgvector value: '$text'"
@@ -56,7 +56,7 @@ class Vector(val data: FloatArray) {
  * to `::vector`. An optional [dimensions] is validated on write — a mismatched length fails fast with
  * a clear message rather than as an opaque server error.
  */
-class VectorColumnType(val dimensions: Int? = null) : ColumnType<Vector> {
+public class VectorColumnType(public val dimensions: Int? = null) : ColumnType<Vector> {
     override fun read(rs: ResultSet, index: Int): Vector? = rs.getString(index)?.let(Vector::parse)
 
     override fun toParam(value: Vector): Any? {
@@ -81,14 +81,14 @@ class VectorColumnType(val dimensions: Int? = null) : ColumnType<Vector> {
  *
  * [dimensions], when given, is validated on every write. Refine with `.nullable()` as usual.
  */
-fun Column.Companion.Vector(dimensions: Int? = null, name: String? = null): Column.Spec<Vector> =
+public fun Column.Companion.Vector(dimensions: Int? = null, name: String? = null): Column.Spec<Vector> =
     Column.of(VectorColumnType(dimensions), name)
 
 /**
  * A vector similarity metric. Maps to a pgvector distance operator via [distance]. For all three,
  * **smaller is more similar**, so nearest-neighbour search is an ascending `orderBy`.
  */
-enum class VectorMetric {
+public enum class VectorMetric {
     /** Euclidean (L2) distance — straight-line distance; accounts for magnitude. pgvector `<->`. */
     EUCLIDEAN,
 
@@ -138,30 +138,30 @@ internal class VectorDistanceOp(
  * the usual choice for text embeddings. The named aliases below ([euclideanDistance] / [cosineDistance] /
  * [innerProduct]) are sugar over this.
  */
-fun Operand<Vector>.distance(query: Vector, metric: VectorMetric = VectorMetric.COSINE): NumericExpr<Double> =
+public fun Operand<Vector>.distance(query: Vector, metric: VectorMetric = VectorMetric.COSINE): NumericExpr<Double> =
     VectorDistanceOp(this, Value(query), metric, query.toString())
 
 /** pgvector distance between two vector operands (e.g. two columns), over the given [metric]. */
-fun Operand<Vector>.distance(other: Operand<Vector>, metric: VectorMetric = VectorMetric.COSINE): NumericExpr<Double> =
+public fun Operand<Vector>.distance(other: Operand<Vector>, metric: VectorMetric = VectorMetric.COSINE): NumericExpr<Double> =
     VectorDistanceOp(this, other, metric, other.resultKey())
 
 /** Euclidean (L2) distance `<->` to a query vector. Alias for `distance(query, VectorMetric.EUCLIDEAN)`. */
-fun Operand<Vector>.euclideanDistance(query: Vector): NumericExpr<Double> = distance(query, VectorMetric.EUCLIDEAN)
+public fun Operand<Vector>.euclideanDistance(query: Vector): NumericExpr<Double> = distance(query, VectorMetric.EUCLIDEAN)
 
 /** Euclidean (L2) distance `<->` between two vector operands. */
-fun Operand<Vector>.euclideanDistance(other: Operand<Vector>): NumericExpr<Double> = distance(other, VectorMetric.EUCLIDEAN)
+public fun Operand<Vector>.euclideanDistance(other: Operand<Vector>): NumericExpr<Double> = distance(other, VectorMetric.EUCLIDEAN)
 
 /** Cosine distance `<=>` (`1 - similarity`) to a query vector. Alias for `distance(query, VectorMetric.COSINE)`. */
-fun Operand<Vector>.cosineDistance(query: Vector): NumericExpr<Double> = distance(query, VectorMetric.COSINE)
+public fun Operand<Vector>.cosineDistance(query: Vector): NumericExpr<Double> = distance(query, VectorMetric.COSINE)
 
 /** Cosine distance `<=>` between two vector operands. */
-fun Operand<Vector>.cosineDistance(other: Operand<Vector>): NumericExpr<Double> = distance(other, VectorMetric.COSINE)
+public fun Operand<Vector>.cosineDistance(other: Operand<Vector>): NumericExpr<Double> = distance(other, VectorMetric.COSINE)
 
 /**
  * Negative inner product `<#>` to a query vector. Alias for `distance(query, VectorMetric.DOT)`. pgvector
  * negates the dot product, so the value is ≤ 0 and, like the others, smaller means more similar.
  */
-fun Operand<Vector>.innerProduct(query: Vector): NumericExpr<Double> = distance(query, VectorMetric.DOT)
+public fun Operand<Vector>.innerProduct(query: Vector): NumericExpr<Double> = distance(query, VectorMetric.DOT)
 
 /** Negative inner product `<#>` between two vector operands. */
-fun Operand<Vector>.innerProduct(other: Operand<Vector>): NumericExpr<Double> = distance(other, VectorMetric.DOT)
+public fun Operand<Vector>.innerProduct(other: Operand<Vector>): NumericExpr<Double> = distance(other, VectorMetric.DOT)

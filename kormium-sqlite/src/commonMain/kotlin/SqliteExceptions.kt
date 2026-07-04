@@ -14,7 +14,7 @@ private const val SQLITE_CONSTRAINT_UNIQUE = 2067
  * message text (stable across the JDBC and native drivers, e.g. "UNIQUE constraint
  * failed"). The extended code (when known) is carried in [QueryException.sqlState].
  */
-fun sqliteException(message: String, extendedCode: Int? = null, cause: Throwable? = null): QueryException {
+public fun sqliteException(message: String, extendedCode: Int? = null, cause: Throwable? = null): QueryException {
     val state = extendedCode?.toString()
     return when {
         extendedCode == SQLITE_CONSTRAINT_UNIQUE || extendedCode == SQLITE_CONSTRAINT_PRIMARYKEY ||

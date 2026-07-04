@@ -7,6 +7,8 @@ repositories {
 }
 
 kotlin {
+    explicitApi()
+
     // A SQLite engine for Kotlin running on Node, over the synchronous better-sqlite3 package.
     // Node only (no browser); nodejs() also runs the tests against a real on-disk/in-memory SQLite.
     compilerOptions {

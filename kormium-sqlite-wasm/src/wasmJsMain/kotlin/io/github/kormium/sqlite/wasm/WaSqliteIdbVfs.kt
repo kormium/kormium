@@ -8,4 +8,4 @@ package io.github.kormium.sqlite.wasm
  * uses). Construct it with the IndexedDB database name, then register it via
  * [SQLiteAPI.vfs_register] and pass its name to `open_v2` to persist a database to the browser.
  */
-external class IDBBatchAtomicVFS(idbDatabaseName: String) : JsAny
+public external class IDBBatchAtomicVFS(idbDatabaseName: String) : JsAny
