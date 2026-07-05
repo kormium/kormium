@@ -100,7 +100,9 @@ These are useful but should not distract from core reliability:
   three, and the browser/Node engines have shipped (wa-sqlite in the browser, better-sqlite3 /
   node-postgres / mysql2 on Node); still new, so treated as experimental. A PGlite engine
   (Postgres in the browser) lives in a separate repo. Remaining: wasmWasi stays DSL-only until
-  WASI sockets mature. See [Web targets](web-targets.md);
+  WASI sockets mature; browser SQLite also has a pooled, concurrent-reader mode now
+  (`createPooledSqliteWasmDatabase`, OPFS + a Worker pool, needs COOP/COEP) alongside the
+  default single-connection engine — see [Web targets](web-targets.md);
 - more SQL dialects;
 - richer schema DSL;
 - generated entities or compiler plugin support;

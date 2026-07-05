@@ -73,6 +73,98 @@ text binding, Promise→suspend, single-connection `Mutex`) carry over to the en
   can build queries and plug their own transport. Tracked against WASI sockets / preview2
   maturing in Kotlin.
 
+## Phase 4 — Concurrent browser SQLite reads (OPFS + Worker pool) — SHIPPED
+
+**Motivation.** Every other pooled Kormium backend gives you real concurrency out of the box:
+JVM SQLite pools JDBC connections (HikariCP), and the Node Postgres/MySQL engines pool their
+native driver's connections. `kormium-sqlite-wasm`'s original engine was single-connection
+(`SqliteWasmDatabase` guards one wa-sqlite instance with a `Mutex`). This surfaced concretely in
+`kormium/playground`'s `sql-demo`: independent read-only aggregate queries against a large dataset
+couldn't overlap — wall-clock time was the *sum* of every query, not the slowest one.
+
+**What shipped, and why it doesn't look like the original sketch:**
+
+- **New engine, new dependency.** `kormium-sqlite-wasm`'s existing `wa-sqlite` dependency turned
+  out to be npm `1.0.0`, published January 2024 and never updated since; its `AccessHandlePoolVFS`
+  explicitly does not support multiple connections. Building the originally-sketched spike on it
+  would have failed by construction, not by a real browser limitation. Instead, the pooled engine
+  is built on the officially-maintained **`@sqlite.org/sqlite-wasm`** package (published in
+  lockstep with SQLite releases) via a new standalone library, **[`kormium/sqlite-wasm-kt`](https://github.com/kormium/sqlite-wasm-kt)**
+  (mirrors the `kormium/decimal` precedent — reusable outside Kormium, no dependency on Kormium
+  types). It uses that package's `OpfsWlDb` (the `opfs-wl` VFS, SQLite 3.53.0+: real
+  multi-connection concurrent access via Web Locks + `Atomics.waitAsync`, no custom VFS/locking
+  code needed from us).
+- **COOP/COEP is required — confirmed empirically, not assumed.** Tested directly: `OpfsWlDb`
+  registration silently no-ops (`sqlite3.oo1.OpfsWlDb is not a constructor`, no error) without
+  `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp`; works
+  fully with them. GitHub Pages cannot serve custom headers, so hosting the pooled engine's demo
+  needs Netlify/Cloudflare Pages or similar (a `_headers` file).
+- **A pooled Worker needs a worker script; a Kotlin/Wasm *library* can't ship one transparently.**
+  Kotlin/Wasm compiles one bundle per **executable**, not per library, and a Worker needs a real,
+  separate script to load — a library alone has no bundle of its own to point a `Worker` at. The
+  fix: `kormium/sqlite-wasm-kt` ships a companion **executable** subproject,
+  `sqlite-wasm-kt-worker` — a tiny, Kormium-independent Worker entry point that answers a generic
+  `postMessage` RPC protocol (open/execute/query/close) over one `SqliteWasmConnection`. It's
+  distributed as its own npm package; `kormium-sqlite-wasm` depends on it via
+  `implementation(npm("@kormium/sqlite-wasm-worker", ...))`, and `new Worker(new
+  URL('@kormium/sqlite-wasm-worker/...', import.meta.url))` — webpack's built-in `new
+  Worker(new URL(...))` bundling picks this up automatically as its own chunk, **with zero
+  consumer-side webpack config for the Worker delivery itself** (confirmed empirically with a
+  throwaway npm package + real headless-Chrome run before building the real thing).
+  - One real gotcha this surfaced: the worker package must ship **raw ESM** (the Kotlin/Wasm
+    compiler's un-webpacked `.mjs`/`.wasm` output), not `wasmJsBrowserDistribution`'s
+    already-webpack-bundled UMD output. A pre-bundled file is one opaque CommonJS module to the
+    *consumer's* webpack, which then never re-discovers/re-emits `@sqlite.org/sqlite-wasm`'s own
+    `sqlite3.wasm` asset reference bundled *inside* that opaque blob — the asset silently never
+    makes it into the final dist directory. Raw ESM source doesn't have this problem: the
+    consumer's webpack traces it like any other module and emits its assets itself.
+  - A consumer app *does* need two small, one-time webpack config additions (`webpack.config.d/`):
+    `output.environment.dynamicImport = true`, and marking `node:module`/`node:fs`/`node:path`/
+    `node:url`/the Deno path specifier as `externals` — `@sqlite.org/sqlite-wasm`'s Node/Deno
+    environment-detection branches reference those, never reached in a browser but still
+    statically parsed by webpack. This is required only for apps that actually call
+    `createPooledSqliteWasmDatabase`; Kotlin/Wasm's dead-code elimination drops the whole
+    dependency (and the requirement) for apps that don't, confirmed by rebuilding `wasm-todo`
+    (the single-connection demo) without either the call or the config and getting its original,
+    unchanged bundle back.
+- **Routing signal is `readOnly`, not `transactional`.** `SuspendDatabase.useConnection`'s
+  `transactional = false` (i.e. `suspendAutocommit { }`) covers both reads *and* single-statement
+  writes — the interface doesn't distinguish them. Routing all of it to the reader pool would risk
+  sending an autocommit write to a connection that can't be guaranteed writable. So only an
+  explicit `suspendTransaction(readOnly = true) { }` — the one unambiguous "this is a read" signal
+  — routes to the reader pool; everything else (including plain `suspendAutocommit`) goes to the
+  writer. Callers who want pooled reads must use `suspendTransaction(readOnly = true) { }`, not
+  `suspendAutocommit { }`.
+- **A subtle Worker-side race, found and fixed:** sending the first request immediately after
+  `new Worker(...)` raced the worker's own startup in this specific Kotlin/Wasm+webpack-chunk
+  setup — the message was sent before the worker's listener was reliably observed to be attached
+  in practice. Fixed with an explicit ready handshake: the worker posts a sentinel message the
+  moment its listener is registered, and the main-thread side awaits it before sending the real
+  `open` request.
+
+**API shipped** (additive; the original single-connection `createSqliteWasmDatabase` is untouched
+and stays the default):
+
+```kotlin
+public suspend fun createPooledSqliteWasmDatabase(
+    opfsPath: String,
+    readerPoolSize: Int = 4,
+    config: KormiumConfig = KormiumConfig(),
+): PooledSqliteWasmDatabase
+```
+
+**Verified end-to-end** (`kormium-sqlite-wasm` depending on `kormium/sqlite-wasm-kt` via a
+composite build, real headless Chrome, COOP/COEP headers): writer connection commits
+CREATE/DELETE/INSERT; two reader connections then run `suspendTransaction(readOnly = true) { }`
+reads that genuinely overlap (their `BEGIN` statements land within microseconds of each other in
+the SQL trace, not queued one after another).
+
+**Still open:** `kormium/sqlite-wasm-kt` and `sqlite-wasm-kt-worker` are not yet published to Maven
+Central / npm — `kormium-sqlite-wasm` currently resolves them via a composite build
+(`includeBuild("../sqlite-wasm-kt")`) and a dev-only local npm path. Re-validating against
+`sql-demo`'s actual 1M-row workload (the acceptance test that motivated this phase) and the
+[Backends](backends.md) concurrency-row/ADR writeup are the remaining follow-ups.
+
 ## Known constraints
 
 - Kotlin/JS exports to idiomatic TypeScript poorly for a generic-heavy DSL. The target
