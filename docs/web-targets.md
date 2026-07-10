@@ -73,7 +73,13 @@ text binding, Promise→suspend, single-connection `Mutex`) carry over to the en
   can build queries and plug their own transport. Tracked against WASI sockets / preview2
   maturing in Kotlin.
 
-## Phase 4 — Concurrent browser SQLite reads (OPFS + Worker pool) — SHIPPED
+## Phase 4 — Concurrent browser SQLite reads (OPFS + Worker pool)
+
+> **Outcome first (the detail below is the engineering record that led here):** the pool shipped
+> but is **experimental with a narrow niche**, not the browser-analytics default the plan assumed.
+> Validation flipped the premise — see the [addendum](#phase-4-addendum--measured-limits-validation-against-sql-demo-at-1m-rows)
+> and [ADR 0010](adr/0010-browser-sqlite-three-engines.md). The recommended default is now a
+> *third* engine, `createWorkerSqliteWasmDatabase` (Worker-hosted in-memory), also built here.
 
 **Motivation.** Every other pooled Kormium backend gives you real concurrency out of the box:
 JVM SQLite pools JDBC connections (HikariCP), and the Node Postgres/MySQL engines pool their
@@ -142,8 +148,9 @@ couldn't overlap — wall-clock time was the *sum* of every query, not the slowe
   moment its listener is registered, and the main-thread side awaits it before sending the real
   `open` request.
 
-**API shipped** (additive; the original single-connection `createSqliteWasmDatabase` is untouched
-and stays the default):
+**API shipped** (additive; the original `createSqliteWasmDatabase` is untouched — but see the
+addendum: the recommended default became `createWorkerSqliteWasmDatabase`, and this pooled factory
+is experimental):
 
 ```kotlin
 public suspend fun createPooledSqliteWasmDatabase(
@@ -159,11 +166,54 @@ CREATE/DELETE/INSERT; two reader connections then run `suspendTransaction(readOn
 reads that genuinely overlap (their `BEGIN` statements land within microseconds of each other in
 the SQL trace, not queued one after another).
 
-**Still open:** `kormium/sqlite-wasm-kt` and `sqlite-wasm-kt-worker` are not yet published to Maven
-Central / npm — `kormium-sqlite-wasm` currently resolves them via a composite build
-(`includeBuild("../sqlite-wasm-kt")`) and a dev-only local npm path. Re-validating against
-`sql-demo`'s actual 1M-row workload (the acceptance test that motivated this phase) and the
-[Backends](backends.md) concurrency-row/ADR writeup are the remaining follow-ups.
+Both halves are published: `io.github.kormium:sqlite-wasm-kt` on Maven Central and
+`@kormium/sqlite-wasm-worker` on npm (0.1.0), so `kormium-sqlite-wasm` consumes them as ordinary
+dependencies. (The [Backends](backends.md) per-engine table and
+[ADR 0010](adr/0010-browser-sqlite-three-engines.md) are done.)
+
+### Phase 4 addendum — measured limits (validation against `sql-demo` at 1M rows)
+
+Validating against the workload that motivated the phase produced a verdict the original plan did
+not anticipate: **the pooled engine is EXPERIMENTAL, and its niche is much narrower than "browser
+analytical dashboards".** What the measurements showed, in order:
+
+- **Three fixes took a single 1M-row indexed aggregate from ~1.7 s to ~100–125 ms** (all landed):
+  the wa-sqlite-era `'ct'` open flags copied from the upstream demo enabled *per-statement SQL
+  tracing to `console.log`* (`t` = trace — fixed to `'c'` in `sqlite-wasm-kt`); SQLite's ~2 MB
+  default page cache forced re-reading hot index pages through OPFS every query (each pool
+  connection now gets `PRAGMA cache_size=-32768` + `temp_store=MEMORY`); and the BEGIN/COMMIT wrap
+  around every read-only block cost two extra `postMessage` round trips per query, each of which
+  also waits in the main thread's event queue under active UI rendering. Read-only blocks on the
+  pool now skip the wrap — semantically that makes them READ COMMITTED (per-statement snapshots)
+  rather than SERIALIZABLE; a future `isolation = SERIALIZABLE` opt-in restoring the real
+  transaction is a parked candidate.
+- **After those fixes, reader parallelism inverted into a loss.** With queries this fast, opfs-wl's
+  per-statement lock handoff between connections (Web Locks + `Atomics.waitAsync`, sync access
+  handles are exclusive by spec) dominates: the same 4-query dashboard burst measured ~410 ms wall
+  on ONE reader vs ~1030 ms on FOUR. This matches upstream wa-sqlite findings (~60k tps single
+  connection → ~1.5k with two). Two-lane composition (separate pool instances for fast/heavy
+  queries on one OPFS file) was also measured: it costs ~30% on a single burst from cross-lane
+  lock contention, and under rapid repeated bursts (slider dragging) multi-connection lock
+  acquisition **fails outright** — `xLock() GetSyncHandleError` after opfs-wl's 5 retries, because
+  cancelled coroutines don't cancel requests already queued on the Workers.
+- **The right tool for `sql-demo` turned out to be in-memory, single connection — and that became
+  a third engine.** The demo regenerates its dataset on every load, so OPFS persistence buys
+  nothing, and one connection at memory speed with zero lock traffic beats every pooled
+  configuration measured. `createWorkerSqliteWasmDatabase()` (shipped alongside the pool) hosts
+  that one in-memory connection in a dedicated Worker: measured ~35% faster per query than the
+  main-thread wa-sqlite engine on the same workload (official non-Asyncify build: aggregates
+  93–120 ms vs 146–184 ms at 1M rows), SQLite off the main thread so UI keeps rendering during a
+  query, and no COOP/COEP requirement (plain dedicated Worker). `sql-demo` now runs on it. Its
+  read-only blocks skip BEGIN/COMMIT too, but *without* the isolation caveat: one connection plus
+  the block-scoped Mutex make interleaving impossible, so the block is trivially serializable.
+
+**Where the pooled engine still makes sense** (and what its docs must say when it ships):
+persistent OPFS data that must survive reloads, *infrequent* heavy queries (hundreds of ms to
+seconds each — lock handoff amortizes), and the writes-don't-block-reads property. It is not a fit
+for rapid bursts of fast indexed queries — there a single connection wins on both speed and
+reliability. Parked candidates from this investigation: `isolation = SERIALIZABLE` opt-in on the
+pool, worker-side query timings surfaced to the app, `readerPoolSize` default 4 → 1, and a
+lane/priority hint in the core API.
 
 ## Known constraints
 

@@ -26,7 +26,9 @@ identical regardless of which engine you open. Adding a driver is a new row belo
 | SQLite | sqlite3 (cinterop) | Native / iOS | blocking + suspend | `kormium-sqlite` |
 | SQLite | AndroidX SQLite | Android | blocking + suspend | `kormium-sqlite` |
 | SQLite | better-sqlite3 | Wasm/Node | suspend | `kormium-sqlite-node` |
-| SQLite | wa-sqlite (SQLite in WASM) | Wasm/browser | suspend | `kormium-sqlite-wasm` |
+| SQLite | wa-sqlite (main-thread, `:memory:` / IndexedDB) | Wasm/browser | suspend | `kormium-sqlite-wasm` |
+| SQLite | `@sqlite.org/sqlite-wasm` (Worker, `:memory:`) | Wasm/browser | suspend | `kormium-sqlite-wasm` |
+| SQLite | `@sqlite.org/sqlite-wasm` (Worker pool, OPFS) — *experimental* | Wasm/browser | suspend | `kormium-sqlite-wasm` |
 
 **Blocking + suspend** engines implement both `Database` and `SuspendDatabase`. The **suspend**-only
 engines (r2dbc and every Wasm/Node one) implement only `SuspendDatabase` — a JS event loop can't be
@@ -146,6 +148,43 @@ SQLite notes:
 - File databases are opened in WAL mode.
 - Foreign keys are enabled with `PRAGMA foreign_keys=ON`.
 - `UUID`, `Decimal`, `Json` and temporal values are stored as text and parsed back.
+
+### Browser SQLite (`kormium-sqlite-wasm`)
+
+The browser has no one right SQLite engine, so `kormium-sqlite-wasm` ships **three**, each a
+distinct point on the storage × host × concurrency trade-off (see
+[ADR 0010](adr/0010-browser-sqlite-three-engines.md)). All three implement the same
+`SuspendDatabase`, so your `Table`/query code is identical across them.
+
+| Factory | SQLite runs on | Storage | Concurrency | COOP/COEP | Use when |
+| --- | --- | --- | --- | --- | --- |
+| `createSqliteWasmDatabase(dataDir?)` | main thread | `:memory:` (default) or IndexedDB (`dataDir`) | one connection (`Mutex`) | not needed | you need IndexedDB persistence without cross-origin isolation |
+| `createWorkerSqliteWasmDatabase()` | a dedicated Worker | `:memory:` | one connection (`Mutex`) | not needed | **default choice** — data fits in memory and need not survive a reload |
+| `createPooledSqliteWasmDatabase(opfsPath, readerPoolSize = 4)` | a Worker pool | OPFS (`opfs-wl`) | 1 writer + N readers | **required** | *experimental* — persistent data + infrequent heavy queries |
+
+**Prefer `createWorkerSqliteWasmDatabase` unless you have a specific reason not to.** It runs SQLite
+off the main thread (a long query no longer freezes UI rendering) and measured ~35% faster per query
+than the main-thread engine, at memory speed with no lock traffic. Its read-only blocks
+(`suspendTransaction(readOnly = true) { }`) skip `BEGIN`/`COMMIT` — the single connection plus a
+block-scoped `Mutex` make it trivially serializable, so no round trips are spent on a transaction
+that cannot interleave.
+
+**The pooled OPFS engine is experimental and deliberately not the default.** Reader pooling helps
+*only* when individual queries are slow (hundreds of ms to seconds) and infrequent — there the win
+of overlapping them beats `opfs-wl`'s per-statement lock handoff between connections. For bursts of
+fast indexed queries the handoff dominates and a single connection is both faster and more reliable
+(a 4-query dashboard burst at 1M rows measured ~410 ms on one reader vs ~1030 ms on four; rapid
+bursts can even fail with `xLock GetSyncHandleError`, since OPFS sync access handles are exclusive
+by spec). It also requires `Cross-Origin-Opener-Policy: same-origin` +
+`Cross-Origin-Embedder-Policy: require-corp` response headers (`opfs-wl` needs cross-origin
+isolation; without them the database silently fails to open) and a small consumer-side webpack
+config addition. Reach for it for persistent OPFS data with the writes-don't-block-reads property,
+not as a general speedup. See [web-targets.md](web-targets.md) Phase 4 for the full measurements.
+
+> The pooled and Worker engines are built on the official `@sqlite.org/sqlite-wasm` (maintained in
+> lockstep with SQLite releases) via the standalone
+> [`kormium/sqlite-wasm-kt`](https://github.com/kormium/sqlite-wasm-kt) library and a
+> `@kormium/sqlite-wasm-worker` bundle. The original `createSqliteWasmDatabase` stays on wa-sqlite.
 
 ## r2dbc PostgreSQL
 
@@ -268,7 +307,7 @@ The public API presents Kotlin values consistently even when storage differs.
 | iOS | Not shipped | sqlite3 |
 | Windows Native | libpq (experimental) | sqlite3 (experimental) |
 | Wasm/Node | node-postgres (`kormium-postgres-node`) | better-sqlite3 (`kormium-sqlite-node`) |
-| Wasm/Browser | PGlite ([separate repo](https://github.com/kormium/pglite)) | wa-sqlite (`kormium-sqlite-wasm`) |
+| Wasm/Browser | PGlite ([separate repo](https://github.com/kormium/pglite)) | `kormium-sqlite-wasm` — three engines (main-thread wa-sqlite, Worker in-memory, experimental OPFS pool); see [Browser SQLite](#browser-sqlite-kormium-sqlite-wasm) |
 
 MySQL/MariaDB on Wasm/Node uses mysql2 (`kormium-mysql-node`). See the
 [engine matrix](#engines-database--driver--target) above and
