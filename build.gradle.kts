@@ -122,6 +122,9 @@ val publishableModules = setOf(
     "kormium-ktor-koin",
     "kormium-bom",
 )
+// The BOM derives its constraints from this same set (see kormium-bom/build.gradle.kts), so a
+// module added here is pinned by the BOM automatically — they cannot drift apart (issue #8).
+extra["publishableModules"] = publishableModules
 
 subprojects {
     if (name !in publishableModules) return@subprojects
@@ -134,8 +137,12 @@ subprojects {
         coordinates(group.toString(), name, version.toString())
 
         pom {
-            name.set("kormium")
-            description.set("Kormium — a simple Kotlin Multiplatform ORM (Postgres + SQLite, JVM + Native).")
+            name.set(this@subprojects.name)
+            description.set(
+                "Kormium — a type-safe, reflection-free Kotlin Multiplatform ORM / SQL DSL for " +
+                    "server and client: one schema and query model for PostgreSQL, MySQL and SQLite " +
+                    "on JVM, Android, iOS, Native, R2DBC, Node and the browser (Wasm).",
+            )
             inceptionYear.set("2024")
             url.set("https://github.com/kormium/kormium")
             licenses {
