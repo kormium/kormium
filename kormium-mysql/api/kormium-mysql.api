@@ -19,24 +19,6 @@ public final class io/github/kormium/MySqlJvmTypeMapper : io/github/kormium/Type
 	public fun toParameter (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
-public final class io/github/kormium/MySqlResultSetWrapper : io/github/kormium/resultset/ResultSet {
-	public fun <init> (Ljava/sql/ResultSet;)V
-	public fun getBoolean (I)Ljava/lang/Boolean;
-	public fun getBytes (I)[B
-	public fun getColumns ()[Ljava/lang/String;
-	public fun getDate (I)Lkotlinx/datetime/LocalDate;
-	public fun getDouble (I)Ljava/lang/Double;
-	public fun getFloat (I)Ljava/lang/Float;
-	public fun getInstant (I)Lkotlin/time/Instant;
-	public fun getInt (I)Ljava/lang/Integer;
-	public fun getLocalDateTime (I)Lkotlinx/datetime/LocalDateTime;
-	public fun getLong (I)Ljava/lang/Long;
-	public fun getShort (I)Ljava/lang/Short;
-	public fun getString (I)Ljava/lang/String;
-	public fun getTime (I)Lkotlinx/datetime/LocalTime;
-	public fun next ()Z
-}
-
 public final class io/github/kormium/database/CreateDatabaseKt {
 	public static final fun createDatabase (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/functions/Function1;)Lio/github/kormium/MySqlDriver;
 	public static synthetic fun createDatabase$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/MySqlDriver;

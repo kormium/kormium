@@ -15,26 +15,3 @@ public abstract interface class io/github/kormium/SqliteDriver : io/github/kormi
 	public abstract fun isClosed ()Z
 }
 
-public final class io/github/kormium/SqliteExceptionsKt {
-	public static final fun sqliteException (Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Throwable;)Lio/github/kormium/QueryException;
-	public static synthetic fun sqliteException$default (Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Throwable;ILjava/lang/Object;)Lio/github/kormium/QueryException;
-}
-
-public final class io/github/kormium/SqliteResultSetWrapper : io/github/kormium/resultset/ResultSet {
-	public fun <init> (Ljava/sql/ResultSet;)V
-	public fun getBoolean (I)Ljava/lang/Boolean;
-	public fun getBytes (I)[B
-	public fun getColumns ()[Ljava/lang/String;
-	public fun getDate (I)Lkotlinx/datetime/LocalDate;
-	public fun getDouble (I)Ljava/lang/Double;
-	public fun getFloat (I)Ljava/lang/Float;
-	public fun getInstant (I)Lkotlin/time/Instant;
-	public fun getInt (I)Ljava/lang/Integer;
-	public fun getLocalDateTime (I)Lkotlinx/datetime/LocalDateTime;
-	public fun getLong (I)Ljava/lang/Long;
-	public fun getShort (I)Ljava/lang/Short;
-	public fun getString (I)Ljava/lang/String;
-	public fun getTime (I)Lkotlinx/datetime/LocalTime;
-	public fun next ()Z
-}
-

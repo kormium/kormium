@@ -15,7 +15,7 @@ import kotlin.reflect.KClass
  * [toString] representation.
  * Concrete subclasses must implement [hasValue] and [getValue].
  */
-public abstract class AbstractSqlParameterSource : SqlParameterSource {
+internal abstract class AbstractSqlParameterSource : SqlParameterSource {
     private val sqlTypes: MutableMap<String, UInt> = HashMap()
     private val typeNames: MutableMap<String, String> = HashMap()
 

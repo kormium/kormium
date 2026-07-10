@@ -6,6 +6,17 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed (breaking, pre-1.0)
+- **Accidentally-public driver internals are now `internal`.** None of these appeared in
+  any documentation or were usable without reaching into implementation packages:
+  the native PostgreSQL plumbing inherited from pgkn (`AbstractSqlParameterSource`,
+  `MapSqlParameterSource`, `Oid`, `AnonymousClassException`, `GetColumnValueException`,
+  `InvalidDataAccessApiUsageException`), the per-backend JDBC `ResultSet` wrappers
+  (`PgResultSetWrapper`, `MySqlResultSetWrapper`, `SqliteResultSetWrapper`),
+  `JdbcExecutor`, `MySqlNativeTypeMapper` and the `sqliteException` helper. The exact
+  removals are the `.api` dump diffs in this change (−186 ABI lines). Everything the
+  docs, samples or sibling modules use is untouched.
+
 ### Added
 - **API surface is now locked.** Every published module compiles in Kotlin's
   `explicitApi()` strict mode (all public declarations carry explicit visibility and

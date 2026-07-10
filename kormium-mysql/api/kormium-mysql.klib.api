@@ -25,10 +25,6 @@ final class io.github.kormium.mysql.exception/QueryExecutionException : io.githu
     constructor <init>(kotlin/String, kotlin/Throwable? = ...) // io.github.kormium.mysql.exception/QueryExecutionException.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
 }
 
-final object io.github.kormium.mysql/MySqlNativeTypeMapper : io.github.kormium/TypeMapper { // io.github.kormium.mysql/MySqlNativeTypeMapper|null[0]
-    final fun toParameter(kotlin/Any?): kotlin/Any? // io.github.kormium.mysql/MySqlNativeTypeMapper.toParameter|toParameter(kotlin.Any?){}[0]
-}
-
 final fun io.github.kormium.database/createDatabase(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium/MySqlDriver // io.github.kormium.database/createDatabase|createDatabase(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.Int;io.github.kormium.KormiumConfig){}[0]
 final fun io.github.kormium.database/createDatabase(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ..., kotlin/Function1<io.github.kormium/KormiumBuilder, kotlin/Unit>): io.github.kormium/MySqlDriver // io.github.kormium.database/createDatabase|createDatabase(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.Int;kotlin.Function1<io.github.kormium.KormiumBuilder,kotlin.Unit>){}[0]
 final fun io.github.kormium.mysql.exception/mysqlException(kotlin/String, kotlin/UInt, kotlin/String? = ...): io.github.kormium/QueryException // io.github.kormium.mysql.exception/mysqlException|mysqlException(kotlin.String;kotlin.UInt;kotlin.String?){}[0]

@@ -5,7 +5,7 @@ import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import java.sql.ResultSetMetaData
 
-public class PgResultSetWrapper(private val pgResultSet: java.sql.ResultSet) : ResultSet {
+internal class PgResultSetWrapper(private val pgResultSet: java.sql.ResultSet) : ResultSet {
     // Lazy: the hot read path maps columns positionally and never touches this, so don't
     // read ResultSetMetaData on every query.
     override val columns: Array<String> by lazy { internalGetColumns() }
