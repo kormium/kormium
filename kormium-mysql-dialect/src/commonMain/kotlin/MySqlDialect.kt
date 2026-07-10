@@ -13,7 +13,7 @@ package io.github.kormium
  * [Uuid] is stored as text (`CHAR(36)`) and a [kotlinx.serialization.json.JsonElement] binds as a
  * string literal into a `JSON` column — both handled by `MySqlJvmTypeMapper`, not the dialect.
  */
-object MySqlDialect : Dialect by StandardDialect {
+public object MySqlDialect : Dialect by StandardDialect {
     override fun quoteIdentifier(name: String): String =
         "`${name.replace("`", "``")}`"
 

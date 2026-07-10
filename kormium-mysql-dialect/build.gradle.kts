@@ -12,6 +12,8 @@ repositories {
 // driver's reach (jvm + the three unix native targets; no mingw — Windows uses the JVM driver)
 // plus the web stack.
 kotlin {
+    explicitApi()
+
     jvmToolchain(21)
 
     jvm()

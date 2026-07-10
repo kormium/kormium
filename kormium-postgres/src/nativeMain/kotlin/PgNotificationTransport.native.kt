@@ -35,7 +35,7 @@ import libpq.PQstatus
  *
  * Note: the socket reactor is unavailable on Windows native (mingwX64); [subscribe] there fails.
  */
-fun postgresListenNotifyTransport(
+public fun postgresListenNotifyTransport(
     host: String,
     port: Int = 5432,
     database: String,

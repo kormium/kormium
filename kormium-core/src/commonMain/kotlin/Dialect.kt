@@ -5,18 +5,18 @@ package io.github.kormium
  * [Dialect] instead of hardcoding one SQL flavour, so other backends (SQLite, ...)
  * can plug in their own rendering.
  */
-interface Dialect {
+public interface Dialect {
     /** Quotes a column/table identifier. */
-    fun quoteIdentifier(name: String): String
+    public fun quoteIdentifier(name: String): String
 
     /** Renders the bind placeholder for [name], optionally casting based on [value]'s type. */
-    fun renderBind(name: String, value: Any?): String
+    public fun renderBind(name: String, value: Any?): String
 
     /** Renders a `LIMIT` clause (trailing space included), or "" when unbounded. */
-    fun renderLimit(limit: UInt): String
+    public fun renderLimit(limit: UInt): String
 
     /** Renders an `OFFSET` clause (trailing space included), or "" when zero. */
-    fun renderOffset(offset: UInt): String
+    public fun renderOffset(offset: UInt): String
 
     /**
      * Renders the combined `LIMIT`/`OFFSET` tail. The default composes the two independent
@@ -25,7 +25,7 @@ interface Dialect {
      * dialect overrides this to emit the two together (a sentinel `LIMIT` when only an offset
      * is set). Standard/Postgres/SQLite keep the default and render identically to before.
      */
-    fun renderLimitOffset(limit: UInt, offset: UInt): String =
+    public fun renderLimitOffset(limit: UInt, offset: UInt): String =
         renderLimit(limit) + renderOffset(offset)
 
     /**
@@ -34,7 +34,7 @@ interface Dialect {
      * concurrently-starting application instances; the lock is released automatically when the
      * surrounding transaction commits. The default is `null` (no lock).
      */
-    fun advisoryLockSql(key: Long): String? = null
+    public fun advisoryLockSql(key: Long): String? = null
 
     // ---- write-path rendering (Postgres/SQLite-flavoured by default; MySQL overrides) ----
 
@@ -43,14 +43,14 @@ interface Dialect {
      * `insert(returning = true)` runs the insert without a RETURNING clause and re-selects the
      * stored row by primary key instead. Default `true` (Postgres and SQLite both support it).
      */
-    val supportsReturning: Boolean get() = true
+    public val supportsReturning: Boolean get() = true
 
     /**
      * The full `INSERT` statement for a row with no assigned columns (every column takes its DB
      * default). Standard SQL is `INSERT INTO t DEFAULT VALUES`; MySQL has no `DEFAULT VALUES` and
      * spells it `INSERT INTO t () VALUES ()`.
      */
-    fun renderInsertDefaultValues(qualifiedTable: String): String =
+    public fun renderInsertDefaultValues(qualifiedTable: String): String =
         "INSERT INTO $qualifiedTable DEFAULT VALUES"
 
     /**
@@ -59,7 +59,7 @@ interface Dialect {
      * Standard SQL targets the conflict columns (`ON CONFLICT (...) DO UPDATE SET ...`); MySQL keys
      * on any declared unique/primary index and ignores the column list (`ON DUPLICATE KEY UPDATE`).
      */
-    fun renderUpsertSuffix(conflictColumns: List<String>, setClause: String): String =
+    public fun renderUpsertSuffix(conflictColumns: List<String>, setClause: String): String =
         "ON CONFLICT (${conflictColumns.joinToString(", ")}) DO UPDATE SET $setClause"
 
     /**
@@ -67,7 +67,7 @@ interface Dialect {
      * [conflictColumns] are already quoted. Standard SQL is `ON CONFLICT (...) DO NOTHING`; MySQL
      * uses a no-op `ON DUPLICATE KEY UPDATE col = col` (ignores only a duplicate-key conflict).
      */
-    fun renderInsertOrIgnoreSuffix(conflictColumns: List<String>): String =
+    public fun renderInsertOrIgnoreSuffix(conflictColumns: List<String>): String =
         "ON CONFLICT (${conflictColumns.joinToString(", ")}) DO NOTHING"
 
     /**
@@ -75,7 +75,7 @@ interface Dialect {
      * on PostgreSQL and SQLite, but **bytes** on MySQL — so MySQL overrides this with `CHAR_LENGTH`
      * to keep `length()` portable (a multibyte string counts the same everywhere).
      */
-    fun renderCharLength(arg: String): String = "LENGTH($arg)"
+    public fun renderCharLength(arg: String): String = "LENGTH($arg)"
 
     // ---- transaction options (isolation / read-only); see [TransactionIsolation] ----
 
@@ -84,7 +84,7 @@ interface Dialect {
      * which has a single effective level ≈ `SERIALIZABLE`), a [TransactionIsolation] passed to a
      * transaction is silently ignored rather than emulated or rejected. Default `true`.
      */
-    val supportsTransactionIsolation: Boolean get() = true
+    public val supportsTransactionIsolation: Boolean get() = true
 
     /**
      * SQL a backend runs to enter / leave a read-only transaction, for databases that toggle
@@ -94,7 +94,7 @@ interface Dialect {
      * [SqliteDialect] supplies `PRAGMA query_only` here — the single source the JDBC and the
      * native/Android SQLite backends all read.
      */
-    val readOnlyToggle: ReadOnlyToggle? get() = null
+    public val readOnlyToggle: ReadOnlyToggle? get() = null
 }
 
 /**
@@ -102,14 +102,14 @@ interface Dialect {
  * used by a backend whose database toggles read-only with a statement rather than a native
  * connection flag (see [Dialect.readOnlyToggle]).
  */
-data class ReadOnlyToggle(val enter: String, val exit: String)
+public data class ReadOnlyToggle(val enter: String, val exit: String)
 
 /**
  * Standard-SQL rendering: double-quoted identifiers, `:name` placeholders, plain
  * `LIMIT`/`OFFSET`. Serves as the agnostic default (e.g. [Query] debug rendering)
  * and a base that backend dialects can delegate to.
  */
-object StandardDialect : Dialect {
+public object StandardDialect : Dialect {
     override fun quoteIdentifier(name: String): String =
         "\"${name.replace("\"", "\"\"")}\""
 

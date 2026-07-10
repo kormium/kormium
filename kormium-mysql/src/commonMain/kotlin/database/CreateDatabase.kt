@@ -4,7 +4,7 @@ import io.github.kormium.KormiumBuilder
 import io.github.kormium.KormiumConfig
 import io.github.kormium.MySqlDriver
 
-expect fun createDatabase(
+public expect fun createDatabase(
     host: String,
     port: Int = 3306,
     database: String,
@@ -18,7 +18,7 @@ expect fun createDatabase(
  * Opens a MySQL/MariaDB database with a configuration block: `createDatabase(host = …, …) {`
  * `config { … }; beforeStart { migrate(appMigrations) } }`. See [KormiumBuilder].
  */
-fun createDatabase(
+public fun createDatabase(
     host: String,
     port: Int = 3306,
     database: String,

@@ -5,7 +5,7 @@ package io.github.kormium
  * qualified by their table, so a reference to an outer column (`users.id`) correlates correctly
  * against an inner one (`orders.userId`). Built by [any] / [none].
  */
-class ExistsOp internal constructor(
+public class ExistsOp internal constructor(
     private val table: Table<*, *>,
     private val predicate: Expression,
     private val negated: Boolean,
@@ -26,7 +26,7 @@ class ExistsOp internal constructor(
  * Users.find { where { Orders.any { (Orders.userId eq Users.id) and (Orders.total gt 100) } } }
  * ```
  */
-fun <T : Entity> Table<*, T>.any(predicate: () -> Expression): Expression = ExistsOp(this, predicate(), negated = false)
+public fun <T : Entity> Table<*, T>.any(predicate: () -> Expression): Expression = ExistsOp(this, predicate(), negated = false)
 
 /**
  * `NOT EXISTS (SELECT 1 FROM this WHERE …)` — true when no row of this table matches the
@@ -36,4 +36,4 @@ fun <T : Entity> Table<*, T>.any(predicate: () -> Expression): Expression = Exis
  * Users.find { where { Orders.none { Orders.userId eq Users.id } } }   // users with no orders
  * ```
  */
-fun <T : Entity> Table<*, T>.none(predicate: () -> Expression): Expression = ExistsOp(this, predicate(), negated = true)
+public fun <T : Entity> Table<*, T>.none(predicate: () -> Expression): Expression = ExistsOp(this, predicate(), negated = true)

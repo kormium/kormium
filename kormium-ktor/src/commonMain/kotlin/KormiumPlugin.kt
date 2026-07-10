@@ -6,7 +6,7 @@ import io.ktor.server.application.hooks.MonitoringEvent
 import io.ktor.server.application.log
 
 /** Configuration for the [Kormium] plugin. */
-class KormiumConfig {
+public class KormiumConfig {
     internal val managed = mutableListOf<AutoCloseable>()
 
     /**
@@ -15,7 +15,7 @@ class KormiumConfig {
      * you are NOT managing the database's lifecycle elsewhere — Ktor's built-in DI already closes
      * `AutoCloseable` dependencies on shutdown, so registering it there makes this unnecessary.
      */
-    fun manage(db: AutoCloseable) {
+    public fun manage(db: AutoCloseable) {
         managed += db
     }
 }
@@ -29,7 +29,7 @@ class KormiumConfig {
  * install(Kormium) { manage(database) }
  * ```
  */
-val Kormium = createApplicationPlugin(name = "Kormium", createConfiguration = ::KormiumConfig) {
+public val Kormium: io.ktor.server.application.ApplicationPlugin<KormiumConfig> = createApplicationPlugin(name = "Kormium", createConfiguration = ::KormiumConfig) {
     val managed = pluginConfig.managed.toList()
     on(MonitoringEvent(ApplicationStopped)) { application ->
         managed.forEach { db ->

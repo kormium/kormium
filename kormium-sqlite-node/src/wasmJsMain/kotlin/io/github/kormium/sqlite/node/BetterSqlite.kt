@@ -7,10 +7,10 @@ package io.github.kormium.sqlite.node
  * from `kormium-wasm-driver`.
  */
 @JsModule("better-sqlite3")
-external class Database(filename: String) : JsAny {
+public external class Database(filename: String) : JsAny {
     /** Runs one or more statements without parameters (DDL / scripts). */
-    fun exec(sql: String)
-    fun close()
+    public fun exec(sql: String)
+    public fun close()
 }
 
 /** Prepares [sql], binds [params] positionally and returns all result rows (SELECT / RETURNING). */

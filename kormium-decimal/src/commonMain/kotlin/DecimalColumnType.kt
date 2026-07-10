@@ -11,12 +11,12 @@ import io.github.kormium.resultset.ResultSet
  * only carries the value — except on the JVM, where parameters bind as
  * `java.math.BigDecimal` so JDBC/r2dbc drivers declare the real `numeric` parameter type.
  */
-object DecimalColumnType : ColumnType<Decimal> {
+public object DecimalColumnType : ColumnType<Decimal> {
     override fun read(rs: ResultSet, index: Int): Decimal? = rs.getString(index)?.let(Decimal::parse)
     override fun toParam(value: Decimal): Any? = decimalToParam(value)
 }
 
 /** Declares a [Decimal] column: `val price by Column.decimal()`. */
-fun Column.Companion.decimal(name: String? = null): Column.Spec<Decimal> = of(DecimalColumnType, name)
+public fun Column.Companion.decimal(name: String? = null): Column.Spec<Decimal> = of(DecimalColumnType, name)
 
 internal expect fun decimalToParam(value: Decimal): Any?

@@ -6,6 +6,15 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **API surface is now locked.** Every published module compiles in Kotlin's
+  `explicitApi()` strict mode (all public declarations carry explicit visibility and
+  return types), and [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator)
+  dumps the JVM and klib ABI of each module into `<module>/api/`; CI fails on any surface
+  change that isn't an explicitly reviewed `./gradlew apiDump`. This change is purely
+  mechanical — the dumped ABI is byte-identical before and after. (Deliberate narrowing of
+  accidentally-public internals comes separately, as reviewable `.api` diffs.)
+
 ### Changed
 - **BREAKING: `Instant` is now `kotlin.time.Instant`.** `Column.Instant`, `InstantColumnType`
   and `ResultSet.getInstant` use the stdlib `kotlin.time.Instant` instead of

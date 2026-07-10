@@ -1,0 +1,143 @@
+// Klib ABI Dump
+// Targets: [linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-postgres>
+final enum class io.github.kormium.postgres/Oid : kotlin/Enum<io.github.kormium.postgres/Oid> { // io.github.kormium.postgres/Oid|null[0]
+    enum entry BIT // io.github.kormium.postgres/Oid.BIT|null[0]
+    enum entry BIT_ARRAY // io.github.kormium.postgres/Oid.BIT_ARRAY|null[0]
+    enum entry BOOL // io.github.kormium.postgres/Oid.BOOL|null[0]
+    enum entry BOOL_ARRAY // io.github.kormium.postgres/Oid.BOOL_ARRAY|null[0]
+    enum entry BOX // io.github.kormium.postgres/Oid.BOX|null[0]
+    enum entry BPCHAR // io.github.kormium.postgres/Oid.BPCHAR|null[0]
+    enum entry BPCHAR_ARRAY // io.github.kormium.postgres/Oid.BPCHAR_ARRAY|null[0]
+    enum entry BYTEA // io.github.kormium.postgres/Oid.BYTEA|null[0]
+    enum entry BYTEA_ARRAY // io.github.kormium.postgres/Oid.BYTEA_ARRAY|null[0]
+    enum entry CHAR // io.github.kormium.postgres/Oid.CHAR|null[0]
+    enum entry CHAR_ARRAY // io.github.kormium.postgres/Oid.CHAR_ARRAY|null[0]
+    enum entry DATE // io.github.kormium.postgres/Oid.DATE|null[0]
+    enum entry DATE_ARRAY // io.github.kormium.postgres/Oid.DATE_ARRAY|null[0]
+    enum entry FLOAT4 // io.github.kormium.postgres/Oid.FLOAT4|null[0]
+    enum entry FLOAT4_ARRAY // io.github.kormium.postgres/Oid.FLOAT4_ARRAY|null[0]
+    enum entry FLOAT8 // io.github.kormium.postgres/Oid.FLOAT8|null[0]
+    enum entry FLOAT8_ARRAY // io.github.kormium.postgres/Oid.FLOAT8_ARRAY|null[0]
+    enum entry INT2 // io.github.kormium.postgres/Oid.INT2|null[0]
+    enum entry INT2_ARRAY // io.github.kormium.postgres/Oid.INT2_ARRAY|null[0]
+    enum entry INT4 // io.github.kormium.postgres/Oid.INT4|null[0]
+    enum entry INT4_ARRAY // io.github.kormium.postgres/Oid.INT4_ARRAY|null[0]
+    enum entry INT8 // io.github.kormium.postgres/Oid.INT8|null[0]
+    enum entry INT8_ARRAY // io.github.kormium.postgres/Oid.INT8_ARRAY|null[0]
+    enum entry INTERVAL // io.github.kormium.postgres/Oid.INTERVAL|null[0]
+    enum entry INTERVAL_ARRAY // io.github.kormium.postgres/Oid.INTERVAL_ARRAY|null[0]
+    enum entry JSON // io.github.kormium.postgres/Oid.JSON|null[0]
+    enum entry JSONB // io.github.kormium.postgres/Oid.JSONB|null[0]
+    enum entry JSONB_ARRAY // io.github.kormium.postgres/Oid.JSONB_ARRAY|null[0]
+    enum entry JSON_ARRAY // io.github.kormium.postgres/Oid.JSON_ARRAY|null[0]
+    enum entry MONEY // io.github.kormium.postgres/Oid.MONEY|null[0]
+    enum entry MONEY_ARRAY // io.github.kormium.postgres/Oid.MONEY_ARRAY|null[0]
+    enum entry NAME // io.github.kormium.postgres/Oid.NAME|null[0]
+    enum entry NAME_ARRAY // io.github.kormium.postgres/Oid.NAME_ARRAY|null[0]
+    enum entry NUMERIC // io.github.kormium.postgres/Oid.NUMERIC|null[0]
+    enum entry NUMERIC_ARRAY // io.github.kormium.postgres/Oid.NUMERIC_ARRAY|null[0]
+    enum entry OID // io.github.kormium.postgres/Oid.OID|null[0]
+    enum entry OID_ARRAY // io.github.kormium.postgres/Oid.OID_ARRAY|null[0]
+    enum entry POINT // io.github.kormium.postgres/Oid.POINT|null[0]
+    enum entry POINT_ARRAY // io.github.kormium.postgres/Oid.POINT_ARRAY|null[0]
+    enum entry REF_CURSOR // io.github.kormium.postgres/Oid.REF_CURSOR|null[0]
+    enum entry REF_CURSOR_ARRAY // io.github.kormium.postgres/Oid.REF_CURSOR_ARRAY|null[0]
+    enum entry TEXT // io.github.kormium.postgres/Oid.TEXT|null[0]
+    enum entry TEXT_ARRAY // io.github.kormium.postgres/Oid.TEXT_ARRAY|null[0]
+    enum entry TIME // io.github.kormium.postgres/Oid.TIME|null[0]
+    enum entry TIMESTAMP // io.github.kormium.postgres/Oid.TIMESTAMP|null[0]
+    enum entry TIMESTAMPTZ // io.github.kormium.postgres/Oid.TIMESTAMPTZ|null[0]
+    enum entry TIMESTAMPTZ_ARRAY // io.github.kormium.postgres/Oid.TIMESTAMPTZ_ARRAY|null[0]
+    enum entry TIMESTAMP_ARRAY // io.github.kormium.postgres/Oid.TIMESTAMP_ARRAY|null[0]
+    enum entry TIMETZ // io.github.kormium.postgres/Oid.TIMETZ|null[0]
+    enum entry TIMETZ_ARRAY // io.github.kormium.postgres/Oid.TIMETZ_ARRAY|null[0]
+    enum entry TIME_ARRAY // io.github.kormium.postgres/Oid.TIME_ARRAY|null[0]
+    enum entry UNSPECIFIED // io.github.kormium.postgres/Oid.UNSPECIFIED|null[0]
+    enum entry UUID // io.github.kormium.postgres/Oid.UUID|null[0]
+    enum entry UUID_ARRAY // io.github.kormium.postgres/Oid.UUID_ARRAY|null[0]
+    enum entry VARBIT // io.github.kormium.postgres/Oid.VARBIT|null[0]
+    enum entry VARBIT_ARRAY // io.github.kormium.postgres/Oid.VARBIT_ARRAY|null[0]
+    enum entry VARCHAR // io.github.kormium.postgres/Oid.VARCHAR|null[0]
+    enum entry VARCHAR_ARRAY // io.github.kormium.postgres/Oid.VARCHAR_ARRAY|null[0]
+    enum entry VOID // io.github.kormium.postgres/Oid.VOID|null[0]
+    enum entry XML // io.github.kormium.postgres/Oid.XML|null[0]
+    enum entry XML_ARRAY // io.github.kormium.postgres/Oid.XML_ARRAY|null[0]
+
+    final val entries // io.github.kormium.postgres/Oid.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.kormium.postgres/Oid> // io.github.kormium.postgres/Oid.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val value // io.github.kormium.postgres/Oid.value|{}value[0]
+        final fun <get-value>(): kotlin/Int // io.github.kormium.postgres/Oid.value.<get-value>|<get-value>(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.kormium.postgres/Oid // io.github.kormium.postgres/Oid.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.kormium.postgres/Oid> // io.github.kormium.postgres/Oid.values|values#static(){}[0]
+}
+
+abstract interface io.github.kormium/PostgresDriver : io.github.kormium.database/Database<kotlin/Nothing>, io.github.kormium.database/SuspendDatabase<kotlin/Nothing>, kotlin/AutoCloseable { // io.github.kormium/PostgresDriver|null[0]
+    abstract val config // io.github.kormium/PostgresDriver.config|{}config[0]
+        abstract fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium/PostgresDriver.config.<get-config>|<get-config>(){}[0]
+    abstract val dialect // io.github.kormium/PostgresDriver.dialect|{}dialect[0]
+        abstract fun <get-dialect>(): io.github.kormium/Dialect // io.github.kormium/PostgresDriver.dialect.<get-dialect>|<get-dialect>(){}[0]
+    abstract val isClosed // io.github.kormium/PostgresDriver.isClosed|{}isClosed[0]
+        abstract fun <get-isClosed>(): kotlin/Boolean // io.github.kormium/PostgresDriver.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+    abstract val writeListeners // io.github.kormium/PostgresDriver.writeListeners|{}writeListeners[0]
+        abstract fun <get-writeListeners>(): io.github.kormium/WriteListeners // io.github.kormium/PostgresDriver.writeListeners.<get-writeListeners>|<get-writeListeners>(){}[0]
+}
+
+abstract class io.github.kormium.postgres.paramsource/AbstractSqlParameterSource : io.github.kormium/SqlParameterSource { // io.github.kormium.postgres.paramsource/AbstractSqlParameterSource|null[0]
+    constructor <init>() // io.github.kormium.postgres.paramsource/AbstractSqlParameterSource.<init>|<init>(){}[0]
+
+    final fun getTypeName(kotlin/String): kotlin/String? // io.github.kormium.postgres.paramsource/AbstractSqlParameterSource.getTypeName|getTypeName(kotlin.String){}[0]
+    final fun registerSqlType(kotlin/String, kotlin/Any?) // io.github.kormium.postgres.paramsource/AbstractSqlParameterSource.registerSqlType|registerSqlType(kotlin.String;kotlin.Any?){}[0]
+    final fun registerSqlType(kotlin/String, kotlin/UInt) // io.github.kormium.postgres.paramsource/AbstractSqlParameterSource.registerSqlType|registerSqlType(kotlin.String;kotlin.UInt){}[0]
+    final fun registerTypeName(kotlin/String, kotlin/String) // io.github.kormium.postgres.paramsource/AbstractSqlParameterSource.registerTypeName|registerTypeName(kotlin.String;kotlin.String){}[0]
+    open fun getSqlType(kotlin/String): kotlin/UInt // io.github.kormium.postgres.paramsource/AbstractSqlParameterSource.getSqlType|getSqlType(kotlin.String){}[0]
+    open fun toString(): kotlin/String // io.github.kormium.postgres.paramsource/AbstractSqlParameterSource.toString|toString(){}[0]
+}
+
+final class io.github.kormium.postgres.exception/AnonymousClassException : io.github.kormium.postgres.exception/SQLException { // io.github.kormium.postgres.exception/AnonymousClassException|null[0]
+    constructor <init>() // io.github.kormium.postgres.exception/AnonymousClassException.<init>|<init>(){}[0]
+}
+
+final class io.github.kormium.postgres.exception/ConnectionClosedException : io.github.kormium.postgres.exception/SQLException { // io.github.kormium.postgres.exception/ConnectionClosedException|null[0]
+    constructor <init>() // io.github.kormium.postgres.exception/ConnectionClosedException.<init>|<init>(){}[0]
+}
+
+final class io.github.kormium.postgres.exception/GetColumnValueException : io.github.kormium.postgres.exception/SQLException { // io.github.kormium.postgres.exception/GetColumnValueException|null[0]
+    constructor <init>(kotlin/Int) // io.github.kormium.postgres.exception/GetColumnValueException.<init>|<init>(kotlin.Int){}[0]
+}
+
+final class io.github.kormium.postgres.exception/InvalidDataAccessApiUsageException : io.github.kormium.postgres.exception/SQLException { // io.github.kormium.postgres.exception/InvalidDataAccessApiUsageException|null[0]
+    constructor <init>(kotlin/String, kotlin/Throwable? = ...) // io.github.kormium.postgres.exception/InvalidDataAccessApiUsageException.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
+}
+
+final class io.github.kormium.postgres.exception/QueryExecutionException : io.github.kormium.postgres.exception/SQLException { // io.github.kormium.postgres.exception/QueryExecutionException|null[0]
+    constructor <init>(kotlin/String, kotlin/Throwable? = ...) // io.github.kormium.postgres.exception/QueryExecutionException.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
+}
+
+final class io.github.kormium.postgres.paramsource/MapSqlParameterSource : io.github.kormium.postgres.paramsource/AbstractSqlParameterSource { // io.github.kormium.postgres.paramsource/MapSqlParameterSource|null[0]
+    constructor <init>(kotlin.collections/Map<kotlin/String, kotlin/Any?>?) // io.github.kormium.postgres.paramsource/MapSqlParameterSource.<init>|<init>(kotlin.collections.Map<kotlin.String,kotlin.Any?>?){}[0]
+
+    final val parameterNames // io.github.kormium.postgres.paramsource/MapSqlParameterSource.parameterNames|{}parameterNames[0]
+        final fun <get-parameterNames>(): kotlin/Array<kotlin/String> // io.github.kormium.postgres.paramsource/MapSqlParameterSource.parameterNames.<get-parameterNames>|<get-parameterNames>(){}[0]
+
+    final fun addValue(kotlin/String, kotlin/Any?): io.github.kormium.postgres.paramsource/MapSqlParameterSource // io.github.kormium.postgres.paramsource/MapSqlParameterSource.addValue|addValue(kotlin.String;kotlin.Any?){}[0]
+    final fun addValue(kotlin/String, kotlin/Any?, kotlin/UInt): io.github.kormium.postgres.paramsource/MapSqlParameterSource // io.github.kormium.postgres.paramsource/MapSqlParameterSource.addValue|addValue(kotlin.String;kotlin.Any?;kotlin.UInt){}[0]
+    final fun addValue(kotlin/String, kotlin/Any?, kotlin/UInt, kotlin/String?): io.github.kormium.postgres.paramsource/MapSqlParameterSource // io.github.kormium.postgres.paramsource/MapSqlParameterSource.addValue|addValue(kotlin.String;kotlin.Any?;kotlin.UInt;kotlin.String?){}[0]
+    final fun addValues(kotlin.collections/Map<kotlin/String, kotlin/Any?>?): io.github.kormium.postgres.paramsource/MapSqlParameterSource // io.github.kormium.postgres.paramsource/MapSqlParameterSource.addValues|addValues(kotlin.collections.Map<kotlin.String,kotlin.Any?>?){}[0]
+    final fun getValue(kotlin/String): kotlin/Any? // io.github.kormium.postgres.paramsource/MapSqlParameterSource.getValue|getValue(kotlin.String){}[0]
+    final fun getValues(): kotlin.collections/Map<kotlin/String, kotlin/Any?> // io.github.kormium.postgres.paramsource/MapSqlParameterSource.getValues|getValues(){}[0]
+    final fun hasValue(kotlin/String): kotlin/Boolean // io.github.kormium.postgres.paramsource/MapSqlParameterSource.hasValue|hasValue(kotlin.String){}[0]
+}
+
+sealed class io.github.kormium.postgres.exception/SQLException : kotlin/Exception // io.github.kormium.postgres.exception/SQLException|null[0]
+
+final fun io.github.kormium.database/createDatabase(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium/PostgresDriver // io.github.kormium.database/createDatabase|createDatabase(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.Int;io.github.kormium.KormiumConfig){}[0]
+final fun io.github.kormium.database/createDatabase(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ..., kotlin/Function1<io.github.kormium/KormiumBuilder, kotlin/Unit>): io.github.kormium/PostgresDriver // io.github.kormium.database/createDatabase|createDatabase(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.Int;kotlin.Function1<io.github.kormium.KormiumBuilder,kotlin.Unit>){}[0]
+final fun io.github.kormium.postgres/FPostgresDriver(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium/PostgresDriver // io.github.kormium.postgres/FPostgresDriver|FPostgresDriver(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.Int;io.github.kormium.KormiumConfig){}[0]
+final fun io.github.kormium/postgresListenNotifyTransport(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/String = ...): io.github.kormium/NotificationTransport // io.github.kormium/postgresListenNotifyTransport|postgresListenNotifyTransport(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]

@@ -20,4 +20,4 @@ package io.github.kormium
  * `this@transaction` qualifier.
  */
 @DslMarker
-annotation class KormiumDsl
+public annotation class KormiumDsl

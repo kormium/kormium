@@ -22,7 +22,7 @@ import io.r2dbc.pool.ConnectionPoolConfiguration
  *
  * Returns it tagged [Nothing] (covariance pins the catalog at the call site).
  */
-fun createMySqlR2dbcDatabase(
+public fun createMySqlR2dbcDatabase(
     host: String,
     port: Int = 3306,
     database: String,

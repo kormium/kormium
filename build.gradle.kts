@@ -3,6 +3,26 @@ import com.vanniktech.maven.publish.MavenPublishBaseExtension
 plugins {
     // Applied to the publishable subprojects below (not to the root itself).
     id("com.vanniktech.maven.publish") version "0.36.0" apply false
+    // Applied at the root: validates the public ABI of every published module (JVM + klib).
+    // API changes require `./gradlew apiDump` and a review of the .api diffs.
+    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.1"
+}
+
+apiValidation {
+    // Track the Kotlin/Native + js/wasm ABI too, not just the JVM one.
+    @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
+    klib {
+        enabled = true
+    }
+    // Consumers, not published API surfaces. (Sample project names are their leaf names;
+    // the "r2dbc" here is samples:r2dbc — the library module is named kormium-r2dbc.)
+    ignoredProjects.addAll(
+        listOf(
+            "benchmarks", "kormium-bom",
+            "ktor-di", "ktor-koin", "crud-sqlite", "repository", "sharding",
+            "sqlite-cache", "cross-instance-cache", "r2dbc", "wasm-todo",
+        ),
+    )
 }
 
 buildscript {
@@ -138,6 +158,21 @@ subprojects {
                 connection.set("scm:git:https://github.com/kormium/kormium.git")
                 developerConnection.set("scm:git:ssh://git@github.com/kormium/kormium.git")
             }
+        }
+    }
+}
+
+// BCV's klib ABI inference for host-unsupported targets does not hold up in this build:
+// on a Linux host the extracted golden dump keeps the full target list in its header
+// (incl. the Apple targets the dumps were generated with) while the fresh merge lists
+// only the Linux-buildable ones, so klibApiCheck always diffs. Validate the klib surface
+// on the host profile that can build every declared target — macOS, the same profile
+// that publishes. The JVM ABI checks run on every host; CI runs the full apiCheck
+// (JVM + klib) in its macOS job.
+allprojects {
+    tasks.matching { it.name == "klibApiCheck" }.configureEach {
+        onlyIf("klib ABI is validated on macOS, where every declared target builds") {
+            org.jetbrains.kotlin.konan.target.HostManager.hostIsMac
         }
     }
 }

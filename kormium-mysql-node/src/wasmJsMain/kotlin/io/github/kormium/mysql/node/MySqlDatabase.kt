@@ -17,13 +17,13 @@ import kotlinx.coroutines.withContext
  * [useConnection] borrows a [PoolConnection] for the block and returns it after — independent calls
  * run on independent connections (real concurrency, no Mutex). Suspend-only.
  */
-class MySqlDatabase internal constructor(
+public class MySqlDatabase internal constructor(
     private val pool: MyPool,
     override val config: KormiumConfig,
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
-    override val dialect = MySqlDialect
+    override val dialect: MySqlDialect = MySqlDialect
 
     private val lifecycle = DatabaseLifecycle { pool.end() }
 
@@ -55,7 +55,7 @@ class MySqlDatabase internal constructor(
         }
     }
 
-    override fun close() = lifecycle.close()
+    override fun close(): Unit = lifecycle.close()
 }
 
 private val TransactionIsolation.sql: String
@@ -70,7 +70,7 @@ private val TransactionIsolation.sql: String
  * Opens a MySQL/MariaDB database over a mysql2 connection pool of [poolSize] connections. Tagged
  * [Nothing]; pin the catalog at the call site.
  */
-fun createNodeMysqlDatabase(
+public fun createNodeMysqlDatabase(
     host: String,
     port: Int = 3306,
     database: String,

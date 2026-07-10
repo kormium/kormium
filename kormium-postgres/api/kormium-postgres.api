@@ -1,0 +1,45 @@
+public final class io/github/kormium/PgNotificationTransportKt {
+	public static final fun postgresListenNotifyTransport (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/kormium/NotificationTransport;
+	public static synthetic fun postgresListenNotifyTransport$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/kormium/NotificationTransport;
+}
+
+public final class io/github/kormium/PgResultSetWrapper : io/github/kormium/resultset/ResultSet {
+	public fun <init> (Ljava/sql/ResultSet;)V
+	public fun getBoolean (I)Ljava/lang/Boolean;
+	public fun getBytes (I)[B
+	public fun getColumns ()[Ljava/lang/String;
+	public fun getDate (I)Lkotlinx/datetime/LocalDate;
+	public fun getDouble (I)Ljava/lang/Double;
+	public fun getFloat (I)Ljava/lang/Float;
+	public fun getInstant (I)Lkotlin/time/Instant;
+	public fun getInt (I)Ljava/lang/Integer;
+	public fun getLocalDateTime (I)Lkotlinx/datetime/LocalDateTime;
+	public fun getLong (I)Ljava/lang/Long;
+	public fun getShort (I)Ljava/lang/Short;
+	public fun getString (I)Ljava/lang/String;
+	public fun getTime (I)Lkotlinx/datetime/LocalTime;
+	public fun next ()Z
+}
+
+public abstract interface class io/github/kormium/PostgresDriver : io/github/kormium/database/Database, io/github/kormium/database/SuspendDatabase, java/lang/AutoCloseable {
+	public abstract fun getConfig ()Lio/github/kormium/KormiumConfig;
+	public abstract fun getDialect ()Lio/github/kormium/Dialect;
+	public abstract fun getWriteListeners ()Lio/github/kormium/WriteListeners;
+	public abstract fun isClosed ()Z
+}
+
+public final class io/github/kormium/PostgresJvmTypeMapper : io/github/kormium/TypeMapper {
+	public static final field INSTANCE Lio/github/kormium/PostgresJvmTypeMapper;
+	public fun toParameter (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/database/CreateDatabaseKt {
+	public static final fun createDatabase (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/functions/Function1;)Lio/github/kormium/PostgresDriver;
+	public static synthetic fun createDatabase$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/PostgresDriver;
+}
+
+public final class io/github/kormium/database/Database_jvmKt {
+	public static final fun createDatabase (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/KormiumConfig;)Lio/github/kormium/PostgresDriver;
+	public static synthetic fun createDatabase$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/KormiumConfig;ILjava/lang/Object;)Lio/github/kormium/PostgresDriver;
+}
+

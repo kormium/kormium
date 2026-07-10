@@ -26,7 +26,7 @@ import kotlin.uuid.toJavaUuid
  * explicit `::type` casts from [PostgresDialect] where inference needs help; r2dbc is
  * natively typed already.
  */
-object PostgresJvmTypeMapper : TypeMapper {
+public object PostgresJvmTypeMapper : TypeMapper {
     override fun toParameter(value: Any?): Any? = when (value) {
         // StandardTypeMapper would toString() these (text is fine for libpq, wrong here):
         // pass them through so they bind as real float4 / int2.

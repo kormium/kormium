@@ -22,7 +22,7 @@ import io.ktor.http.HttpStatusCode
  * }
  * ```
  */
-fun KormiumException.httpStatusCode(): HttpStatusCode = when (this) {
+public fun KormiumException.httpStatusCode(): HttpStatusCode = when (this) {
     is UniqueViolationException -> HttpStatusCode.Conflict
     is ForeignKeyViolationException -> HttpStatusCode.BadRequest
     is NotNullViolationException -> HttpStatusCode.BadRequest

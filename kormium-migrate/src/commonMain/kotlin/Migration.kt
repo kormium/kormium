@@ -26,8 +26,8 @@ import kotlin.time.Clock
  * For SQL the splitter cannot handle (e.g. a Postgres function body that itself contains `;`),
  * pass the statements explicitly with the `List<String>` constructor.
  */
-class Migration<G : Catalog> private constructor(
-    val id: String,
+public class Migration<G : Catalog> private constructor(
+    public val id: String,
     internal val statements: List<String>,
     internal val checksum: String,
 ) {
@@ -42,10 +42,10 @@ class Migration<G : Catalog> private constructor(
     }
 
     /** A migration written as one SQL string; statements are separated by top-level `;`. */
-    constructor(id: String, sql: String) : this(id, splitStatements(sql), crc32(normalize(sql)))
+    public constructor(id: String, sql: String) : this(id, splitStatements(sql), crc32(normalize(sql)))
 
     /** A migration written as explicit statements; bypasses the SQL splitter. */
-    constructor(id: String, statements: List<String>) :
+    public constructor(id: String, statements: List<String>) :
         this(id, statements, crc32(statements.joinToString("\n;\n") { normalize(it) }))
 }
 
@@ -57,10 +57,10 @@ class Migration<G : Catalog> private constructor(
 private const val MAX_ID_LENGTH = 255
 
 /** Thrown when an already-applied migration's SQL no longer matches the recorded checksum. */
-class MigrationChecksumException(
-    val id: String,
-    val recorded: String,
-    val current: String,
+public class MigrationChecksumException(
+    public val id: String,
+    public val recorded: String,
+    public val current: String,
 ) : RuntimeException(
     "Migration \"$id\" was modified after it was applied " +
         "(recorded checksum $recorded, current $current). " +
@@ -102,7 +102,7 @@ private const val JOURNAL = "kormium_migrations"
  * `migrate(...)` on every startup is fine — typically from a `beforeStart { migrate(appMigrations) }`
  * block on the `createX { }` builder.
  */
-fun <G : Catalog> Database<G>.migrate(migrations: List<Migration<G>>) {
+public fun <G : Catalog> Database<G>.migrate(migrations: List<Migration<G>>) {
     usePinned(transactional = true) { exec ->
         exec.dialect.advisoryLockSql(migrationLockKey)?.let { exec.execute(it) }
 

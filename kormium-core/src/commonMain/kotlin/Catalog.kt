@@ -7,4 +7,4 @@ package io.github.kormium
  * to, and a [Table] is tagged with the catalog it belongs to. Many database instances
  * may share a catalog (sharding).
  */
-interface Catalog
+public interface Catalog

@@ -1,7 +1,7 @@
 package io.github.kormium
 
 
-data class Query(
+public data class Query(
     val whereExpression: Expression? = null,
     val limit: UInt = UInt.MAX_VALUE,
     val offset: UInt = 0u,
@@ -12,7 +12,7 @@ data class Query(
      * bind parameters on [builder] instead of inlining them. Identifier quoting and
      * LIMIT/OFFSET rendering go through the builder's [Dialect].
      */
-    fun toSql(builder: ParamBuilder): String {
+    public fun toSql(builder: ParamBuilder): String {
         val whereStr = whereExpression?.let { "WHERE ${it.toSql(builder)} " } ?: ""
         val orderByStr = orderBy?.let { "ORDER BY ${prepareOrderBy(it, builder)} " } ?: ""
         val limitOffsetStr = builder.dialect.renderLimitOffset(limit, offset)
@@ -25,7 +25,7 @@ data class Query(
      * skip the single aggregate row and read as 0), and `UPDATE` / `DELETE` (plain mutation
      * statements don't take `ORDER BY` / `LIMIT` / `OFFSET` in Postgres).
      */
-    fun toWhereSql(builder: ParamBuilder): String =
+    public fun toWhereSql(builder: ParamBuilder): String =
         whereExpression?.let { "WHERE ${it.toSql(builder)} " } ?: ""
 
     // Debug-friendly rendering; placeholders are emitted in place of values.
@@ -35,6 +35,6 @@ data class Query(
         orderBy.entries.joinToString(",") { (key, value) -> "${key.toSql(builder)} ${value.name}" }
 }
 
-enum class AscDescOrder{
+public enum class AscDescOrder{
     ASC, DESC
 }

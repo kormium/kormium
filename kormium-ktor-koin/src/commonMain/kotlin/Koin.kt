@@ -22,31 +22,31 @@ import org.koin.ktor.ext.getKoin
  * // call.kormium<AppCatalog>(named("app"))
  * ```
  */
-inline fun <reified G : Catalog> ApplicationCall.kormium(qualifier: Qualifier? = null): KormiumHandle<G> =
+public inline fun <reified G : Catalog> ApplicationCall.kormium(qualifier: Qualifier? = null): KormiumHandle<G> =
     KormiumHandle(getKoin().get(qualifier = qualifier))
 
 // --- (a) catalog as a TYPE argument — `call.transaction<AppCatalog, _> { ... }` ---------------
 // The `_` lets the return type infer while the catalog is given explicitly as a type.
 // For a named dependency use the value form (b) or `kormium<G>(qualifier).transaction { }`.
 
-suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
+public suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
     noinline block: suspend SuspendScope<G>.() -> R,
 ): R = kormium<G>().database.suspendTransaction(block = block)
 
-suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
+public suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
     noinline block: suspend SuspendScope<G>.() -> R,
 ): R = kormium<G>().database.suspendAutocommit(block)
 
 // --- (b) catalog as a VALUE — `call.transaction(AppCatalog) { ... }` --------------------------
 // Both type parameters infer; pass a [qualifier] for a named dependency.
 
-suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
+public suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
     catalog: G,
     qualifier: Qualifier? = null,
     noinline block: suspend SuspendScope<G>.() -> R,
 ): R = kormium<G>(qualifier).database.suspendTransaction(block = block)
 
-suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
+public suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
     catalog: G,
     qualifier: Qualifier? = null,
     noinline block: suspend SuspendScope<G>.() -> R,

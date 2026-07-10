@@ -21,7 +21,7 @@ import kotlin.uuid.Uuid
  * binds as an `OffsetDateTime` at UTC (a `TIMESTAMP` is stored/compared in UTC); the connection
  * URL pins the session zone to UTC so the value round-trips unchanged.
  */
-object MySqlJvmTypeMapper : TypeMapper {
+public object MySqlJvmTypeMapper : TypeMapper {
     override fun toParameter(value: Any?): Any? = when (value) {
         // StandardTypeMapper would toString() these; pass them through so they bind as real types.
         is Float, is Short -> value

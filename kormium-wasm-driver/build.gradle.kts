@@ -11,6 +11,8 @@ repositories {
 // param-binding helper. Driver-specific externals stay in each engine; this is the common layer
 // so that one fix lands everywhere instead of in four copies.
 kotlin {
+    explicitApi()
+
     compilerOptions {
         optIn.add("kotlin.js.ExperimentalWasmJsInterop")
     }

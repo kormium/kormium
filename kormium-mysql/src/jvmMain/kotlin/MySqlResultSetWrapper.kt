@@ -21,7 +21,7 @@ import java.time.OffsetDateTime
  * correct [Instant]. UUID (`CHAR(36)`) and `JSON` columns are plain text via [getString], which
  * lines up with korm's text-based column reading.
  */
-class MySqlResultSetWrapper(private val rs: java.sql.ResultSet) : ResultSet {
+public class MySqlResultSetWrapper(private val rs: java.sql.ResultSet) : ResultSet {
     // Lazy: the hot read path maps columns positionally and never touches this.
     override val columns: Array<String> by lazy { internalGetColumns() }
 

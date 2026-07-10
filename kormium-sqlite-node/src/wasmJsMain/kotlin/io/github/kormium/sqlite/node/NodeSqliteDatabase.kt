@@ -20,13 +20,13 @@ import kotlinx.coroutines.withContext
  * can't interleave with another's. SQLite has a single effective isolation level, so a requested
  * [TransactionIsolation] is ignored (as SqliteDialect declares).
  */
-class NodeSqliteDatabase internal constructor(
+public class NodeSqliteDatabase internal constructor(
     private val db: Database,
     override val config: KormiumConfig,
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
-    override val dialect = SqliteDialect
+    override val dialect: SqliteDialect = SqliteDialect
 
     private val lifecycle = DatabaseLifecycle { db.close() }
     private val connectionLock = Mutex()
@@ -57,7 +57,7 @@ class NodeSqliteDatabase internal constructor(
         }
     }
 
-    override fun close() = lifecycle.close()
+    override fun close(): Unit = lifecycle.close()
 }
 
 /**
@@ -65,7 +65,7 @@ class NodeSqliteDatabase internal constructor(
  *
  * @param path `":memory:"` (default) for an in-memory database, or a filesystem path to persist.
  */
-fun createNodeSqliteDatabase(
+public fun createNodeSqliteDatabase(
     path: String = ":memory:",
     config: KormiumConfig = KormiumConfig(),
 ): NodeSqliteDatabase = NodeSqliteDatabase(Database(path), config)

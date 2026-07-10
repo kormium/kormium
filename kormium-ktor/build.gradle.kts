@@ -14,6 +14,8 @@ repositories {
 val ktorVersion = "3.5.0"
 
 kotlin {
+    explicitApi()
+
     jvmToolchain(21)
 
     jvm {

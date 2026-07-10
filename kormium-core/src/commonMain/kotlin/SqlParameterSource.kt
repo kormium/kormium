@@ -10,13 +10,13 @@ package io.github.kormium
  * specifying the name of the parameter.
  *
  */
-interface SqlParameterSource {
+public interface SqlParameterSource {
     /**
      * Determine whether there is a value for the specified named parameter.
      * @param paramName the name of the parameter
      * @return whether there is a value defined
      */
-    fun hasValue(paramName: String): Boolean
+    public fun hasValue(paramName: String): Boolean
 
     /**
      * Return the parameter value for the requested named parameter.
@@ -25,7 +25,7 @@ interface SqlParameterSource {
      * @throws IllegalArgumentException if there is no value for the requested parameter
      */
     @Throws(IllegalArgumentException::class)
-    fun getValue(paramName: String): Any?
+    public fun getValue(paramName: String): Any?
 
     /**
      * Determine the SQL type for the specified named parameter.
@@ -34,7 +34,7 @@ interface SqlParameterSource {
      * or `TYPE_UNKNOWN` if not known
      * @see .TYPE_UNKNOWN
      */
-    fun getSqlType(paramName: String) = TYPE_UNKNOWN
+    public fun getSqlType(paramName: String): UInt = TYPE_UNKNOWN
 
     /**
      * Determine the type name for the specified named parameter.
@@ -42,22 +42,22 @@ interface SqlParameterSource {
      * @return the type name of the specified parameter,
      * or `null` if not known
      */
-    fun getTypeName(paramName: String?): String? = null
+    public fun getTypeName(paramName: String?): String? = null
 
     /**
      * Enumerate all available parameter names if possible.
      */
-    val parameterNames: Array<String>?
+    public val parameterNames: Array<String>?
         get() = null
 
-    companion object {
+    public companion object {
         /**
          * Constant that indicates an unknown (or unspecified) SQL type.
          * To be returned from `getType` when no specific SQL type known.
          * @see getSqlType
          *
          */
-        val TYPE_UNKNOWN: UInt = UInt.MIN_VALUE
+        public val TYPE_UNKNOWN: UInt = UInt.MIN_VALUE
         // TODO check if libpq has a default param type oid
     }
 }

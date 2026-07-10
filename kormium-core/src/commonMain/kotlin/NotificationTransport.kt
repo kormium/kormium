@@ -20,20 +20,20 @@ import kotlinx.coroutines.launch
  * SINGLE suspend shape (not a blocking/suspend pair): the sync-vs-suspend bridging is handled
  * by [connectNotifications], so an implementer writes exactly one version.
  */
-interface NotificationTransport {
+public interface NotificationTransport {
     /**
      * Publishes the table names a local commit just wrote. `suspend` so coroutine-based clients
      * (rethis, r2dbc) are idiomatic; [connectNotifications] invokes this fire-and-forget on a
      * background scope, so it never blocks the committing thread. Delivery is best-effort.
      */
-    suspend fun publish(tables: Set<String>)
+    public suspend fun publish(tables: Set<String>)
 
     /**
      * A cold [Flow] of remote change signals: each element is the set of tables some OTHER
      * instance committed. [connectNotifications] collects it on a background coroutine and feeds
      * each element into the local write-notification registry.
      */
-    fun subscribe(): Flow<Set<String>>
+    public fun subscribe(): Flow<Set<String>>
 }
 
 /**
@@ -60,13 +60,13 @@ interface NotificationTransport {
  * interoperate. Table-granular and tiny (well within Postgres NOTIFY's ~8KB payload). Table names
  * don't contain commas in practice; [decodeTablePayload] drops blanks defensively.
  */
-fun encodeTablePayload(tables: Set<String>): String = tables.joinToString(",")
+public fun encodeTablePayload(tables: Set<String>): String = tables.joinToString(",")
 
 /** Inverse of [encodeTablePayload]. */
-fun decodeTablePayload(payload: String): Set<String> =
+public fun decodeTablePayload(payload: String): Set<String> =
     payload.split(",").filter { it.isNotEmpty() }.toSet()
 
-fun <G : Catalog> SuspendDatabase<G>.connectNotifications(transport: NotificationTransport): Registration {
+public fun <G : Catalog> SuspendDatabase<G>.connectNotifications(transport: NotificationTransport): Registration {
     val listeners = writeListeners
     // Errors are swallowed (best-effort delivery); a real deployment relies on a cache TTL as the
     // safety net for dropped notifications. See the cross-instance-cache sample README.

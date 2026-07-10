@@ -30,5 +30,5 @@ private class SqliteJdbcDriver(path: String, poolSize: Int, config: KormiumConfi
     config = config,
 ), SqliteDriver
 
-actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
+public actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
     SqliteJdbcDriver(path, poolSize, config)

@@ -18,24 +18,24 @@ package io.github.kormium
  * no ordering, no limit/offset). [Query] stays available for reusable/prebuilt queries.
  */
 @KormiumDsl
-class QueryBuilder {
+public class QueryBuilder {
     private val conditions = mutableListOf<Expression>()
     private val orderings = LinkedHashMap<Selectable<*>, AscDescOrder>()
 
     /** `orderBy DESC Users.age`, `orderBy ASC Users.name`. Multiple calls keep their order. */
-    val orderBy: OrderByDsl = OrderByDsl(orderings)
+    public val orderBy: OrderByDsl = OrderByDsl(orderings)
 
     /** No `LIMIT` when left null. */
-    var limit: Int? = null
+    public var limit: Int? = null
 
     /** No `OFFSET` when left null. */
-    var offset: Int? = null
+    public var offset: Int? = null
 
     /**
      * Adds a predicate. Multiple `where { ... }` calls combine with `AND`; put complex
      * boolean logic inside a single block using `and` / `or` / `not(...)`.
      */
-    fun where(block: () -> Expression) {
+    public fun where(block: () -> Expression) {
         conditions += block()
     }
 
@@ -65,12 +65,12 @@ class QueryBuilder {
  * operand is any [Selectable] — a column, or a computed value like `Users.name.lower()` or
  * `Users.qty * 2` (for case-insensitive or computed ordering).
  */
-class OrderByDsl internal constructor(private val orderings: MutableMap<Selectable<*>, AscDescOrder>) {
-    infix fun ASC(expression: Selectable<*>) {
+public class OrderByDsl internal constructor(private val orderings: MutableMap<Selectable<*>, AscDescOrder>) {
+    public infix fun ASC(expression: Selectable<*>) {
         orderings[expression] = AscDescOrder.ASC
     }
 
-    infix fun DESC(expression: Selectable<*>) {
+    public infix fun DESC(expression: Selectable<*>) {
         orderings[expression] = AscDescOrder.DESC
     }
 }

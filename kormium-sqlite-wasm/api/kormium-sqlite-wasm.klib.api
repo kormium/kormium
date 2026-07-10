@@ -1,0 +1,28 @@
+// Klib ABI Dump
+// Targets: [wasmJs]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-sqlite-wasm>
+final class io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS : kotlin.js/JsAny { // io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS|null[0]
+    constructor <init>(kotlin/String) // io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS.<init>|<init>(kotlin.String){}[0]
+}
+
+final class io.github.kormium.sqlite.wasm/SqliteWasmDatabase : io.github.kormium.database/SuspendDatabase<kotlin/Nothing> { // io.github.kormium.sqlite.wasm/SqliteWasmDatabase|null[0]
+    final val config // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.config|{}config[0]
+        final fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.config.<get-config>|<get-config>(){}[0]
+    final val dialect // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.dialect|{}dialect[0]
+        final fun <get-dialect>(): io.github.kormium/SqliteDialect // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.dialect.<get-dialect>|<get-dialect>(){}[0]
+    final val isClosed // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.isClosed|{}isClosed[0]
+        final fun <get-isClosed>(): kotlin/Boolean // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+    final val writeListeners // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.writeListeners|{}writeListeners[0]
+        final fun <get-writeListeners>(): io.github.kormium/WriteListeners // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.writeListeners.<get-writeListeners>|<get-writeListeners>(){}[0]
+
+    final fun close() // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.close|close(){}[0]
+    final suspend fun <#A1: kotlin/Any?> useConnection(kotlin/Boolean, io.github.kormium/TransactionIsolation?, kotlin/Boolean, kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendSqlExecutor, #A1>): #A1 // io.github.kormium.sqlite.wasm/SqliteWasmDatabase.useConnection|useConnection(kotlin.Boolean;io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendSqlExecutor,0:0>){0§<kotlin.Any?>}[0]
+}
+
+final fun io.github.kormium.sqlite.wasm/SQLiteESMFactory(kotlin.js/JsAny? = ...): kotlin.js/Promise<kotlin.js/JsAny> // io.github.kormium.sqlite.wasm/SQLiteESMFactory|SQLiteESMFactory(kotlin.js.JsAny?){}[0]
+final suspend fun io.github.kormium.sqlite.wasm/createSqliteWasmDatabase(kotlin/String? = ..., io.github.kormium/KormiumConfig = ..., kotlin.js/JsAny? = ...): io.github.kormium.sqlite.wasm/SqliteWasmDatabase // io.github.kormium.sqlite.wasm/createSqliteWasmDatabase|createSqliteWasmDatabase(kotlin.String?;io.github.kormium.KormiumConfig;kotlin.js.JsAny?){}[0]

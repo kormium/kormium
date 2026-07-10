@@ -1,0 +1,70 @@
+public final class io/github/kormium/PostgresDialect : io/github/kormium/Dialect {
+	public static final field INSTANCE Lio/github/kormium/PostgresDialect;
+	public fun advisoryLockSql (J)Ljava/lang/String;
+	public fun getReadOnlyToggle ()Lio/github/kormium/ReadOnlyToggle;
+	public fun getSupportsReturning ()Z
+	public fun getSupportsTransactionIsolation ()Z
+	public fun quoteIdentifier (Ljava/lang/String;)Ljava/lang/String;
+	public fun renderBind (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;
+	public fun renderCharLength (Ljava/lang/String;)Ljava/lang/String;
+	public fun renderInsertDefaultValues (Ljava/lang/String;)Ljava/lang/String;
+	public fun renderInsertOrIgnoreSuffix (Ljava/util/List;)Ljava/lang/String;
+	public fun renderLimit-WZ4Q5Ns (I)Ljava/lang/String;
+	public fun renderLimitOffset-feOb9K0 (II)Ljava/lang/String;
+	public fun renderOffset-WZ4Q5Ns (I)Ljava/lang/String;
+	public fun renderUpsertSuffix (Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/github/kormium/Vector {
+	public static final field Companion Lio/github/kormium/Vector$Companion;
+	public fun <init> (Ljava/util/List;)V
+	public fun <init> ([F)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun get (I)F
+	public final fun getData ()[F
+	public final fun getSize ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/kormium/Vector$Companion {
+	public final fun of ([F)Lio/github/kormium/Vector;
+	public final fun parse (Ljava/lang/String;)Lio/github/kormium/Vector;
+}
+
+public final class io/github/kormium/VectorColumnType : io/github/kormium/ColumnType {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Integer;)V
+	public synthetic fun <init> (Ljava/lang/Integer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getDescription ()Ljava/lang/String;
+	public final fun getDimensions ()Ljava/lang/Integer;
+	public fun read (Lio/github/kormium/resultset/ResultSet;I)Lio/github/kormium/Vector;
+	public synthetic fun read (Lio/github/kormium/resultset/ResultSet;I)Ljava/lang/Object;
+	public fun toParam (Lio/github/kormium/Vector;)Ljava/lang/Object;
+	public synthetic fun toParam (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/VectorKt {
+	public static final fun Vector (Lio/github/kormium/Column$Companion;Ljava/lang/Integer;Ljava/lang/String;)Lio/github/kormium/Column$Spec;
+	public static synthetic fun Vector$default (Lio/github/kormium/Column$Companion;Ljava/lang/Integer;Ljava/lang/String;ILjava/lang/Object;)Lio/github/kormium/Column$Spec;
+	public static final fun cosineDistance (Lio/github/kormium/Operand;Lio/github/kormium/Operand;)Lio/github/kormium/NumericExpr;
+	public static final fun cosineDistance (Lio/github/kormium/Operand;Lio/github/kormium/Vector;)Lio/github/kormium/NumericExpr;
+	public static final fun distance (Lio/github/kormium/Operand;Lio/github/kormium/Operand;Lio/github/kormium/VectorMetric;)Lio/github/kormium/NumericExpr;
+	public static final fun distance (Lio/github/kormium/Operand;Lio/github/kormium/Vector;Lio/github/kormium/VectorMetric;)Lio/github/kormium/NumericExpr;
+	public static synthetic fun distance$default (Lio/github/kormium/Operand;Lio/github/kormium/Operand;Lio/github/kormium/VectorMetric;ILjava/lang/Object;)Lio/github/kormium/NumericExpr;
+	public static synthetic fun distance$default (Lio/github/kormium/Operand;Lio/github/kormium/Vector;Lio/github/kormium/VectorMetric;ILjava/lang/Object;)Lio/github/kormium/NumericExpr;
+	public static final fun euclideanDistance (Lio/github/kormium/Operand;Lio/github/kormium/Operand;)Lio/github/kormium/NumericExpr;
+	public static final fun euclideanDistance (Lio/github/kormium/Operand;Lio/github/kormium/Vector;)Lio/github/kormium/NumericExpr;
+	public static final fun innerProduct (Lio/github/kormium/Operand;Lio/github/kormium/Operand;)Lio/github/kormium/NumericExpr;
+	public static final fun innerProduct (Lio/github/kormium/Operand;Lio/github/kormium/Vector;)Lio/github/kormium/NumericExpr;
+}
+
+public final class io/github/kormium/VectorMetric : java/lang/Enum {
+	public static final field COSINE Lio/github/kormium/VectorMetric;
+	public static final field DOT Lio/github/kormium/VectorMetric;
+	public static final field EUCLIDEAN Lio/github/kormium/VectorMetric;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/kormium/VectorMetric;
+	public static fun values ()[Lio/github/kormium/VectorMetric;
+}
+

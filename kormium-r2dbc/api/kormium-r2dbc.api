@@ -1,0 +1,24 @@
+public final class io/github/kormium/r2dbc/MySqlR2dbcKt {
+	public static final fun createMySqlR2dbcDatabase (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/KormiumConfig;)Lio/github/kormium/r2dbc/R2dbcDatabase;
+	public static synthetic fun createMySqlR2dbcDatabase$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/KormiumConfig;ILjava/lang/Object;)Lio/github/kormium/r2dbc/R2dbcDatabase;
+}
+
+public final class io/github/kormium/r2dbc/R2dbcDatabase : io/github/kormium/database/SuspendDatabase {
+	public fun close ()V
+	public fun getConfig ()Lio/github/kormium/KormiumConfig;
+	public fun getDialect ()Lio/github/kormium/Dialect;
+	public fun getWriteListeners ()Lio/github/kormium/WriteListeners;
+	public fun isClosed ()Z
+	public fun useConnection (ZLio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/r2dbc/R2dbcDatabaseKt {
+	public static final fun createR2dbcDatabase (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/KormiumConfig;)Lio/github/kormium/r2dbc/R2dbcDatabase;
+	public static synthetic fun createR2dbcDatabase$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/KormiumConfig;ILjava/lang/Object;)Lio/github/kormium/r2dbc/R2dbcDatabase;
+}
+
+public final class io/github/kormium/r2dbc/R2dbcNotificationTransportKt {
+	public static final fun r2dbcListenNotifyTransport (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/github/kormium/NotificationTransport;
+	public static synthetic fun r2dbcListenNotifyTransport$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/kormium/NotificationTransport;
+}
+

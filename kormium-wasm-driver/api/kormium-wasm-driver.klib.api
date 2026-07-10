@@ -1,0 +1,48 @@
+// Klib ABI Dump
+// Targets: [wasmJs]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-wasm-driver>
+final class io.github.kormium.wasm.driver/ParsedSql { // io.github.kormium.wasm.driver/ParsedSql|null[0]
+    constructor <init>(kotlin/String, kotlin.collections/List<kotlin/String>) // io.github.kormium.wasm.driver/ParsedSql.<init>|<init>(kotlin.String;kotlin.collections.List<kotlin.String>){}[0]
+
+    final val names // io.github.kormium.wasm.driver/ParsedSql.names|{}names[0]
+        final fun <get-names>(): kotlin.collections/List<kotlin/String> // io.github.kormium.wasm.driver/ParsedSql.names.<get-names>|<get-names>(){}[0]
+    final val sql // io.github.kormium.wasm.driver/ParsedSql.sql|{}sql[0]
+        final fun <get-sql>(): kotlin/String // io.github.kormium.wasm.driver/ParsedSql.sql.<get-sql>|<get-sql>(){}[0]
+}
+
+final class io.github.kormium.wasm.driver/TextResultSet : io.github.kormium.resultset/ResultSet { // io.github.kormium.wasm.driver/TextResultSet|null[0]
+    constructor <init>(kotlin.js/JsArray<kotlin.js/JsAny?>, kotlin/Array<kotlin/String>) // io.github.kormium.wasm.driver/TextResultSet.<init>|<init>(kotlin.js.JsArray<kotlin.js.JsAny?>;kotlin.Array<kotlin.String>){}[0]
+
+    final val columns // io.github.kormium.wasm.driver/TextResultSet.columns|{}columns[0]
+        final fun <get-columns>(): kotlin/Array<kotlin/String> // io.github.kormium.wasm.driver/TextResultSet.columns.<get-columns>|<get-columns>(){}[0]
+
+    final fun getBoolean(kotlin/Int): kotlin/Boolean? // io.github.kormium.wasm.driver/TextResultSet.getBoolean|getBoolean(kotlin.Int){}[0]
+    final fun getBytes(kotlin/Int): kotlin/ByteArray? // io.github.kormium.wasm.driver/TextResultSet.getBytes|getBytes(kotlin.Int){}[0]
+    final fun getDate(kotlin/Int): kotlinx.datetime/LocalDate? // io.github.kormium.wasm.driver/TextResultSet.getDate|getDate(kotlin.Int){}[0]
+    final fun getDouble(kotlin/Int): kotlin/Double? // io.github.kormium.wasm.driver/TextResultSet.getDouble|getDouble(kotlin.Int){}[0]
+    final fun getFloat(kotlin/Int): kotlin/Float? // io.github.kormium.wasm.driver/TextResultSet.getFloat|getFloat(kotlin.Int){}[0]
+    final fun getInstant(kotlin/Int): kotlin.time/Instant? // io.github.kormium.wasm.driver/TextResultSet.getInstant|getInstant(kotlin.Int){}[0]
+    final fun getInt(kotlin/Int): kotlin/Int? // io.github.kormium.wasm.driver/TextResultSet.getInt|getInt(kotlin.Int){}[0]
+    final fun getLocalDateTime(kotlin/Int): kotlinx.datetime/LocalDateTime? // io.github.kormium.wasm.driver/TextResultSet.getLocalDateTime|getLocalDateTime(kotlin.Int){}[0]
+    final fun getLong(kotlin/Int): kotlin/Long? // io.github.kormium.wasm.driver/TextResultSet.getLong|getLong(kotlin.Int){}[0]
+    final fun getShort(kotlin/Int): kotlin/Short? // io.github.kormium.wasm.driver/TextResultSet.getShort|getShort(kotlin.Int){}[0]
+    final fun getString(kotlin/Int): kotlin/String? // io.github.kormium.wasm.driver/TextResultSet.getString|getString(kotlin.Int){}[0]
+    final fun getTime(kotlin/Int): kotlinx.datetime/LocalTime? // io.github.kormium.wasm.driver/TextResultSet.getTime|getTime(kotlin.Int){}[0]
+    final fun next(): kotlin/Boolean // io.github.kormium.wasm.driver/TextResultSet.next|next(){}[0]
+}
+
+final val io.github.kormium.wasm.driver/DollarMarker // io.github.kormium.wasm.driver/DollarMarker|{}DollarMarker[0]
+    final fun <get-DollarMarker>(): kotlin/Function1<kotlin/Int, kotlin/String> // io.github.kormium.wasm.driver/DollarMarker.<get-DollarMarker>|<get-DollarMarker>(){}[0]
+final val io.github.kormium.wasm.driver/QuestionMarker // io.github.kormium.wasm.driver/QuestionMarker|{}QuestionMarker[0]
+    final fun <get-QuestionMarker>(): kotlin/Function1<kotlin/Int, kotlin/String> // io.github.kormium.wasm.driver/QuestionMarker.<get-QuestionMarker>|<get-QuestionMarker>(){}[0]
+
+final fun io.github.kormium.wasm.driver/bindTextParams(kotlin.collections/List<kotlin/String>, kotlin.collections/Map<kotlin/String, kotlin/Any?>, io.github.kormium/TypeMapper): kotlin.js/JsArray<kotlin.js/JsAny?> // io.github.kormium.wasm.driver/bindTextParams|bindTextParams(kotlin.collections.List<kotlin.String>;kotlin.collections.Map<kotlin.String,kotlin.Any?>;io.github.kormium.TypeMapper){}[0]
+final fun io.github.kormium.wasm.driver/byteArrayToBinary(kotlin/ByteArray): kotlin.js/JsAny // io.github.kormium.wasm.driver/byteArrayToBinary|byteArrayToBinary(kotlin.ByteArray){}[0]
+final fun io.github.kormium.wasm.driver/cellText(kotlin.js/JsAny?): kotlin/String? // io.github.kormium.wasm.driver/cellText|cellText(kotlin.js.JsAny?){}[0]
+final fun io.github.kormium.wasm.driver/jsToByteArray(kotlin.js/JsAny?): kotlin/ByteArray? // io.github.kormium.wasm.driver/jsToByteArray|jsToByteArray(kotlin.js.JsAny?){}[0]
+final fun io.github.kormium.wasm.driver/parseNamedParams(kotlin/String, kotlin/Function1<kotlin/Int, kotlin/String>): io.github.kormium.wasm.driver/ParsedSql // io.github.kormium.wasm.driver/parseNamedParams|parseNamedParams(kotlin.String;kotlin.Function1<kotlin.Int,kotlin.String>){}[0]

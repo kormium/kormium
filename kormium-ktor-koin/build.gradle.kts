@@ -14,6 +14,8 @@ repositories {
 val koinVersion = "4.1.0"
 
 kotlin {
+    explicitApi()
+
     jvmToolchain(21)
 
     jvm {

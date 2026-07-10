@@ -44,7 +44,7 @@ private class MySqlJdbcDriver(
     config = config,
 ), MySqlDriver
 
-actual fun createDatabase(
+public actual fun createDatabase(
     host: String,
     port: Int,
     database: String,

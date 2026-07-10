@@ -30,7 +30,7 @@ import csqlite.*
 private val SQLITE_TRANSIENT: CPointer<CFunction<(COpaquePointer?) -> Unit>>? = (-1L).toCPointer()
 
 @OptIn(ExperimentalForeignApi::class)
-actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
+public actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
     SqliteNativeDriver(path, poolSize, config)
 
 @OptIn(ExperimentalForeignApi::class)

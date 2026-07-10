@@ -8,9 +8,9 @@ import io.github.kormium.resultset.ResultSet
  * is the SELECT-list SQL), so aggregates can be used in `having(...)`. [Z] is the value
  * type read.
  */
-interface Selectable<Z> : Expression {
+public interface Selectable<Z> : Expression {
     /** Reads this field's value from the result row at [index]. */
-    fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z?
+    public fun read(rs: ResultSet, index: Int, typeMapper: TypeMapper): Z?
 
     /**
      * A stable, structural key identifying this field in a [ResultRow] — independent of the
@@ -18,7 +18,7 @@ interface Selectable<Z> : Expression {
      * can be read with a freshly built field (`row[Orders.total.sum()]`) without hoisting it into
      * a `val`. Columns key by `table.name`; aggregates by their function over their target's key.
      */
-    fun resultKey(): Any
+    public fun resultKey(): Any
 }
 
 internal enum class JoinType(val sql: String) { INNER("INNER JOIN"), LEFT("LEFT JOIN") }
@@ -31,7 +31,7 @@ internal class JoinClause<G : Catalog>(val type: JoinType, val table: Table<G, *
  * from two tables ([JoinPair]) can also be read as entity pairs with `find()`. Supports
  * `where`, `groupBy`, `having` and `distinct`.
  */
-class Join<G : Catalog> internal constructor(
+public class Join<G : Catalog> internal constructor(
     internal val base: Table<G, *>,
     internal val clauses: List<JoinClause<G>>,
     internal val whereExpr: Expression?,
@@ -51,31 +51,31 @@ class Join<G : Catalog> internal constructor(
     ) = Join(base, clauses, whereExpr, groupByCols, havingExpr, distinct)
 
     /** Restricts the joined rows; combined with AND if called more than once. */
-    fun where(condition: Expression): Join<G> = copy(whereExpr = whereExpr?.let { it and condition } ?: condition)
+    public fun where(condition: Expression): Join<G> = copy(whereExpr = whereExpr?.let { it and condition } ?: condition)
 
     /** Groups rows by [columns] (for use with aggregates). */
-    fun groupBy(vararg columns: Column<*, *, *>): Join<G> = copy(groupByCols = groupByCols + columns)
+    public fun groupBy(vararg columns: Column<*, *, *>): Join<G> = copy(groupByCols = groupByCols + columns)
 
     /** Filters groups (combined with AND if called more than once). */
-    fun having(condition: Expression): Join<G> = copy(havingExpr = havingExpr?.let { it and condition } ?: condition)
+    public fun having(condition: Expression): Join<G> = copy(havingExpr = havingExpr?.let { it and condition } ?: condition)
 
     /** Selects distinct rows. */
-    fun distinct(): Join<G> = copy(distinct = true)
+    public fun distinct(): Join<G> = copy(distinct = true)
 
-    infix fun innerJoin(other: Table<G, *>): JoinStep<G> = JoinStep(this, JoinType.INNER, other)
-    infix fun leftJoin(other: Table<G, *>): JoinStep<G> = JoinStep(this, JoinType.LEFT, other)
+    public infix fun innerJoin(other: Table<G, *>): JoinStep<G> = JoinStep(this, JoinType.INNER, other)
+    public infix fun leftJoin(other: Table<G, *>): JoinStep<G> = JoinStep(this, JoinType.LEFT, other)
 }
 
 /** Starts a query over a single table (for aggregates / grouping / distinct). */
-fun <G : Catalog> Table<G, *>.query(): Join<G> = Join(this, emptyList(), null)
+public fun <G : Catalog> Table<G, *>.query(): Join<G> = Join(this, emptyList(), null)
 
 /** A pending (erased) join awaiting its ON condition. */
-class JoinStep<G : Catalog> internal constructor(
+public class JoinStep<G : Catalog> internal constructor(
     private val join: Join<G>,
     private val type: JoinType,
     private val table: Table<G, *>,
 ) {
-    infix fun on(condition: Expression): Join<G> =
+    public infix fun on(condition: Expression): Join<G> =
         Join(join.base, join.clauses + JoinClause(type, table, condition), join.whereExpr, join.groupByCols, join.havingExpr, join.distinct)
 }
 
@@ -84,23 +84,23 @@ class JoinStep<G : Catalog> internal constructor(
  * (`find()`) in addition to the `select(...)` forms. Joining a third table — or grouping —
  * degrades to an (erased) [Join] that supports only the `select(...)` forms.
  */
-class JoinPair<G : Catalog, A : Entity, B : Entity> internal constructor(
+public class JoinPair<G : Catalog, A : Entity, B : Entity> internal constructor(
     internal val left: Table<G, A>,
     internal val right: Table<G, B>,
     private val type: JoinType,
     private val on: Expression,
     internal val whereExpr: Expression?,
 ) {
-    fun where(condition: Expression): JoinPair<G, A, B> =
+    public fun where(condition: Expression): JoinPair<G, A, B> =
         JoinPair(left, right, type, on, whereExpr?.let { it and condition } ?: condition)
 
     internal fun asJoin(): Join<G> = Join(left, listOf(JoinClause(type, right, on)), whereExpr)
 
-    fun groupBy(vararg columns: Column<*, *, *>): Join<G> = asJoin().groupBy(*columns)
-    fun distinct(): Join<G> = asJoin().distinct()
+    public fun groupBy(vararg columns: Column<*, *, *>): Join<G> = asJoin().groupBy(*columns)
+    public fun distinct(): Join<G> = asJoin().distinct()
 
-    infix fun innerJoin(other: Table<G, *>): JoinStep<G> = asJoin().innerJoin(other)
-    infix fun leftJoin(other: Table<G, *>): JoinStep<G> = asJoin().leftJoin(other)
+    public infix fun innerJoin(other: Table<G, *>): JoinStep<G> = asJoin().innerJoin(other)
+    public infix fun leftJoin(other: Table<G, *>): JoinStep<G> = asJoin().leftJoin(other)
 }
 
 /**
@@ -109,53 +109,53 @@ class JoinPair<G : Catalog, A : Entity, B : Entity> internal constructor(
  * with no match. Joining a third table — or grouping — degrades to an (erased) [Join] that
  * supports only the `select(...)` forms.
  */
-class LeftJoinPair<G : Catalog, A : Entity, B : Entity> internal constructor(
+public class LeftJoinPair<G : Catalog, A : Entity, B : Entity> internal constructor(
     internal val left: Table<G, A>,
     internal val right: Table<G, B>,
     private val on: Expression,
     internal val whereExpr: Expression?,
 ) {
-    fun where(condition: Expression): LeftJoinPair<G, A, B> =
+    public fun where(condition: Expression): LeftJoinPair<G, A, B> =
         LeftJoinPair(left, right, on, whereExpr?.let { it and condition } ?: condition)
 
     internal fun asJoin(): Join<G> = Join(left, listOf(JoinClause(JoinType.LEFT, right, on)), whereExpr)
 
-    fun groupBy(vararg columns: Column<*, *, *>): Join<G> = asJoin().groupBy(*columns)
-    fun distinct(): Join<G> = asJoin().distinct()
+    public fun groupBy(vararg columns: Column<*, *, *>): Join<G> = asJoin().groupBy(*columns)
+    public fun distinct(): Join<G> = asJoin().distinct()
 
-    infix fun innerJoin(other: Table<G, *>): JoinStep<G> = asJoin().innerJoin(other)
-    infix fun leftJoin(other: Table<G, *>): JoinStep<G> = asJoin().leftJoin(other)
+    public infix fun innerJoin(other: Table<G, *>): JoinStep<G> = asJoin().innerJoin(other)
+    public infix fun leftJoin(other: Table<G, *>): JoinStep<G> = asJoin().leftJoin(other)
 }
 
 /** A two-table join awaiting its ON condition, keeping both entity types. */
-class JoinPairStep<G : Catalog, A : Entity, B : Entity> internal constructor(
+public class JoinPairStep<G : Catalog, A : Entity, B : Entity> internal constructor(
     private val left: Table<G, A>,
     private val right: Table<G, B>,
     private val type: JoinType,
 ) {
-    infix fun on(condition: Expression): JoinPair<G, A, B> = JoinPair(left, right, type, condition, null)
+    public infix fun on(condition: Expression): JoinPair<G, A, B> = JoinPair(left, right, type, condition, null)
 }
 
 /** A two-table LEFT join awaiting its ON condition, keeping both entity types. */
-class LeftJoinPairStep<G : Catalog, A : Entity, B : Entity> internal constructor(
+public class LeftJoinPairStep<G : Catalog, A : Entity, B : Entity> internal constructor(
     private val left: Table<G, A>,
     private val right: Table<G, B>,
 ) {
-    infix fun on(condition: Expression): LeftJoinPair<G, A, B> = LeftJoinPair(left, right, condition, null)
+    public infix fun on(condition: Expression): LeftJoinPair<G, A, B> = LeftJoinPair(left, right, condition, null)
 }
 
-infix fun <G : Catalog, A : Entity, B : Entity> Table<G, A>.innerJoin(other: Table<G, B>): JoinPairStep<G, A, B> =
+public infix fun <G : Catalog, A : Entity, B : Entity> Table<G, A>.innerJoin(other: Table<G, B>): JoinPairStep<G, A, B> =
     JoinPairStep(this, other, JoinType.INNER)
 
-infix fun <G : Catalog, A : Entity, B : Entity> Table<G, A>.leftJoin(other: Table<G, B>): LeftJoinPairStep<G, A, B> =
+public infix fun <G : Catalog, A : Entity, B : Entity> Table<G, A>.leftJoin(other: Table<G, B>): LeftJoinPairStep<G, A, B> =
     LeftJoinPairStep(this, other)
 
 /**
  * One row of a query result. Read fields by the [Selectable] you selected:
  * `row[Users.name]` / `row[total]` (throws if NULL/absent) or `row.getOrNull(...)`.
  */
-class ResultRow internal constructor(private val values: Map<Any, Any?>) {
-    operator fun <Z> get(field: Selectable<Z>): Z {
+public class ResultRow internal constructor(private val values: Map<Any, Any?>) {
+    public operator fun <Z> get(field: Selectable<Z>): Z {
         val key = fieldKey(field)
         if (key !in values) {
             error("Field '$key' was not selected in this projection — add it to select(...), or use getOrNull.")
@@ -165,7 +165,7 @@ class ResultRow internal constructor(private val values: Map<Any, Any?>) {
             ?: error("Selected field '$key' is NULL; use getOrNull for nullable fields.")
     }
 
-    fun <Z> getOrNull(field: Selectable<Z>): Z? {
+    public fun <Z> getOrNull(field: Selectable<Z>): Z? {
         @Suppress("UNCHECKED_CAST")
         return values[fieldKey(field)] as Z?
     }
@@ -187,7 +187,7 @@ class ResultRow internal constructor(private val values: Map<Any, Any?>) {
  * NULL); detect the unmatched case yourself, e.g. `row.getOrNull(Right.id) == null`. The
  * two-table `find()` does this for you and returns `Pair<A, B?>`.
  */
-fun <T : Entity> ResultRow.entity(table: Table<*, T>): T = table.hydrateFrom(this)
+public fun <T : Entity> ResultRow.entity(table: Table<*, T>): T = table.hydrateFrom(this)
 
 // Identifies a selected field by its structural key, so a row reads back regardless of which
 // instance is used — both a Column's property delegate and an aggregate factory yield a fresh

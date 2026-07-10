@@ -1,0 +1,13 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-ktor-di>
+final suspend inline fun <#A: reified io.github.kormium/Catalog, #B: kotlin/Any?> (io.ktor.server.application/ApplicationCall).io.github.kormium.ktor.di/autocommit(#A, noinline kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium.ktor.di/autocommit|autocommit@io.ktor.server.application.ApplicationCall(0:0;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final suspend inline fun <#A: reified io.github.kormium/Catalog, #B: kotlin/Any?> (io.ktor.server.application/ApplicationCall).io.github.kormium.ktor.di/autocommit(noinline kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium.ktor.di/autocommit|autocommit@io.ktor.server.application.ApplicationCall(kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final suspend inline fun <#A: reified io.github.kormium/Catalog, #B: kotlin/Any?> (io.ktor.server.application/ApplicationCall).io.github.kormium.ktor.di/transaction(#A, noinline kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium.ktor.di/transaction|transaction@io.ktor.server.application.ApplicationCall(0:0;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final suspend inline fun <#A: reified io.github.kormium/Catalog, #B: kotlin/Any?> (io.ktor.server.application/ApplicationCall).io.github.kormium.ktor.di/transaction(noinline kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium.ktor.di/transaction|transaction@io.ktor.server.application.ApplicationCall(kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final suspend inline fun <#A: reified io.github.kormium/Catalog> (io.ktor.server.application/ApplicationCall).io.github.kormium.ktor.di/kormium(): io.github.kormium.ktor/KormiumHandle<#A> // io.github.kormium.ktor.di/kormium|kormium@io.ktor.server.application.ApplicationCall(){0§<io.github.kormium.Catalog>}[0]

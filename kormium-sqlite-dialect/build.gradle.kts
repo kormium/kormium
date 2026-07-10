@@ -13,6 +13,8 @@ repositories {
 // driver (and its `expect createSqliteDatabase`) cannot go. Both the platform driver
 // (kormium-sqlite) and any web engine (wa-sqlite, node:sqlite) reuse this one copy.
 kotlin {
+    explicitApi()
+
     jvmToolchain(21)
 
     jvm()

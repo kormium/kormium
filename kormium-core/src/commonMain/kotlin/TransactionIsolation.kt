@@ -19,7 +19,7 @@ package io.github.kormium
  * [sql] is the standard SQL spelling used by the SQL-driven native backends; the JDBC and
  * r2dbc backends translate the enum through their driver APIs instead.
  */
-enum class TransactionIsolation(val sql: String) {
+public enum class TransactionIsolation(public val sql: String) {
     ReadUncommitted("READ UNCOMMITTED"),
     ReadCommitted("READ COMMITTED"),
     RepeatableRead("REPEATABLE READ"),
