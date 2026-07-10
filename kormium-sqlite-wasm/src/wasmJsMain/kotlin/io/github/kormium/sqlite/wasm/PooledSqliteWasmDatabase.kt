@@ -8,14 +8,21 @@ import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
 import io.github.kormium.WriteListeners
 import io.github.kormium.database.SuspendDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
- * A SQLite [SuspendDatabase] backed by a dedicated writer [WorkerConnection] plus a pool of
+ * A SQLite [SuspendDatabase] backed by a single serialized writer [WorkerConnection] plus a pool of
  * reader [WorkerConnection]s, all against the same OPFS-backed file via the `opfs-wl` VFS
- * (`kormium/sqlite-wasm-kt`) — real multi-connection concurrent reads, unlike
- * [SqliteWasmDatabase]'s single Mutex-guarded connection.
+ * (`kormium/sqlite-wasm-kt`). Reads run lock-free across the reader Workers (the concurrency this
+ * engine exists for); writes are serialized on the one writer connection by [writerLock], the same
+ * whole-block guarantee [SqliteWasmDatabase] gives with its `Mutex`.
  *
  * Routing: only an explicit read-only **transaction** (`suspendTransaction(readOnly = true) { }`,
  * i.e. `readOnly == true` here) goes to the reader pool. Everything else — including plain
@@ -24,6 +31,8 @@ import kotlinx.coroutines.withContext
  * "the cheap path for reads / single statements"); routing all of it to readers would risk sending
  * an autocommit write to a connection this pool can't guarantee is writable. Wrap reads you want
  * pooled in `suspendTransaction(readOnly = true) { }`, not `suspendAutocommit { }`.
+ *
+ * To reopen the same `opfsPath` afterwards, prefer [closeAndAwait] over [close] — see its doc.
  */
 public class PooledSqliteWasmDatabase internal constructor(
     private val writer: WorkerConnection,
@@ -34,10 +43,19 @@ public class PooledSqliteWasmDatabase internal constructor(
     override val writeListeners: WriteListeners = WriteListeners()
     override val dialect: SqliteDialect = SqliteDialect
 
-    private val lifecycle = DatabaseLifecycle {
-        writer.terminate()
-        readers.forEach { it.terminate() }
-    }
+    private val allConnections = listOf(writer) + readers
+
+    // Serializes every block that runs on the single writer connection. Readers are NOT locked —
+    // concurrency across reader Workers is the whole point. Without this, two concurrent write
+    // blocks interleave their BEGIN/COMMIT on one connection and the second BEGIN fails ("cannot
+    // start a transaction within a transaction"), or their statements merge into one transaction.
+    private val writerLock = Mutex()
+
+    // The lifecycle flag is decoupled from connection teardown so that both the synchronous [close]
+    // (fire-and-forget) and the suspending [closeAndAwait] (awaited) can drive teardown exactly once.
+    // wasmJs is single-threaded, so a plain flag is a safe once-guard (no preemption check→set).
+    private val lifecycle = DatabaseLifecycle { }
+    private var teardownStarted = false
     private var nextReader = 0
 
     override val isClosed: Boolean get() = lifecycle.isClosed
@@ -50,17 +68,48 @@ public class PooledSqliteWasmDatabase internal constructor(
     ): R {
         lifecycle.checkOpen()
         val connection = if (readOnly) pickReader() else writer
+        // Any block on the writer connection takes the lock — including a readOnly block that fell
+        // back to the writer because readers is empty (readerPoolSize = 0), which must not interleave
+        // with a concurrent write on that same connection. True reader connections stay lock-free.
+        return if (connection === writer) {
+            writerLock.withLock { runBlock(connection, transactional, readOnly, block) }
+        } else {
+            runBlock(connection, transactional, readOnly, block)
+        }
+    }
+
+    private suspend fun <R> runBlock(
+        connection: WorkerConnection,
+        transactional: Boolean,
+        readOnly: Boolean,
+        block: suspend (SuspendSqlExecutor) -> R,
+    ): R {
         val executor = WorkerSqlExecutor(connection, SqliteDialect, StandardTypeMapper)
-        if (!transactional) return block(executor)
+        // A readOnly block that fell back to the writer (readerPoolSize = 0) has no query_only reader
+        // to protect it, so guard it read-only for the block's duration — the writer has query_only
+        // OFF, and this restores the per-block toggle the reader connections get once at open.
+        if (readOnly && connection === writer) {
+            executor.execute("PRAGMA query_only=ON")
+            return try {
+                block(executor)
+            } finally {
+                withContext(NonCancellable) { runCatching { executor.execute("PRAGMA query_only=OFF") } }
+            }
+        }
+        // Read-only blocks skip BEGIN/COMMIT entirely: each statement is one postMessage round
+        // trip to the Worker, so the wrap costs two extra round trips per block — and each round
+        // trip's reply waits in the MAIN thread's event queue, which under active UI rendering
+        // (the exact dashboard scenario the pool exists for) can dwarf the query itself. An
+        // autocommit SELECT sees a consistent snapshot on its own; the trade-off is that MULTIPLE
+        // statements in one readOnly block get per-statement snapshots, not one shared snapshot
+        // (a writer's commit may become visible between them).
+        if (!transactional || readOnly) return block(executor)
         executor.execute("BEGIN")
-        if (readOnly) executor.execute("PRAGMA query_only=ON")
         return try {
             block(executor).also { executor.execute("COMMIT") }
         } catch (e: Throwable) {
             withContext(NonCancellable) { runCatching { executor.execute("ROLLBACK") } }
             throw e
-        } finally {
-            if (readOnly) runCatching { executor.execute("PRAGMA query_only=OFF") }
         }
     }
 
@@ -73,7 +122,41 @@ public class PooledSqliteWasmDatabase internal constructor(
         return connection
     }
 
-    override fun close(): Unit = lifecycle.close()
+    /**
+     * Closes without awaiting: [AutoCloseable]'s contract is synchronous, so the graceful,
+     * handle-releasing close of each Worker (see [WorkerConnection.close]) is kicked off on a
+     * detached scope and not awaited. Prefer [closeAndAwait] when you will reopen the same
+     * `opfsPath` — this path does not guarantee the OPFS access handles are released before it
+     * returns (or at all, if the enclosing scope dies first).
+     */
+    override fun close() {
+        lifecycle.close()
+        if (!teardownStarted) {
+            teardownStarted = true
+            CoroutineScope(Job()).launch { closeAllConnections() }
+        }
+    }
+
+    /**
+     * Closes and **awaits** graceful release of every connection's OPFS access handle before
+     * returning. An abrupt `terminate()` can leave the handle held past the Worker's death, so the
+     * next `createPooledSqliteWasmDatabase` on the same `opfsPath` would fail to acquire its lock
+     * (`xLock` / `GetSyncHandleError`); awaiting the graceful close here prevents that. Idempotent,
+     * and interchangeable with [close] for the flag/`isClosed` — but only this variant is safe to
+     * sequence a reopen after. (If [close] already started the detached teardown, this returns
+     * without a second teardown; call [closeAndAwait] rather than [close] when a reopen will follow.)
+     */
+    public suspend fun closeAndAwait() {
+        lifecycle.close()
+        if (!teardownStarted) {
+            teardownStarted = true
+            closeAllConnections()
+        }
+    }
+
+    private suspend fun closeAllConnections(): Unit = coroutineScope {
+        allConnections.forEach { launch { it.close() } }
+    }
 }
 
 /**
@@ -92,7 +175,25 @@ public suspend fun createPooledSqliteWasmDatabase(
     readerPoolSize: Int = 4,
     config: KormiumConfig = KormiumConfig(),
 ): PooledSqliteWasmDatabase {
-    val writer = WorkerConnection.open(opfsPath)
-    val readers = List(readerPoolSize) { WorkerConnection.open(opfsPath) }
+    // Analytical page cache: SQLite's default (~2 MB) forces re-reading hot index pages through
+    // OPFS on every aggregate over a large table; 32 MB keeps a 1M-row table's per-dimension
+    // covering index fully cached, making repeat aggregates near-memory-speed. temp_store=MEMORY
+    // keeps GROUP BY/ORDER BY scratch B-trees off the (comparatively slow) VFS as well.
+    suspend fun WorkerConnection.applyPerfPragmas() {
+        execute("PRAGMA cache_size=-32768", emptyList())
+        execute("PRAGMA temp_store=MEMORY", emptyList())
+    }
+
+    val writer = WorkerConnection.open(opfsPath).also { it.applyPerfPragmas() }
+    // query_only is set ONCE here, for the reader's whole lifetime, rather than toggled on/off
+    // around every read-only transaction: a reader is never picked for a write (see pickReader),
+    // so there's no round trip to save by deferring it, and it also guards a suspendTransaction(
+    // readOnly = true, transactional = false) call, which used to skip the old per-transaction guard.
+    val readers = List(readerPoolSize) {
+        WorkerConnection.open(opfsPath).also {
+            it.execute("PRAGMA query_only=ON", emptyList())
+            it.applyPerfPragmas()
+        }
+    }
     return PooledSqliteWasmDatabase(writer, readers, config)
 }

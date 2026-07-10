@@ -16,8 +16,8 @@ internal external interface PoolWorker : JsAny {
     var onerror: ((PoolWorkerErrorEvent) -> Unit)?
     fun postMessage(message: JsAny)
 
-    /** Ends the Worker immediately — used for teardown instead of a graceful RPC round trip
-     *  (matches how the single-connection engine also fire-and-forgets its close). */
+    /** Ends the Worker immediately. Called by [WorkerConnection.close] only after a graceful
+     *  `close` RPC round trip has released the connection's OPFS access handle (or timed out). */
     fun terminate()
 }
 
