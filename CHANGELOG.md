@@ -51,6 +51,22 @@ All notable changes to Kormium are documented here. The format is based on
 ### Added
 - **`kormium-decimal` module** — `Column.decimal()` / `DecimalColumnType` for exact decimal
   columns, published for the full target matrix and pinned by the BOM.
+- **Browser SQLite now ships three engines** (see
+  [ADR 0010](docs/adr/0010-browser-sqlite-three-engines.md) and
+  [Backends → Browser SQLite](docs/backends.md#browser-sqlite-kormium-sqlite-wasm)); the original
+  `createSqliteWasmDatabase` (main thread, `:memory:`/IndexedDB) is untouched:
+  - `createWorkerSqliteWasmDatabase()` — **the recommended default**: one in-memory connection in
+    a dedicated Worker, so SQLite runs off the main thread (UI keeps rendering during a query);
+    measured ~35% faster per query than the main-thread engine at 1M rows. No COOP/COEP needed.
+  - `createPooledSqliteWasmDatabase(opfsPath, readerPoolSize)` — **experimental**: persistent
+    OPFS storage with one writer + N concurrent readers (`opfs-wl` VFS); reads route via
+    `suspendTransaction(readOnly = true) { }`, and `closeAndAwait()` releases OPFS handles before
+    a reopen. Requires COOP/COEP response headers and suits *infrequent, heavy* queries —
+    for bursts of fast indexed queries a single connection measured both faster and more reliable.
+  - Both new engines are built on the published
+    [`kormium/sqlite-wasm-kt`](https://github.com/kormium/sqlite-wasm-kt) bindings
+    (`io.github.kormium:sqlite-wasm-kt` + npm `@kormium/sqlite-wasm-worker`) over the official
+    `@sqlite.org/sqlite-wasm`.
 
 ## [0.9.1] — Publish the 0.9.0 web/Node modules
 
