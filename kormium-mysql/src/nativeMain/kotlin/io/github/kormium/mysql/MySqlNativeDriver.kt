@@ -1,6 +1,7 @@
 package io.github.kormium.mysql
 
 import io.github.kormium.ConnectionPool
+import io.github.kormium.PoolExhaustedException
 import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.KormiumConfig
 import io.github.kormium.MySqlDialect
@@ -35,6 +36,8 @@ import kotlinx.cinterop.value
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration
 import mysql.MYSQL
 import mysql.MYSQL_BIND
 import mysql.MYSQL_RES
@@ -88,12 +91,22 @@ internal class MySqlNativeDriver(
     private val user: String,
     private val password: String,
     private val poolSize: Int,
+    private val acquireTimeout: Duration,
     override val config: KormiumConfig,
 ) : MySqlDriver, SuspendDatabase<Nothing> {
 
     init {
         require(poolSize >= 1) { "poolSize must be >= 1, was $poolSize" }
+        require(acquireTimeout.isPositive()) { "acquireTimeout must be positive, was $acquireTimeout" }
     }
+
+    // A bounded borrow: a saturated pool fails with a clear, catchable error instead of
+    // hanging the caller forever (poolSize connections all pinned by long transactions).
+    private fun poolExhausted(): Nothing = throw PoolExhaustedException(
+        "connection pool exhausted: no connection became free within $acquireTimeout " +
+            "(poolSize = $poolSize, all connections busy). Increase poolSize or shorten " +
+            "the transactions/pinned blocks holding connections.",
+    )
 
     override val writeListeners: WriteListeners = WriteListeners()
     override val dialect = MySqlDialect
@@ -139,7 +152,7 @@ internal class MySqlNativeDriver(
     private val connectionPool = object : ConnectionPool {
         override fun acquire(): PinnedConnection {
             val conn = pool.tryReceive().getOrNull() ?: try {
-                runBlocking { pool.receive() }
+                runBlocking { withTimeoutOrNull(acquireTimeout) { pool.receive() } } ?: poolExhausted()
             } catch (_: ClosedReceiveChannelException) {
                 throw ConnectionClosedException()
             }
@@ -148,7 +161,7 @@ internal class MySqlNativeDriver(
 
         override suspend fun acquireSuspending(): PinnedConnection {
             val conn = pool.tryReceive().getOrNull() ?: try {
-                pool.receive()
+                withTimeoutOrNull(acquireTimeout) { pool.receive() } ?: poolExhausted()
             } catch (_: ClosedReceiveChannelException) {
                 throw ConnectionClosedException()
             }

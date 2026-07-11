@@ -1,5 +1,8 @@
 package io.github.kormium
 
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
 /**
  * Opens a SQLite database and returns a [SqliteDriver].
  *
@@ -13,10 +16,16 @@ package io.github.kormium
  * @param poolSize how many connections to keep. SQLite allows a single writer, so the
  *   default is 1 (everything serialised, no `database is locked`); raise it for
  *   concurrent reads (WAL permits many readers alongside one writer).
+ * @param acquireTimeout how long a caller may wait for a pooled connection when all
+ *   [poolSize] connections are busy before failing with [PoolExhaustedException] (on the
+ *   JVM this is HikariCP's `connectionTimeout`, which has a 250 ms floor). A bounded wait
+ *   turns a saturated pool — e.g. `poolSize = 1` and a long transaction — into a clear,
+ *   catchable error instead of an indefinite hang.
  */
 public expect fun createSqliteDatabase(
     path: String = ":memory:",
     poolSize: Int = 1,
+    acquireTimeout: Duration = 30.seconds,
     config: KormiumConfig = KormiumConfig(),
 ): SqliteDriver
 
@@ -27,5 +36,6 @@ public expect fun createSqliteDatabase(
 public fun createSqliteDatabase(
     path: String = ":memory:",
     poolSize: Int = 1,
+    acquireTimeout: Duration = 30.seconds,
     block: KormiumBuilder.() -> Unit,
-): SqliteDriver = KormiumBuilder().apply(block).finish { createSqliteDatabase(path, poolSize, it) }
+): SqliteDriver = KormiumBuilder().apply(block).finish { createSqliteDatabase(path, poolSize, acquireTimeout, it) }

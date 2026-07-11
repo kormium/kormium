@@ -615,6 +615,10 @@ public final class io/github/kormium/PinnedConnection$DefaultImpls {
 	public static synthetic fun begin$default (Lio/github/kormium/PinnedConnection;Lio/github/kormium/TransactionIsolation;ZILjava/lang/Object;)V
 }
 
+public final class io/github/kormium/PoolExhaustedException : io/github/kormium/KormiumException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
 public final class io/github/kormium/Query {
 	public synthetic fun <init> (Lio/github/kormium/Expression;IILjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (Lio/github/kormium/Expression;IILjava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
