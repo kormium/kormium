@@ -68,6 +68,15 @@ All notable changes to Kormium are documented here. The format is based on
     (`io.github.kormium:sqlite-wasm-kt` + npm `@kormium/sqlite-wasm-worker`) over the official
     `@sqlite.org/sqlite-wasm`.
 
+### Fixed
+- **The BOM now pins every published artifact** (#8). Ten modules had drifted out of
+  `kormium-bom` — `kormium-r2dbc`, `kormium-observe`, the three dialect modules, `kormium-wasm-driver`
+  and the four web/Node engines — so the documented BOM setup still required explicit versions for
+  them. The BOM's constraints are now derived from the same `publishableModules` set that decides
+  what gets published (the exact drift class 0.9.1 fixed for publishing), so they cannot diverge
+  again. The per-artifact POM `name`/`description` were also refreshed (they still described
+  Kormium as "Postgres + SQLite, JVM + Native").
+
 ## [0.9.1] — Publish the 0.9.0 web/Node modules
 
 ### Fixed
