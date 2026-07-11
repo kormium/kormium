@@ -1,6 +1,6 @@
 public class io/github/kormium/jdbc/JdbcDatabase : io/github/kormium/database/Database, io/github/kormium/database/SuspendDatabase {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ljava/lang/String;Lio/github/kormium/KormiumConfig;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ljava/lang/String;Lio/github/kormium/KormiumConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ljava/lang/String;Lio/github/kormium/KormiumConfig;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Ljava/lang/String;Lio/github/kormium/KormiumConfig;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
 	public fun getConfig ()Lio/github/kormium/KormiumConfig;
 	public fun getDialect ()Lio/github/kormium/Dialect;

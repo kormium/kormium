@@ -17,5 +17,6 @@ public actual fun createDatabase(
     user: String,
     password: String,
     poolSize: Int,
+    acquireTimeout: kotlin.time.Duration,
     config: KormiumConfig,
-): MySqlDriver = MySqlNativeDriver(host, port, database, user, password, poolSize, config)
+): MySqlDriver = MySqlNativeDriver(host, port, database, user, password, poolSize, acquireTimeout, config)

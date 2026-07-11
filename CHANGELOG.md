@@ -67,6 +67,15 @@ All notable changes to Kormium are documented here. The format is based on
     [`kormium/sqlite-wasm-kt`](https://github.com/kormium/sqlite-wasm-kt) bindings
     (`io.github.kormium:sqlite-wasm-kt` + npm `@kormium/sqlite-wasm-worker`) over the official
     `@sqlite.org/sqlite-wasm`.
+- **Bounded pool checkout: `acquireTimeout` + `PoolExhaustedException`** (#36). When all `poolSize`
+  connections are busy, an acquire now waits at most `acquireTimeout` (new
+  `createDatabase`/`createSqliteDatabase` parameter, default 30 s) and fails with the new
+  `PoolExhaustedException` naming the pool size and what to do — instead of blocking forever, which
+  is what the native/Android Channel pools did (the classic deadlock: SQLite's `poolSize = 1`
+  default plus a nested `transaction { autocommit { } }`). On the JVM the parameter maps to
+  HikariCP's `connectionTimeout` and its checkout timeout is translated to the same exception, so
+  exhaustion is one catchable type on every JVM/native/Android backend — see
+  [Backends → Pool exhaustion](docs/backends.md#pool-exhaustion-acquiretimeout).
 
 ### Fixed
 - **The BOM now pins every published artifact** (#8). Ten modules had drifted out of

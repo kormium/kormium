@@ -6,6 +6,7 @@ import io.github.kormium.PostgresDialect
 import io.github.kormium.PostgresDriver
 import io.github.kormium.PostgresJvmTypeMapper
 import io.github.kormium.jdbc.JdbcDatabase
+import kotlin.time.Duration
 
 /**
  * A Postgres [PostgresDriver] backed by the shared [JdbcDatabase] (HikariCP pool).
@@ -27,12 +28,14 @@ private class PostgresJdbcDriver(
     user: String,
     password: String,
     poolSize: Int,
+    acquireTimeout: Duration,
     config: KormiumConfig,
 ) : JdbcDatabase(
     jdbcUrl = "jdbc:postgresql://$host:$port/$database?prepareThreshold=1",
     username = user,
     password = password,
     poolSize = poolSize,
+    acquireTimeout = acquireTimeout,
     dialect = PostgresDialect,
     typeMapper = PostgresJvmTypeMapper,
     wrap = ::PgResultSetWrapper,
@@ -46,5 +49,6 @@ public actual fun createDatabase(
     user: String,
     password: String,
     poolSize: Int,
+    acquireTimeout: Duration,
     config: KormiumConfig,
-): PostgresDriver = PostgresJdbcDriver(host, port, database, user, password, poolSize, config)
+): PostgresDriver = PostgresJdbcDriver(host, port, database, user, password, poolSize, acquireTimeout, config)

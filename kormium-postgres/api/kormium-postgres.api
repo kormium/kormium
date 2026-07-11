@@ -16,12 +16,12 @@ public final class io/github/kormium/PostgresJvmTypeMapper : io/github/kormium/T
 }
 
 public final class io/github/kormium/database/CreateDatabaseKt {
-	public static final fun createDatabase (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/functions/Function1;)Lio/github/kormium/PostgresDriver;
-	public static synthetic fun createDatabase$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/PostgresDriver;
+	public static final fun createDatabase-GajXJrc (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLkotlin/jvm/functions/Function1;)Lio/github/kormium/PostgresDriver;
+	public static synthetic fun createDatabase-GajXJrc$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/PostgresDriver;
 }
 
 public final class io/github/kormium/database/Database_jvmKt {
-	public static final fun createDatabase (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/KormiumConfig;)Lio/github/kormium/PostgresDriver;
-	public static synthetic fun createDatabase$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILio/github/kormium/KormiumConfig;ILjava/lang/Object;)Lio/github/kormium/PostgresDriver;
+	public static final fun createDatabase-GajXJrc (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLio/github/kormium/KormiumConfig;)Lio/github/kormium/PostgresDriver;
+	public static synthetic fun createDatabase-GajXJrc$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLio/github/kormium/KormiumConfig;ILjava/lang/Object;)Lio/github/kormium/PostgresDriver;
 }
 

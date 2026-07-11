@@ -49,6 +49,15 @@ public class ConcurrencyConflictException(message: String, sqlState: String?, ca
     QueryException(message, sqlState, cause)
 
 /**
+ * The connection pool stayed exhausted for the whole acquire timeout: every pooled connection was
+ * busy and none became free in time. This is a capacity/latency signal, not a SQL error — the
+ * usual causes are a `poolSize` too small for the concurrency, or long-running
+ * transactions/pinned blocks holding connections. Distinct from [QueryException] so callers can
+ * respond with load shedding / retry / capacity alerts without string-matching.
+ */
+public class PoolExhaustedException(message: String) : KormiumException(message)
+
+/**
  * A database row could not be mapped into an entity. The common case: a column the entity
  * declares non-null came back as SQL `NULL` (a schema mismatch or a bad row). The message names
  * the table and column so the offending row/schema is easy to find.

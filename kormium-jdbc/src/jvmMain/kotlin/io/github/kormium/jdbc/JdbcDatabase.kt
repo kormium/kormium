@@ -7,6 +7,7 @@ import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.PinnedConnection
+import io.github.kormium.PoolExhaustedException
 import io.github.kormium.ReadOnlyToggle
 import io.github.kormium.SqlExecutor
 import io.github.kormium.SqlParameterSource
@@ -23,6 +24,9 @@ import io.github.kormium.sqlException
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
+import java.sql.SQLTransientConnectionException
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /** Wraps a driver [java.sql.ResultSet] in core's backend-agnostic [ResultSet]. */
 public typealias ResultSetWrapper = (java.sql.ResultSet) -> ResultSet
@@ -52,6 +56,7 @@ public open class JdbcDatabase(
     username: String? = null,
     password: String? = null,
     poolSize: Int,
+    acquireTimeout: Duration = 30.seconds,
     override val dialect: Dialect,
     private val typeMapper: TypeMapper,
     private val wrap: ResultSetWrapper,
@@ -63,19 +68,38 @@ public open class JdbcDatabase(
     // Supports change observation (kormium-observe): writes through this database notify here.
     override val writeListeners: WriteListeners = WriteListeners()
 
+    private val poolSize = poolSize
+    private val acquireTimeout = acquireTimeout
+
     private val ds: HikariDataSource = HikariDataSource(HikariConfig().apply {
         this.jdbcUrl = jdbcUrl
         if (username != null) this.username = username
         if (password != null) this.password = password
         this.maximumPoolSize = poolSize
+        // HikariCP enforces a 250 ms floor; anything below is silently reset to the 30 s default,
+        // so clamp to the floor instead of surprising the caller with a much larger value.
+        this.connectionTimeout = acquireTimeout.inWholeMilliseconds.coerceAtLeast(250)
         if (connectionInitSql != null) this.connectionInitSql = connectionInitSql
     })
 
     // One pool, two entry points: usePinned (blocking) and useConnection (suspend) both
     // run on it. acquireSuspending uses the default (offload the blocking checkout).
+    // Hikari reports checkout timeout as SQLTransientConnectionException; surface it as the
+    // portable PoolExhaustedException all Kormium pools throw.
     private val pool = object : ConnectionPool {
-        override fun acquire(): PinnedConnection =
-            JdbcPinnedConnection(ds.connection, dialect, typeMapper, wrap, translate)
+        override fun acquire(): PinnedConnection {
+            val connection = try {
+                ds.connection
+            } catch (e: SQLTransientConnectionException) {
+                throw PoolExhaustedException(
+                    "connection pool exhausted: no connection became free within " +
+                        "${this@JdbcDatabase.acquireTimeout} (poolSize = ${this@JdbcDatabase.poolSize}, " +
+                        "all connections busy). Increase poolSize or shorten the transactions " +
+                        "holding connections. [${e.message}]",
+                )
+            }
+            return JdbcPinnedConnection(connection, dialect, typeMapper, wrap, translate)
+        }
     }
 
     private val lifecycle = DatabaseLifecycle { ds.close() }

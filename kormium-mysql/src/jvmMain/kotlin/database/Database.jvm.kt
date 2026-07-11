@@ -7,6 +7,7 @@ import io.github.kormium.MySqlExceptionTranslator
 import io.github.kormium.MySqlJvmTypeMapper
 import io.github.kormium.MySqlResultSetWrapper
 import io.github.kormium.jdbc.JdbcDatabase
+import kotlin.time.Duration
 
 /**
  * A MySQL/MariaDB [MySqlDriver] backed by the shared [JdbcDatabase] (HikariCP pool over
@@ -29,6 +30,7 @@ private class MySqlJdbcDriver(
     user: String,
     password: String,
     poolSize: Int,
+    acquireTimeout: Duration,
     config: KormiumConfig,
 ) : JdbcDatabase(
     jdbcUrl = "jdbc:mysql://$host:$port/$database" +
@@ -37,6 +39,7 @@ private class MySqlJdbcDriver(
     username = user,
     password = password,
     poolSize = poolSize,
+    acquireTimeout = acquireTimeout,
     dialect = MySqlDialect,
     typeMapper = MySqlJvmTypeMapper,
     wrap = ::MySqlResultSetWrapper,
@@ -51,5 +54,6 @@ public actual fun createDatabase(
     user: String,
     password: String,
     poolSize: Int,
+    acquireTimeout: Duration,
     config: KormiumConfig,
-): MySqlDriver = MySqlJdbcDriver(host, port, database, user, password, poolSize, config)
+): MySqlDriver = MySqlJdbcDriver(host, port, database, user, password, poolSize, acquireTimeout, config)

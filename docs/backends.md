@@ -248,6 +248,28 @@ the stable message text. MySQL reports every constraint violation under SQLSTATE
 mapper keys off the vendor error number instead. Foreign-key enforcement on SQLite requires
 `PRAGMA foreign_keys=ON`, which Kormium sets on every connection.
 
+### Pool exhaustion (`acquireTimeout`)
+
+Every fixed-size pool answers the same question the same way: **what happens when all `poolSize`
+connections are busy?** The caller waits up to `acquireTimeout` (a `createDatabase` /
+`createSqliteDatabase` parameter, default **30 s**) and then fails with
+**`PoolExhaustedException`** — a `KormiumException` distinct from `QueryException`, so load
+shedding / retry / capacity alerting can catch exhaustion without string-matching SQL errors. The
+wait is never unbounded; before 0.10.0 a saturated native pool blocked forever.
+
+- **JVM (PostgreSQL / MySQL / SQLite)** — HikariCP's `connectionTimeout` (which has a 250 ms
+  floor); its checkout timeout is translated to `PoolExhaustedException`.
+- **Native (PostgreSQL / MySQL / SQLite) and Android SQLite** — the Channel-based pool bounds both
+  the blocking (`usePinned`) and suspend (`useConnection`) borrow, including the async libpq
+  reactor path. Cancellation still propagates as cancellation; only an elapsed timeout raises
+  `PoolExhaustedException`.
+- The classic trap is `poolSize = 1` (SQLite's default) plus a **nested** borrow — a
+  `transaction { }` that calls `autocommit { }` on the same database can never succeed and now
+  fails in `acquireTimeout` with a message naming the pool size instead of deadlocking.
+- **r2dbc and the Node/browser engines** keep their drivers' own pooling semantics (r2dbc-pool,
+  node-postgres/mysql2, single-connection wasm engines); `acquireTimeout` applies to the
+  JVM/native/Android pools above.
+
 ## Database lifecycle
 
 Every `Database` / `SuspendDatabase` follows one lifecycle contract, the same across JDBC, libpq,

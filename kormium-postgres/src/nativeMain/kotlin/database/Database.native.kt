@@ -9,5 +9,7 @@ public actual fun createDatabase(
     user: String,
     password: String,
     poolSize: Int,
+    acquireTimeout: kotlin.time.Duration,
     config: KormiumConfig,
-): io.github.kormium.PostgresDriver = io.github.kormium.postgres.FPostgresDriver(host, port, database, user, password, poolSize, config)
+): io.github.kormium.PostgresDriver =
+    io.github.kormium.postgres.FPostgresDriver(host, port, database, user, password, poolSize, acquireTimeout, config)

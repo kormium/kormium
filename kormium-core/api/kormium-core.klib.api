@@ -506,6 +506,10 @@ final class io.github.kormium/ParamBuilder { // io.github.kormium/ParamBuilder|n
     final object Companion // io.github.kormium/ParamBuilder.Companion|null[0]
 }
 
+final class io.github.kormium/PoolExhaustedException : io.github.kormium/KormiumException { // io.github.kormium/PoolExhaustedException|null[0]
+    constructor <init>(kotlin/String) // io.github.kormium/PoolExhaustedException.<init>|<init>(kotlin.String){}[0]
+}
+
 final class io.github.kormium/Query { // io.github.kormium/Query|null[0]
     constructor <init>(io.github.kormium/Expression? = ..., kotlin/UInt = ..., kotlin/UInt = ..., kotlin.collections/Map<io.github.kormium/Selectable<*>, io.github.kormium/AscDescOrder>? = ...) // io.github.kormium/Query.<init>|<init>(io.github.kormium.Expression?;kotlin.UInt;kotlin.UInt;kotlin.collections.Map<io.github.kormium.Selectable<*>,io.github.kormium.AscDescOrder>?){}[0]
 

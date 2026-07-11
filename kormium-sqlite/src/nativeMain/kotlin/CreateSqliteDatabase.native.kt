@@ -21,6 +21,8 @@ import kotlinx.cinterop.value
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration
 import csqlite.*
 
 // SQLite's SQLITE_TRANSIENT (a (-1)-cast function pointer) is a macro cinterop can't
@@ -30,15 +32,33 @@ import csqlite.*
 private val SQLITE_TRANSIENT: CPointer<CFunction<(COpaquePointer?) -> Unit>>? = (-1L).toCPointer()
 
 @OptIn(ExperimentalForeignApi::class)
-public actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
-    SqliteNativeDriver(path, poolSize, config)
+public actual fun createSqliteDatabase(
+    path: String,
+    poolSize: Int,
+    acquireTimeout: Duration,
+    config: KormiumConfig,
+): SqliteDriver = SqliteNativeDriver(path, poolSize, acquireTimeout, config)
 
 @OptIn(ExperimentalForeignApi::class)
-private class SqliteNativeDriver(path: String, private val poolSize: Int, override val config: KormiumConfig) : SqliteDriver, SuspendDatabase<Nothing> {
+private class SqliteNativeDriver(
+    path: String,
+    private val poolSize: Int,
+    private val acquireTimeout: Duration,
+    override val config: KormiumConfig,
+) : SqliteDriver, SuspendDatabase<Nothing> {
 
     init {
         require(poolSize >= 1) { "poolSize must be >= 1, was $poolSize" }
+        require(acquireTimeout.isPositive()) { "acquireTimeout must be positive, was $acquireTimeout" }
     }
+
+    // A bounded borrow: a saturated pool fails with a clear, catchable error instead of
+    // hanging the caller forever (poolSize connections all pinned by long transactions).
+    private fun poolExhausted(): Nothing = throw PoolExhaustedException(
+        "connection pool exhausted: no connection became free within $acquireTimeout " +
+            "(poolSize = $poolSize, all connections busy). Increase poolSize or shorten " +
+            "the transactions/pinned blocks holding connections.",
+    )
 
     override val dialect: Dialect = SqliteDialect
     private val typeMapper: TypeMapper = StandardTypeMapper
@@ -72,7 +92,7 @@ private class SqliteNativeDriver(path: String, private val poolSize: Int, overri
     private val connectionPool = object : ConnectionPool {
         override fun acquire(): PinnedConnection {
             val connection = pool.tryReceive().getOrNull() ?: try {
-                runBlocking { pool.receive() }
+                runBlocking { withTimeoutOrNull(acquireTimeout) { pool.receive() } } ?: poolExhausted()
             } catch (_: ClosedReceiveChannelException) {
                 throw QueryException("SQLite connection pool is closed")
             }
@@ -81,7 +101,7 @@ private class SqliteNativeDriver(path: String, private val poolSize: Int, overri
 
         override suspend fun acquireSuspending(): PinnedConnection {
             val connection = pool.tryReceive().getOrNull() ?: try {
-                pool.receive()
+                withTimeoutOrNull(acquireTimeout) { pool.receive() } ?: poolExhausted()
             } catch (_: ClosedReceiveChannelException) {
                 throw QueryException("SQLite connection pool is closed")
             }
