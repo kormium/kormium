@@ -6,6 +6,8 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.0] — pgvector, API lock, three browser SQLite engines, bounded pools
+
 ### Changed (breaking, pre-1.0)
 - **Accidentally-public driver internals are now `internal`.** None of these appeared in
   any documentation or were usable without reaching into implementation packages:
