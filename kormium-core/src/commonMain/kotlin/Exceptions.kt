@@ -1,7 +1,7 @@
 package io.github.kormium
 
 /** Base type for all korm errors. */
-open class KormiumException(message: String, cause: Throwable? = null) : Exception(message, cause)
+public open class KormiumException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /**
  * Thrown when a `usePinned` / `useConnection` (and therefore any `transaction` / `autocommit`)
@@ -10,29 +10,29 @@ open class KormiumException(message: String, cause: Throwable? = null) : Excepti
  * been called. Every backend reports use-after-close as this single type, so callers can catch
  * it uniformly instead of a backend-specific closed-connection error.
  */
-class DatabaseClosedException(message: String = "database is closed") : KormiumException(message)
+public class DatabaseClosedException(message: String = "database is closed") : KormiumException(message)
 
 /**
  * A SQL statement failed on the server. [sqlState] is the 5-character SQLSTATE code when
  * the backend reports one (e.g. "23505"); subtypes cover the common constraint violations.
  */
-open class QueryException(message: String, val sqlState: String? = null, cause: Throwable? = null) :
+public open class QueryException(message: String, public val sqlState: String? = null, cause: Throwable? = null) :
     KormiumException(message, cause)
 
 /** Unique / primary-key constraint violation (SQLSTATE 23505). */
-class UniqueViolationException(message: String, sqlState: String?, cause: Throwable? = null) :
+public class UniqueViolationException(message: String, sqlState: String?, cause: Throwable? = null) :
     QueryException(message, sqlState, cause)
 
 /** Foreign-key constraint violation (SQLSTATE 23503). */
-class ForeignKeyViolationException(message: String, sqlState: String?, cause: Throwable? = null) :
+public class ForeignKeyViolationException(message: String, sqlState: String?, cause: Throwable? = null) :
     QueryException(message, sqlState, cause)
 
 /** NOT NULL constraint violation (SQLSTATE 23502). */
-class NotNullViolationException(message: String, sqlState: String?, cause: Throwable? = null) :
+public class NotNullViolationException(message: String, sqlState: String?, cause: Throwable? = null) :
     QueryException(message, sqlState, cause)
 
 /** CHECK constraint violation (SQLSTATE 23514). */
-class CheckViolationException(message: String, sqlState: String?, cause: Throwable? = null) :
+public class CheckViolationException(message: String, sqlState: String?, cause: Throwable? = null) :
     QueryException(message, sqlState, cause)
 
 /**
@@ -45,18 +45,27 @@ class CheckViolationException(message: String, sqlState: String?, cause: Throwab
  * backoff — is the application's, and the retried block must be idempotent outside the database since
  * it re-runs. See the retry recipe in `AGENTS.md` and [ADR 0007](../../docs/adr/0007-concurrency-conflict-exception.md).
  */
-class ConcurrencyConflictException(message: String, sqlState: String?, cause: Throwable? = null) :
+public class ConcurrencyConflictException(message: String, sqlState: String?, cause: Throwable? = null) :
     QueryException(message, sqlState, cause)
+
+/**
+ * The connection pool stayed exhausted for the whole acquire timeout: every pooled connection was
+ * busy and none became free in time. This is a capacity/latency signal, not a SQL error — the
+ * usual causes are a `poolSize` too small for the concurrency, or long-running
+ * transactions/pinned blocks holding connections. Distinct from [QueryException] so callers can
+ * respond with load shedding / retry / capacity alerts without string-matching.
+ */
+public class PoolExhaustedException(message: String) : KormiumException(message)
 
 /**
  * A database row could not be mapped into an entity. The common case: a column the entity
  * declares non-null came back as SQL `NULL` (a schema mismatch or a bad row). The message names
  * the table and column so the offending row/schema is easy to find.
  */
-class ResultMappingException(message: String, cause: Throwable? = null) : KormiumException(message, cause)
+public class ResultMappingException(message: String, cause: Throwable? = null) : KormiumException(message, cause)
 
 /** Maps a SQLSTATE to the most specific [QueryException] subtype. */
-fun sqlException(message: String, sqlState: String?, cause: Throwable? = null): QueryException = when (sqlState) {
+public fun sqlException(message: String, sqlState: String?, cause: Throwable? = null): QueryException = when (sqlState) {
     "23505" -> UniqueViolationException(message, sqlState, cause)
     "23503" -> ForeignKeyViolationException(message, sqlState, cause)
     "23502" -> NotNullViolationException(message, sqlState, cause)

@@ -18,13 +18,13 @@ import kotlinx.coroutines.withContext
  * independent calls run on independent connections — real concurrency, no Mutex. Suspend-only (a JS
  * event loop can't be blocked).
  */
-class PgDatabase internal constructor(
+public class PgDatabase internal constructor(
     private val pool: Pool,
     override val config: KormiumConfig,
 ) : SuspendDatabase<Nothing> {
 
     override val writeListeners: WriteListeners = WriteListeners()
-    override val dialect = PostgresDialect
+    override val dialect: PostgresDialect = PostgresDialect
 
     private val lifecycle = DatabaseLifecycle { pool.end() }
 
@@ -56,7 +56,7 @@ class PgDatabase internal constructor(
         }
     }
 
-    override fun close() = lifecycle.close()
+    override fun close(): Unit = lifecycle.close()
 }
 
 private val TransactionIsolation.sql: String
@@ -71,7 +71,7 @@ private val TransactionIsolation.sql: String
  * Opens a Postgres database over a node-postgres connection pool of [poolSize] connections. Returns
  * the handle tagged [Nothing], so by covariance it pins to any `SuspendDatabase<MyCatalog>`.
  */
-fun createNodePostgresDatabase(
+public fun createNodePostgresDatabase(
     host: String,
     port: Int = 5432,
     database: String,

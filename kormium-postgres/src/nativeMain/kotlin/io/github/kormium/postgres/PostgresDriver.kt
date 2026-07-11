@@ -18,9 +18,13 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import libpq.*
 import io.github.kormium.ConnectionPool
 import io.github.kormium.DatabaseLifecycle
+import io.github.kormium.PoolExhaustedException
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.PinnedConnection
@@ -50,13 +54,14 @@ private fun pgBeginSql(isolation: TransactionIsolation?, readOnly: Boolean): Str
 }
 
 @OptIn(ExperimentalForeignApi::class)
-fun FPostgresDriver(
+public fun FPostgresDriver(
     host: String,
     port: Int = 5432,
     database: String,
     user: String,
     password: String,
     poolSize: Int = 10,
+    acquireTimeout: Duration = 30.seconds,
     config: KormiumConfig = KormiumConfig(),
 ): PostgresDriver = PostgresDriverImpl(
     host = host,
@@ -65,6 +70,7 @@ fun FPostgresDriver(
     user = user,
     password = password,
     poolSize = poolSize,
+    acquireTimeout = acquireTimeout,
     config = config,
 )
 
@@ -76,12 +82,22 @@ private class PostgresDriverImpl(
     user: String,
     password: String,
     private val poolSize: Int,
+    private val acquireTimeout: Duration,
     override val config: KormiumConfig,
 ) : PostgresDriver, SuspendDatabase<Nothing> {
 
     init {
         require(poolSize >= 1) { "poolSize must be >= 1, was $poolSize" }
+        require(acquireTimeout.isPositive()) { "acquireTimeout must be positive, was $acquireTimeout" }
     }
+
+    // A bounded borrow: a saturated pool fails with a clear, catchable error instead of
+    // hanging the caller forever (poolSize connections all pinned by long transactions).
+    private fun poolExhausted(): Nothing = throw PoolExhaustedException(
+        "connection pool exhausted: no connection became free within $acquireTimeout " +
+            "(poolSize = $poolSize, all connections busy). Increase poolSize or shorten " +
+            "the transactions/pinned blocks holding connections.",
+    )
 
     override val dialect: Dialect = PostgresDialect
     private val typeMapper: TypeMapper = StandardTypeMapper
@@ -138,7 +154,7 @@ private class PostgresDriverImpl(
     private val connectionPool = object : ConnectionPool {
         override fun acquire(): PinnedConnection {
             val connection = pool.tryReceive().getOrNull() ?: try {
-                runBlocking { pool.receive() }
+                runBlocking { withTimeoutOrNull(acquireTimeout) { pool.receive() } } ?: poolExhausted()
             } catch (_: ClosedReceiveChannelException) {
                 throw ConnectionClosedException()
             }
@@ -148,7 +164,7 @@ private class PostgresDriverImpl(
 
         override suspend fun acquireSuspending(): PinnedConnection {
             val connection = pool.tryReceive().getOrNull() ?: try {
-                pool.receive()
+                withTimeoutOrNull(acquireTimeout) { pool.receive() } ?: poolExhausted()
             } catch (_: ClosedReceiveChannelException) {
                 throw ConnectionClosedException()
             }
@@ -208,7 +224,7 @@ private class PostgresDriverImpl(
 
     private suspend fun acquireConnectionSuspending(): CPointer<PGconn> {
         val conn = pool.tryReceive().getOrNull() ?: try {
-            pool.receive()
+            withTimeoutOrNull(acquireTimeout) { pool.receive() } ?: poolExhausted()
         } catch (_: ClosedReceiveChannelException) {
             throw ConnectionClosedException()
         }

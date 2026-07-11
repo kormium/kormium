@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.autocommit
 import io.github.kormium.database.Database
 import io.github.kormium.database.SuspendDatabase
@@ -98,11 +100,19 @@ class WriteListenerTest {
         db.writeListeners.add { fired = it }
 
         // Raw SQL with no declared tables: Kormium can't know what it touched → no notification.
-        db.transaction { executeUpdate("UPDATE products SET position = 0") }
+        db.transaction {
+            executeUpdate("UPDATE products SET position = :position", params = mapOf("position" to 0), invalidates = emptyList())
+        }
         assertEquals(null, fired, "undeclared raw write must not notify")
 
         // Declaring the affected table opts the raw write into notification.
-        db.transaction { executeUpdate("UPDATE products SET position = 0", invalidates = listOf(TestTable)) }
+        db.transaction {
+            executeUpdate(
+                "UPDATE products SET position = :position",
+                params = mapOf("position" to 0),
+                invalidates = listOf(TestTable),
+            )
+        }
         assertEquals(setOf("products"), fired)
     }
 

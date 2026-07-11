@@ -109,7 +109,7 @@ Users.find { where { Users.nickname.coalesce(Users.handle, Users.name) eq "Ada" 
 select(Users.nickname.coalesce(Users.handle, Users.name).coalesce("anonymous")) // COALESCE(nick, handle, name, 'anonymous')
 ```
 
-The default binds through the column's converter, so an enum/`Instant`/`BigDecimal` fallback maps
+The default binds through the column's converter, so an enum/`Instant`/`Decimal` fallback maps
 the same way a comparison literal does. When the fallback is non-null the result is non-null —
 read it with `row[...]`; for a `coalesce` of two nullable columns, use `getOrNull`.
 
@@ -134,7 +134,7 @@ Users.find { where { case { whenever(Users.age gtEq 18) then true; otherwise(fal
 ```
 
 The result type is inferred from the branch values for the built-in types (String, the integer and
-floating types, Boolean, `BigDecimal`, `Instant`, the date/time types, `Uuid`). For an enum or other
+floating types, Boolean, `Instant`, the date/time types, `Uuid`). For an enum or other
 custom-mapped result, pass the `ColumnType` so the value can be read and bound:
 
 ```kotlin
@@ -289,7 +289,7 @@ rows.forEach { row ->
 You can project rows into your own type:
 
 ```kotlin
-data class UserSpend(val name: String, val total: BigDecimal)
+data class UserSpend(val name: String, val total: Decimal)
 
 val spend: List<UserSpend> = db.autocommit {
     (Users innerJoin Orders on (Users.id eq Orders.userId))
@@ -360,7 +360,7 @@ val total = Orders.total.sum()
 val result = db.autocommit {
     (Users innerJoin Orders on (Users.id eq Orders.userId))
         .groupBy(Users.id)
-        .having(total gt BigDecimal.fromInt(100))
+        .having(total gt Decimal.of(100))
         .select(Users.name, orders, total)
 }
 
@@ -376,7 +376,7 @@ Available aggregates:
 - `column.min()` / `column.max()` → the column's own type
 - `column.sum()` → `Long` for integer columns (`Int`/`Short`/`Long`), since `SUM` widens to
   `bigint` server-side and could otherwise overflow; the column's own type otherwise (e.g.
-  `BigDecimal`, `Double`)
+  `Decimal`, `Double`)
 - `column.avg()` → `Double`
 
 For single-table grouping, start from `Table.query()`:
@@ -393,7 +393,8 @@ val byAge = db.autocommit {
 ## Raw Expressions
 
 `RawExpression` embeds SQL verbatim. It is useful for controlled SQL fragments, but unsafe
-with untrusted input.
+with untrusted input. Like the other raw-SQL escape hatches, it requires
+`@OptIn(DelicateKormiumApi::class)` in scope.
 
 Prefer:
 
@@ -409,6 +410,38 @@ Use raw SQL only when the SQL text is fully controlled by your application:
 Users.find(Query(RawExpression("""lower("name") = 'ada'""")))
 ```
 
+## Vector Search (pgvector)
+
+A [vector column](tables-and-entities.md#vector-columns-pgvector) computes a pgvector distance to a
+query vector. `distance(query, metric)` returns an orderable `Double`, so nearest-neighbour search is
+an ordinary `orderBy` — ascending, since for every metric *smaller is more similar*:
+
+```kotlin
+val query = Vector(openAiClient.embed(question))
+
+val nearest = Docs.find {
+    orderBy ASC Docs.embedding.distance(query, VectorMetric.COSINE)
+    limit = 5
+}
+```
+
+`metric` defaults to `COSINE` (the usual choice for text embeddings). Three named aliases read more
+directly and are exactly `distance(query, ...)` under the hood:
+
+| Alias | `distance(...)` | SQL | Metric |
+| --- | --- | --- | --- |
+| `euclideanDistance(v)` | `distance(v, EUCLIDEAN)` | `<->` | Euclidean (L2) distance |
+| `cosineDistance(v)` | `distance(v, COSINE)` | `<=>` | cosine distance (`1 - similarity`) |
+| `innerProduct(v)` | `distance(v, DOT)` | `<#>` | negative inner product (≤ 0) |
+
+The query vector binds as a parameter with a `::vector` cast — never string-interpolated. The
+operators also take another vector operand (`Docs.embedding.euclideanDistance(Other.centroid)`) for
+column-to-column distance, and compose in `where` for a radius filter
+(`where { Docs.embedding.cosineDistance(query) lt 0.2 }`) or a `select(...)` projection to read the
+score back. Building an ANN index (`ivfflat` / `hnsw`) is a DDL/migration concern — and the index's
+operator class must match the metric you query (`vector_cosine_ops` for `cosineDistance`, etc.) for it
+to be used. This is Postgres-only; the operators render pgvector syntax.
+
 ## Unsupported / Out-of-Scope SQL
 
 Kormium covers a deliberate slice of SQL: typed `SELECT`/`WHERE`/`ORDER BY`/`LIMIT`/`OFFSET`,
@@ -416,7 +449,8 @@ Kormium covers a deliberate slice of SQL: typed `SELECT`/`WHERE`/`ORDER BY`/`LIM
 predicate vocabulary below. The DSL does not try to model all of SQL. Anything outside that
 slice runs through raw SQL — either a `RawExpression` inside the DSL or `execute(...)` /
 `executeUpdate(...)` on a scope (see [Raw Expressions](#raw-expressions) and the
-[API cookbook](api-cookbook.md)).
+[API cookbook](api-cookbook.md)). All of these require `@OptIn(DelicateKormiumApi::class)`;
+`execute`/`executeUpdate` also require `params` and `invalidates` as explicit arguments.
 
 Not modeled by the typed DSL today:
 

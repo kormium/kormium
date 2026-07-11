@@ -9,4 +9,4 @@ import kotlin.js.Promise
  * [Factory] to get the [SQLiteAPI].
  */
 @JsModule("wa-sqlite/dist/wa-sqlite-async.mjs")
-external fun SQLiteESMFactory(config: JsAny? = definedExternally): Promise<JsAny>
+public external fun SQLiteESMFactory(config: JsAny? = definedExternally): Promise<JsAny>

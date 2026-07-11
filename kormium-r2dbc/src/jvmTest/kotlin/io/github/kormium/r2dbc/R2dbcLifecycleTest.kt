@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 package io.github.kormium.r2dbc
 
 import io.github.kormium.DatabaseClosedException
@@ -51,8 +53,8 @@ class R2dbcLifecycleTest {
         withDb { db ->
             db.close()
             runBlocking {
-                assertFailsWith<DatabaseClosedException> { db.suspendAutocommit { execute("SELECT 1") } }
-                assertFailsWith<DatabaseClosedException> { db.suspendTransaction { execute("SELECT 1") } }
+                assertFailsWith<DatabaseClosedException> { db.suspendAutocommit { executeUpdate("SELECT 1", params = emptyMap(), invalidates = emptyList()) } }
+                assertFailsWith<DatabaseClosedException> { db.suspendTransaction { executeUpdate("SELECT 1", params = emptyMap(), invalidates = emptyList()) } }
             }
         }
     }

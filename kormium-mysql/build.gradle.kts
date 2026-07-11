@@ -7,6 +7,8 @@ repositories {
 }
 
 kotlin {
+    explicitApi()
+
     jvmToolchain(21)
 
     jvm {
@@ -49,7 +51,7 @@ kotlin {
                 // to js/wasm). `api` keeps `io.github.kormium.MySqlDialect` visible to existing
                 // consumers exactly as before.
                 api(project(":kormium-mysql-dialect"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 // MySqlJvmTypeMapper binds a JsonElement as its text form into a JSON column.
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
             }
@@ -57,7 +59,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("com.ionspin.kotlin:bignum:0.3.10")
+                implementation(project(":kormium-decimal"))
             }
         }
         val jvmMain by getting {
@@ -66,9 +68,7 @@ kotlin {
                 // URL + MySqlResultSetWrapper (which uses kotlinx-datetime).
                 implementation(project(":kormium-jdbc"))
                 implementation("com.mysql:mysql-connector-j:8.4.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-                // MySqlJvmTypeMapper converts ionspin BigDecimal to java.math.BigDecimal.
-                implementation("com.ionspin.kotlin:bignum:0.3.10")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val jvmTest by getting {
@@ -78,14 +78,14 @@ kotlin {
                 implementation("org.testcontainers:mysql:1.20.4")
                 implementation("com.mysql:mysql-connector-j:8.4.0")
                 // For the all-column-types round-trip test (Instant / Json columns).
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
             }
         }
         val nativeMain by getting {
             dependencies {
                 // The native libmysqlclient driver.
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
             }
         }
@@ -96,3 +96,4 @@ kotlin {
         }
     }
 }
+

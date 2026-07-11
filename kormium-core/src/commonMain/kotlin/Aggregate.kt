@@ -6,14 +6,14 @@ import kotlin.jvm.JvmName
 // like any operand — `total gt 100`), and since Operand is an Expression they also work in `having(...)`.
 
 /** `COUNT(*)` — the number of rows in the group. */
-fun count(): Operand<Long> = object : Operand<Long> {
+public fun count(): Operand<Long> = object : Operand<Long> {
     override val columnType = LongColumnType
     override fun toSql(builder: ParamBuilder) = "COUNT(*)"
     override fun resultKey() = "COUNT(*)"
 }
 
 /** `COUNT(column)` — the non-null values of the column in the group. */
-fun Column<*, *, *>.count(): Operand<Long> {
+public fun Column<*, *, *>.count(): Operand<Long> {
     val column = this
     return object : Operand<Long> {
         override val columnType = LongColumnType
@@ -26,26 +26,26 @@ fun Column<*, *, *>.count(): Operand<Long> {
 // still that integer. SUM is different: SUM over an integer column returns a wider type
 // server-side (Postgres: bigint), so reading it back through the Int mapping would overflow
 // (toInt() throws). The integer-family sum() overloads below therefore return Operand<Long>
-// and read the aggregate as a Long; SUM of a BigDecimal/Double column keeps the column type
+// and read the aggregate as a Long; SUM of a Decimal/Double column keeps the column type
 // via the generic sum().
-fun <Z> Column<Z, *, *>.min(): Operand<Z> = ColumnAggregate("MIN", this)
-fun <Z> Column<Z, *, *>.max(): Operand<Z> = ColumnAggregate("MAX", this)
+public fun <Z> Column<Z, *, *>.min(): Operand<Z> = ColumnAggregate("MIN", this)
+public fun <Z> Column<Z, *, *>.max(): Operand<Z> = ColumnAggregate("MAX", this)
 
-/** `SUM(column)` for a non-integer column (e.g. BigDecimal/Double), read through its type. */
-fun <Z> Column<Z, *, *>.sum(): Operand<Z> = ColumnAggregate("SUM", this)
+/** `SUM(column)` for a non-integer column (e.g. Decimal/Double), read through its type. */
+public fun <Z> Column<Z, *, *>.sum(): Operand<Z> = ColumnAggregate("SUM", this)
 
 // More-specific sum() overloads for integer columns: they win overload resolution over the
 // generic sum() above and return Operand<Long>, reading the (bigint) aggregate as a Long so
 // sums beyond Int.MAX_VALUE don't overflow. @JvmName disambiguates the otherwise-identical JVM
 // signatures (generic erasure collides with these).
 @JvmName("sumInt")
-fun Column<kotlin.Int, *, *>.sum(): Operand<Long> = LongAggregate(this)
+public fun Column<kotlin.Int, *, *>.sum(): Operand<Long> = LongAggregate(this)
 
 @JvmName("sumShort")
-fun Column<kotlin.Short, *, *>.sum(): Operand<Long> = LongAggregate(this)
+public fun Column<kotlin.Short, *, *>.sum(): Operand<Long> = LongAggregate(this)
 
 @JvmName("sumLong")
-fun Column<kotlin.Long, *, *>.sum(): Operand<Long> = LongAggregate(this)
+public fun Column<kotlin.Long, *, *>.sum(): Operand<Long> = LongAggregate(this)
 
 private class ColumnAggregate<Z>(private val fn: String, private val column: Column<Z, *, *>) : Operand<Z> {
     override val columnType: ColumnType<Z> = column.columnType
@@ -61,7 +61,7 @@ private class LongAggregate(private val column: Column<*, *, *>) : Operand<Long>
 }
 
 /** `AVG(column)` as a Double. */
-fun Column<*, *, *>.avg(): Operand<Double> {
+public fun Column<*, *, *>.avg(): Operand<Double> {
     val column = this
     return object : Operand<Double> {
         override val columnType = DoubleColumnType

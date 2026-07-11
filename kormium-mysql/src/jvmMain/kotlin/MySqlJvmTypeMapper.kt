@@ -1,11 +1,10 @@
 package io.github.kormium
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.toJavaInstant
+import kotlin.time.toJavaInstant
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toJavaLocalTime
@@ -22,12 +21,14 @@ import kotlin.uuid.Uuid
  * binds as an `OffsetDateTime` at UTC (a `TIMESTAMP` is stored/compared in UTC); the connection
  * URL pins the session zone to UTC so the value round-trips unchanged.
  */
-object MySqlJvmTypeMapper : TypeMapper {
+public object MySqlJvmTypeMapper : TypeMapper {
     override fun toParameter(value: Any?): Any? = when (value) {
         // StandardTypeMapper would toString() these; pass them through so they bind as real types.
         is Float, is Short -> value
         is Uuid -> value.toString()
-        is BigDecimal -> java.math.BigDecimal(value.toString())
+        // kormium-decimal's toParam already yields java.math.BigDecimal on the JVM; pass it
+        // through so the connector binds a typed DECIMAL parameter.
+        is java.math.BigDecimal -> value
         is Instant -> value.toJavaInstant().atOffset(ZoneOffset.UTC)
         is LocalDate -> value.toJavaLocalDate()
         is LocalTime -> value.toJavaLocalTime()

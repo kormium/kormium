@@ -13,6 +13,8 @@ repositories {
 }
 
 kotlin {
+    explicitApi()
+
     jvmToolchain(21)
 
     jvm {
@@ -53,10 +55,9 @@ kotlin {
                 // Public suspend API (suspendTransaction/suspendAutocommit) is coroutine-based.
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-                // BigDecimal
-                implementation("com.ionspin.kotlin:bignum:0.3.10")
-
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                // LocalDate/LocalTime/LocalDateTime appear in the public API (ColumnType,
+                // ResultSet), so consumers need the types on their compile classpath.
+                api("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val commonTest by getting {
@@ -78,7 +79,6 @@ kotlin {
         val jvmMain by getting {
             dependsOn(loggingMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
                 // kotlin-logging delegates to SLF4J on the JVM; core needs the API on the
                 // runtime classpath (previously pulled in transitively via the drivers).
                 implementation("org.slf4j:slf4j-api:2.0.16")
@@ -87,7 +87,6 @@ kotlin {
         val androidMain by getting {
             dependsOn(loggingMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
                 // Android is JVM-flavoured: kotlin-logging delegates to SLF4J here too.
                 implementation("org.slf4j:slf4j-api:2.0.16")
             }

@@ -7,9 +7,9 @@ import io.github.kormium.database.Database
  * config and produces a new one via `copy`, so adding a field to [KormiumConfig] only needs a
  * matching `var` here (no default is duplicated). See [KormiumBuilder.config].
  */
-class KormiumConfigBuilder internal constructor(private val base: KormiumConfig) {
+public class KormiumConfigBuilder internal constructor(private val base: KormiumConfig) {
     /** See [KormiumConfig.batchInsertMode]. */
-    var batchInsertMode: BatchInsertMode = base.batchInsertMode
+    public var batchInsertMode: BatchInsertMode = base.batchInsertMode
 
     internal fun build(): KormiumConfig = base.copy(
         batchInsertMode = batchInsertMode,
@@ -22,12 +22,12 @@ class KormiumConfigBuilder internal constructor(private val base: KormiumConfig)
  * is returned — the place to run migrations (the `kormium-migrate` module, or Flyway/Liquibase).
  * Migrations are intentionally NOT a built-in concern of this builder.
  */
-class KormiumBuilder {
+public class KormiumBuilder {
     private var config: KormiumConfig = KormiumConfig()
     private var beforeStart: (Database<Nothing>.() -> Unit)? = null
 
     /** Configures the [KormiumConfig] carried by the database. Calls accumulate. */
-    fun config(block: KormiumConfigBuilder.() -> Unit) {
+    public fun config(block: KormiumConfigBuilder.() -> Unit) {
         config = KormiumConfigBuilder(config).apply(block).build()
     }
 
@@ -38,7 +38,7 @@ class KormiumBuilder {
      * them here with your connection settings (they manage their own JDBC connection). Seed data
      * belongs in a migration, not here.
      */
-    fun beforeStart(block: Database<Nothing>.() -> Unit) {
+    public fun beforeStart(block: Database<Nothing>.() -> Unit) {
         beforeStart = block
     }
 
@@ -46,6 +46,6 @@ class KormiumBuilder {
      * Builds the database with [create] (passing the configured [KormiumConfig]), then runs the
      * [beforeStart] hook on it. Called by the `createX { }` factory overloads.
      */
-    fun <D : Database<Nothing>> finish(create: (KormiumConfig) -> D): D =
+    public fun <D : Database<Nothing>> finish(create: (KormiumConfig) -> D): D =
         create(config).also { driver -> beforeStart?.invoke(driver) }
 }

@@ -1,4 +1,6 @@
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
+import io.github.kormium.decimal.Decimal
 import io.github.kormium.BatchInsertMode
 import io.github.kormium.autocommit
 import io.github.kormium.createSqliteDatabase
@@ -17,7 +19,7 @@ class SqliteBuilderTest {
     fun builderAppliesConfigAndRunsBeforeStart() {
         val db: Database<SqCatalog> = createSqliteDatabase {
             config { batchInsertMode = BatchInsertMode.UnionNulls }
-            beforeStart { autocommit { executeUpdate(productsDdl) } }   // create the schema before the db is returned
+            beforeStart { autocommit { executeUpdate(productsDdl, params = emptyMap(), invalidates = emptyList()) } }   // create the schema before the db is returned
         }
 
         db.use {
@@ -29,7 +31,7 @@ class SqliteBuilderTest {
             db.transaction {
                 Products.insert(Product().apply {
                     this.id = id
-                    this.price = BigDecimal.fromInt(5)
+                    this.price = Decimal.of(5)
                     this.qty = 1
                     this.displayName = "from-builder"
                     this.note = null

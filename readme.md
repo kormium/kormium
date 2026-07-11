@@ -143,6 +143,7 @@ dependencies {
 
     // implementation("io.github.kormium:kormium-observe")  // reactive Flow queries
     // implementation("io.github.kormium:kormium-migrate")  // SQL migration runner
+    // implementation("io.github.kormium:kormium-decimal")  // exact decimal columns (Column.decimal())
 
     // optional Ktor integration
     // implementation("io.github.kormium:kormium-ktor")
@@ -192,10 +193,16 @@ module details.
 
 Kormium does not own schema management — create tables with raw SQL or a migration tool.
 
+Raw SQL is gated by `@OptIn(DelicateKormiumApi::class)`, and `executeUpdate` always takes
+`params` and `invalidates` explicitly (`emptyMap()` / `emptyList()` when there's nothing to bind
+or no table to notify):
+
 ```kotlin
 db.transaction {
     executeUpdate(
         """CREATE TABLE IF NOT EXISTS "users" ("id" uuid NOT NULL, "name" text NOT NULL, "age" integer NOT NULL, PRIMARY KEY ("id"))""",
+        params = emptyMap(),
+        invalidates = emptyList(),
     )
     Users.insert(User().apply {
         id = Uuid.random()

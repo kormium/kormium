@@ -12,8 +12,8 @@ import java.sql.SQLException
  * later be bound by name. `::` casts (Postgres) and quoted string literals are left
  * untouched, so the parser is backend-agnostic and shared by every JDBC backend.
  */
-class NamedParamStatement(conn: Connection, sql: String) : AutoCloseable {
-    val preparedStatement: PreparedStatement
+public class NamedParamStatement(conn: Connection, sql: String) : AutoCloseable {
+    public val preparedStatement: PreparedStatement
     private val fields: List<String>
 
     init {
@@ -30,24 +30,24 @@ class NamedParamStatement(conn: Connection, sql: String) : AutoCloseable {
     }
 
     @Throws(SQLException::class)
-    fun executeQuery(): java.sql.ResultSet {
+    public fun executeQuery(): java.sql.ResultSet {
         return preparedStatement.executeQuery()
     }
 
     @Throws(SQLException::class)
-    fun executeUpdate(): Int {
+    public fun executeUpdate(): Int {
         return preparedStatement.executeUpdate()
     }
 
     /** Binds every named placeholder in the statement from [paramSource], by name. */
-    fun bind(paramSource: SqlParameterSource) {
+    public fun bind(paramSource: SqlParameterSource) {
         for (name in fields.toSet()) {
             require(paramSource.hasValue(name)) { "No value supplied for parameter \"$name\"" }
             setAny(name, paramSource.getValue(name))
         }
     }
 
-    fun setAny(name: String, value: Any?) {
+    public fun setAny(name: String, value: Any?) {
         for (index in indexesOf(name)) {
             when (value) {
                 null -> preparedStatement.setObject(index, null)
@@ -73,7 +73,7 @@ class NamedParamStatement(conn: Connection, sql: String) : AutoCloseable {
 
     private class Parsed(val sql: String, val fields: List<String>)
 
-    companion object {
+    public companion object {
         // Reparsing is one cheap pass over the SQL string; the cache only saves it for hot,
         // repeated statements. Bound it so one-off SQL cannot grow it without limit: an
         // access-order LRU capped at MAX_CACHE_ENTRIES, and SQL longer than

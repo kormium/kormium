@@ -8,14 +8,14 @@ package io.github.kormium.postgres.paramsource
  * easier. The methods return a reference to the [MapSqlParameterSource]
  * itself, so you can chain several method calls together within a single statement.
  */
-class MapSqlParameterSource : AbstractSqlParameterSource {
+internal class MapSqlParameterSource : AbstractSqlParameterSource {
     private val values: MutableMap<String, Any?> = LinkedHashMap()
 
     /**
      * Create a new MapSqlParameterSource based on a Map.
      * @param values a Map holding existing parameter values (can be `null`)
      */
-    constructor(values: Map<String, Any?>?) {
+    public constructor(values: Map<String, Any?>?) {
         addValues(values)
     }
 
@@ -26,7 +26,7 @@ class MapSqlParameterSource : AbstractSqlParameterSource {
      * @return a reference to this parameter source,
      * so it's possible to chain several calls together
      */
-    fun addValue(paramName: String, value: Any?): MapSqlParameterSource {
+    public fun addValue(paramName: String, value: Any?): MapSqlParameterSource {
         this.values[paramName] = value
         registerSqlType(paramName, value)
         return this
@@ -40,7 +40,7 @@ class MapSqlParameterSource : AbstractSqlParameterSource {
      * @return a reference to this parameter source,
      * so it's possible to chain several calls together
      */
-    fun addValue(paramName: String, value: Any?, sqlType: UInt): MapSqlParameterSource {
+    public fun addValue(paramName: String, value: Any?, sqlType: UInt): MapSqlParameterSource {
         this.values[paramName] = value
         registerSqlType(paramName = paramName, sqlType = sqlType)
         return this
@@ -55,7 +55,7 @@ class MapSqlParameterSource : AbstractSqlParameterSource {
      * @return a reference to this parameter source,
      * so it's possible to chain several calls together
      */
-    fun addValue(paramName: String, value: Any?, sqlType: UInt, typeName: String?): MapSqlParameterSource {
+    public fun addValue(paramName: String, value: Any?, sqlType: UInt, typeName: String?): MapSqlParameterSource {
         this.values[paramName] = value
         registerSqlType(paramName = paramName, sqlType = sqlType)
         registerTypeName(paramName, typeName!!)
@@ -68,7 +68,7 @@ class MapSqlParameterSource : AbstractSqlParameterSource {
      * @return a reference to this parameter source,
      * so it's possible to chain several calls together
      */
-    fun addValues(values: Map<String, Any?>?): MapSqlParameterSource {
+    public fun addValues(values: Map<String, Any?>?): MapSqlParameterSource {
         values?.forEach { (key, value) ->
             this.values[key] = value
             registerSqlType(paramName = key, value = value)
@@ -79,9 +79,9 @@ class MapSqlParameterSource : AbstractSqlParameterSource {
     /**
      * Expose the current parameter values as read-only Map.
      */
-    fun getValues(): Map<String, Any?> = this.values
+    public fun getValues(): Map<String, Any?> = this.values
 
-    override fun hasValue(paramName: String) = this.values.containsKey(paramName)
+    override fun hasValue(paramName: String): Boolean = this.values.containsKey(paramName)
 
     @Suppress("UseRequire")
     override fun getValue(paramName: String): Any? {

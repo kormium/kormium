@@ -17,19 +17,19 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
  * [teardown] where they can wait for borrowed connections to come back.
  */
 @OptIn(ExperimentalAtomicApi::class)
-class DatabaseLifecycle(private val teardown: () -> Unit) {
+public class DatabaseLifecycle(private val teardown: () -> Unit) {
     private val closed = AtomicReference(false)
 
     /** Whether [close] has been called. */
-    val isClosed: Boolean get() = closed.load()
+    public val isClosed: Boolean get() = closed.load()
 
     /** Throws [DatabaseClosedException] if already closed; call before borrowing a connection. */
-    fun checkOpen() {
+    public fun checkOpen() {
         if (closed.load()) throw DatabaseClosedException()
     }
 
     /** Idempotent: runs [teardown] on the first call only; later calls return immediately. */
-    fun close() {
+    public fun close() {
         if (closed.compareAndSet(expectedValue = false, newValue = true)) teardown()
     }
 }

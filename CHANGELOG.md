@@ -6,6 +6,88 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.10.0] — pgvector, API lock, three browser SQLite engines, bounded pools
+
+### Changed (breaking, pre-1.0)
+- **Accidentally-public driver internals are now `internal`.** None of these appeared in
+  any documentation or were usable without reaching into implementation packages:
+  the native PostgreSQL plumbing inherited from pgkn (`AbstractSqlParameterSource`,
+  `MapSqlParameterSource`, `Oid`, `AnonymousClassException`, `GetColumnValueException`,
+  `InvalidDataAccessApiUsageException`), the per-backend JDBC `ResultSet` wrappers
+  (`PgResultSetWrapper`, `MySqlResultSetWrapper`, `SqliteResultSetWrapper`),
+  `JdbcExecutor`, `MySqlNativeTypeMapper` and the `sqliteException` helper. The exact
+  removals are the `.api` dump diffs in this change (−186 ABI lines). Everything the
+  docs, samples or sibling modules use is untouched.
+
+### Added
+- **API surface is now locked.** Every published module compiles in Kotlin's
+  `explicitApi()` strict mode (all public declarations carry explicit visibility and
+  return types), and [binary-compatibility-validator](https://github.com/Kotlin/binary-compatibility-validator)
+  dumps the JVM and klib ABI of each module into `<module>/api/`; CI fails on any surface
+  change that isn't an explicitly reviewed `./gradlew apiDump`. This change is purely
+  mechanical — the dumped ABI is byte-identical before and after. (Deliberate narrowing of
+  accidentally-public internals comes separately, as reviewable `.api` diffs.)
+
+### Changed
+- **BREAKING: `Instant` is now `kotlin.time.Instant`.** `Column.Instant`, `InstantColumnType`
+  and `ResultSet.getInstant` use the stdlib `kotlin.time.Instant` instead of
+  `kotlinx.datetime.Instant`, which no longer exists in kotlinx-datetime 0.7+. Kormium now
+  depends on kotlinx-datetime **0.8.0**, exposed as an `api` dependency of `kormium-core`
+  (the `LocalDate`/`LocalTime`/`LocalDateTime` column types are part of the public API).
+  Migration: replace `kotlinx.datetime.Instant`/`Clock` imports with `kotlin.time.Instant`/
+  `kotlin.time.Clock`; `Local*` imports are unchanged.
+- **BREAKING: decimal support moved out of core into `kormium-decimal`.** `Column.BigDecimal`,
+  `BigDecimalColumnType` and `ResultSet.getBigDecimal` are removed from `kormium-core`, and the
+  `com.ionspin.kotlin:bignum` dependency is gone from every module — core now ships no type
+  implementations, and 1.0 exposes no third-party 0.x types in its API. Decimal columns come
+  from the new `kormium-decimal` artifact, which bridges
+  [`io.github.kormium:decimal`](https://github.com/kormium/decimal) through the open
+  `ColumnType` seam. Migration: add `io.github.kormium:kormium-decimal`, replace
+  `Column.BigDecimal()` with `Column.decimal()` (import `io.github.kormium.decimal.decimal`)
+  and ionspin's `BigDecimal` values with `io.github.kormium.decimal.Decimal`
+  (`Decimal.parse("10.50")`, `Decimal.of(100)`). On the JVM parameters now bind as
+  `java.math.BigDecimal` (typed `numeric` bind); on all other targets values travel as
+  decimal text, as before. `case { }` no longer infers a decimal result type — pass
+  `DecimalColumnType` explicitly: `case(DecimalColumnType) { ... }`.
+
+### Added
+- **`kormium-decimal` module** — `Column.decimal()` / `DecimalColumnType` for exact decimal
+  columns, published for the full target matrix and pinned by the BOM.
+- **Browser SQLite now ships three engines** (see
+  [ADR 0010](docs/adr/0010-browser-sqlite-three-engines.md) and
+  [Backends → Browser SQLite](docs/backends.md#browser-sqlite-kormium-sqlite-wasm)); the original
+  `createSqliteWasmDatabase` (main thread, `:memory:`/IndexedDB) is untouched:
+  - `createWorkerSqliteWasmDatabase()` — **the recommended default**: one in-memory connection in
+    a dedicated Worker, so SQLite runs off the main thread (UI keeps rendering during a query);
+    measured ~35% faster per query than the main-thread engine at 1M rows. No COOP/COEP needed.
+  - `createPooledSqliteWasmDatabase(opfsPath, readerPoolSize)` — **experimental**: persistent
+    OPFS storage with one writer + N concurrent readers (`opfs-wl` VFS); reads route via
+    `suspendTransaction(readOnly = true) { }`, and `closeAndAwait()` releases OPFS handles before
+    a reopen. Requires COOP/COEP response headers and suits *infrequent, heavy* queries —
+    for bursts of fast indexed queries a single connection measured both faster and more reliable.
+  - Both new engines are built on the published
+    [`kormium/sqlite-wasm-kt`](https://github.com/kormium/sqlite-wasm-kt) bindings
+    (`io.github.kormium:sqlite-wasm-kt` + npm `@kormium/sqlite-wasm-worker`) over the official
+    `@sqlite.org/sqlite-wasm`.
+- **Bounded pool checkout: `acquireTimeout` + `PoolExhaustedException`** (#36). When all `poolSize`
+  connections are busy, an acquire now waits at most `acquireTimeout` (new
+  `createDatabase`/`createSqliteDatabase` parameter, default 30 s) and fails with the new
+  `PoolExhaustedException` naming the pool size and what to do — instead of blocking forever, which
+  is what the native/Android Channel pools did (the classic deadlock: SQLite's `poolSize = 1`
+  default plus a nested `transaction { autocommit { } }`). On the JVM the parameter maps to
+  HikariCP's `connectionTimeout` and its checkout timeout is translated to the same exception, so
+  exhaustion is one catchable type on every JVM/native/Android backend — see
+  [Backends → Pool exhaustion](docs/backends.md#pool-exhaustion-acquiretimeout).
+
+### Fixed
+- **The BOM now pins every published artifact** (#8). Ten modules had drifted out of
+  `kormium-bom` — `kormium-r2dbc`, `kormium-observe`, the three dialect modules, `kormium-wasm-driver`
+  and the four web/Node engines — so the documented BOM setup still required explicit versions for
+  them. The BOM's constraints are now derived from the same `publishableModules` set that decides
+  what gets published (the exact drift class 0.9.1 fixed for publishing), so they cannot diverge
+  again. The per-artifact POM `name`/`description` were also refreshed (they still described
+  Kormium as "Postgres + SQLite, JVM + Native").
+
 ## [0.9.1] — Publish the 0.9.0 web/Node modules
 
 ### Fixed

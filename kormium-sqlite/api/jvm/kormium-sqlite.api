@@ -1,0 +1,17 @@
+public final class io/github/kormium/CreateSqliteDatabaseKt {
+	public static final fun createSqliteDatabase-exY8QGI (Ljava/lang/String;IJLkotlin/jvm/functions/Function1;)Lio/github/kormium/SqliteDriver;
+	public static synthetic fun createSqliteDatabase-exY8QGI$default (Ljava/lang/String;IJLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/SqliteDriver;
+}
+
+public final class io/github/kormium/CreateSqliteDatabase_jvmKt {
+	public static final fun createSqliteDatabase-exY8QGI (Ljava/lang/String;IJLio/github/kormium/KormiumConfig;)Lio/github/kormium/SqliteDriver;
+	public static synthetic fun createSqliteDatabase-exY8QGI$default (Ljava/lang/String;IJLio/github/kormium/KormiumConfig;ILjava/lang/Object;)Lio/github/kormium/SqliteDriver;
+}
+
+public abstract interface class io/github/kormium/SqliteDriver : io/github/kormium/database/Database, io/github/kormium/database/SuspendDatabase, java/lang/AutoCloseable {
+	public abstract fun getConfig ()Lio/github/kormium/KormiumConfig;
+	public abstract fun getDialect ()Lio/github/kormium/Dialect;
+	public abstract fun getWriteListeners ()Lio/github/kormium/WriteListeners;
+	public abstract fun isClosed ()Z
+}
+

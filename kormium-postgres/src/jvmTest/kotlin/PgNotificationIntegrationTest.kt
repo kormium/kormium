@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity

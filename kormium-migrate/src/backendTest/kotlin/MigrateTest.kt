@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.Catalog
 import io.github.kormium.autocommit
 import io.github.kormium.createSqliteDatabase
@@ -19,7 +21,9 @@ class MigrateTest {
     private fun db(): Database<Cat> = createSqliteDatabase()
 
     private fun Database<Cat>.rowCount(table: String): Int =
-        autocommit { execute("SELECT COUNT(*) FROM $table") { it.getInt(0)!! } }.first()
+        autocommit {
+            execute("SELECT COUNT(*) FROM $table", params = emptyMap(), invalidates = emptyList()) { it.getInt(0)!! }
+        }.first()
 
     @Test
     fun appliesPendingOnceAndIsIdempotent() {
@@ -35,7 +39,11 @@ class MigrateTest {
             assertEquals(1, db.rowCount("items"))
             // Both ids recorded, in order, with populated metadata.
             val journal = db.autocommit {
-                execute("SELECT id, checksum, applied_at, idx FROM kormium_migrations ORDER BY idx") { rs ->
+                execute(
+                    "SELECT id, checksum, applied_at, idx FROM kormium_migrations ORDER BY idx",
+                    params = emptyMap(),
+                    invalidates = emptyList(),
+                ) { rs ->
                     listOf(rs.getString(0), rs.getString(1), rs.getString(2), rs.getInt(3))
                 }
             }
@@ -65,7 +73,11 @@ class MigrateTest {
             // Both statements ran: the table exists and the index can be queried via sqlite_master.
             assertEquals(0, db.rowCount("users"))
             val indexes = db.autocommit {
-                execute("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'users_name_idx'") { it.getString(0) }
+                execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'users_name_idx'",
+                    params = emptyMap(),
+                    invalidates = emptyList(),
+                ) { it.getString(0) }
             }
             assertEquals(listOf("users_name_idx"), indexes)
         }
@@ -91,7 +103,11 @@ class MigrateTest {
             )
             assertFails { db.migrate(batch) }
             // The whole transaction rolled back: neither the table nor the journal survives.
-            assertFails { db.autocommit { execute("""SELECT * FROM "rollme"""") { it.getInt(0) } } }
+            assertFails {
+                db.autocommit {
+                    execute("""SELECT * FROM "rollme"""", params = emptyMap(), invalidates = emptyList()) { it.getInt(0) }
+                }
+            }
         }
     }
 }

@@ -17,12 +17,12 @@ import io.r2dbc.pool.ConnectionPoolConfiguration
  *  - [MySqlDialect] for SQL rendering (backtick identifiers, MySQL LIMIT/OFFSET);
  *  - [QuestionMarkParamMarker] so `:name` placeholders are rewritten to `?` (r2dbc-mysql's marker);
  *  - [MySqlJvmTypeMapper] so UUID/JSON bind as text and date/times bind as native `java.time`
- *    values (an [kotlinx.datetime.Instant] as a UTC `OffsetDateTime`), with the session pinned to
+ *    values (an [kotlin.time.Instant] as a UTC `OffsetDateTime`), with the session pinned to
  *    UTC so timestamps round-trip unchanged.
  *
  * Returns it tagged [Nothing] (covariance pins the catalog at the call site).
  */
-fun createMySqlR2dbcDatabase(
+public fun createMySqlR2dbcDatabase(
     host: String,
     port: Int = 3306,
     database: String,

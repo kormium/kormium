@@ -11,6 +11,8 @@ repositories {
 // param-binding helper. Driver-specific externals stay in each engine; this is the common layer
 // so that one fix lands everywhere instead of in four copies.
 kotlin {
+    explicitApi()
+
     compilerOptions {
         optIn.add("kotlin.js.ExperimentalWasmJsInterop")
     }
@@ -26,7 +28,7 @@ kotlin {
         val wasmJsMain by getting {
             dependencies {
                 api(project(":kormium-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val wasmJsTest by getting {

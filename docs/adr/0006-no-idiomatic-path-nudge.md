@@ -1,6 +1,8 @@
 # ADR 0006 — No idiomatic-path nudge (no `@RequiresOptIn` marker, no detekt rule)
 
-- Status: Accepted
+- Status: Partially superseded by [ADR 0009](0009-delicate-raw-sql-optin.md) — the `@RequiresOptIn`
+  rejection below no longer holds for `execute` / `executeUpdate` / `execSql` / `RawExpression`. The
+  detekt-rule rejection and the "don't gate `.select()`" point still stand.
 - Date: 2026-06-30
 
 ## Context
@@ -15,8 +17,9 @@ Examining the actual surface, the premise mostly does not hold:
 - `(A innerJoin B).select()` + `row[col]` is **not** an escape hatch — it is the first-class typed
   way to read columns / aggregates from a join (the alternative to entity hydration via `find()`).
   Marking it "low-level" would gate normal, recommended API.
-- `Scope.execute(sql, params)` runs raw SQL but **binds parameters**, and is the legitimate path for
-  DDL (`execSql`) and SQL the typed DSL doesn't model. Gating every migration is pure friction.
+- `Scope.execute(sql, params, invalidates)` runs raw SQL but **binds parameters**, and is the
+  legitimate path for DDL (`execSql`) and SQL the typed DSL doesn't model. Gating every migration is
+  pure friction.
 - `RawExpression(string)` is the only genuinely unsafe form: verbatim SQL that does **not** bind
   parameters. It is already named `Raw` and documented as unsafe.
 

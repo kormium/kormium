@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity
@@ -27,7 +29,7 @@ class SqliteTransactionOptionsTest {
     // poolSize defaults to 1, so the read-only connection is the one reused next — exactly what
     // we need to prove PRAGMA query_only is reset on release.
     private val db: Database<RoCatalog> = createSqliteDatabase(":memory:").also { d ->
-        d.transaction { executeUpdate(roWidgetsDdl) }
+        d.transaction { executeUpdate(roWidgetsDdl, params = emptyMap(), invalidates = emptyList()) }
     }
 
     @Test

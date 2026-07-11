@@ -1,0 +1,33 @@
+// Klib ABI Dump
+// Targets: [linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-postgres>
+abstract interface io.github.kormium/PostgresDriver : io.github.kormium.database/Database<kotlin/Nothing>, io.github.kormium.database/SuspendDatabase<kotlin/Nothing>, kotlin/AutoCloseable { // io.github.kormium/PostgresDriver|null[0]
+    abstract val config // io.github.kormium/PostgresDriver.config|{}config[0]
+        abstract fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium/PostgresDriver.config.<get-config>|<get-config>(){}[0]
+    abstract val dialect // io.github.kormium/PostgresDriver.dialect|{}dialect[0]
+        abstract fun <get-dialect>(): io.github.kormium/Dialect // io.github.kormium/PostgresDriver.dialect.<get-dialect>|<get-dialect>(){}[0]
+    abstract val isClosed // io.github.kormium/PostgresDriver.isClosed|{}isClosed[0]
+        abstract fun <get-isClosed>(): kotlin/Boolean // io.github.kormium/PostgresDriver.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+    abstract val writeListeners // io.github.kormium/PostgresDriver.writeListeners|{}writeListeners[0]
+        abstract fun <get-writeListeners>(): io.github.kormium/WriteListeners // io.github.kormium/PostgresDriver.writeListeners.<get-writeListeners>|<get-writeListeners>(){}[0]
+}
+
+final class io.github.kormium.postgres.exception/ConnectionClosedException : io.github.kormium.postgres.exception/SQLException { // io.github.kormium.postgres.exception/ConnectionClosedException|null[0]
+    constructor <init>() // io.github.kormium.postgres.exception/ConnectionClosedException.<init>|<init>(){}[0]
+}
+
+final class io.github.kormium.postgres.exception/QueryExecutionException : io.github.kormium.postgres.exception/SQLException { // io.github.kormium.postgres.exception/QueryExecutionException|null[0]
+    constructor <init>(kotlin/String, kotlin/Throwable? = ...) // io.github.kormium.postgres.exception/QueryExecutionException.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
+}
+
+sealed class io.github.kormium.postgres.exception/SQLException : kotlin/Exception // io.github.kormium.postgres.exception/SQLException|null[0]
+
+final fun io.github.kormium.database/createDatabase(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ..., kotlin.time/Duration = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium/PostgresDriver // io.github.kormium.database/createDatabase|createDatabase(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.Int;kotlin.time.Duration;io.github.kormium.KormiumConfig){}[0]
+final fun io.github.kormium.database/createDatabase(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ..., kotlin.time/Duration = ..., kotlin/Function1<io.github.kormium/KormiumBuilder, kotlin/Unit>): io.github.kormium/PostgresDriver // io.github.kormium.database/createDatabase|createDatabase(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.Int;kotlin.time.Duration;kotlin.Function1<io.github.kormium.KormiumBuilder,kotlin.Unit>){}[0]
+final fun io.github.kormium.postgres/FPostgresDriver(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/Int = ..., kotlin.time/Duration = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium/PostgresDriver // io.github.kormium.postgres/FPostgresDriver|FPostgresDriver(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.Int;kotlin.time.Duration;io.github.kormium.KormiumConfig){}[0]
+final fun io.github.kormium/postgresListenNotifyTransport(kotlin/String, kotlin/Int = ..., kotlin/String, kotlin/String, kotlin/String, kotlin/String = ...): io.github.kormium/NotificationTransport // io.github.kormium/postgresListenNotifyTransport|postgresListenNotifyTransport(kotlin.String;kotlin.Int;kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]

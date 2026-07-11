@@ -4,11 +4,11 @@ import io.github.kormium.resultset.ResultSet
 import io.r2dbc.postgresql.codec.Json
 import io.r2dbc.spi.Row
 import io.r2dbc.spi.RowMetadata
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.toKotlinInstant
+import kotlin.time.toKotlinInstant
 import kotlinx.datetime.toKotlinLocalDate
 import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.datetime.toKotlinLocalTime
@@ -34,12 +34,20 @@ internal class R2dbcResultSet(
 
     override fun next(): Boolean = false
 
-    override fun getString(columnIndex: Int): String? = when (val v = row.get(columnIndex)) {
-        null -> null
-        // json/jsonb come back as r2dbc-postgresql's Json wrapper; its toString() isn't the raw
-        // text korm's getJson()/text mapping expects, so unwrap it explicitly.
-        is Json -> v.asString()
-        else -> v.toString()
+    override fun getString(columnIndex: Int): String? {
+        // numeric goes through a TYPED String lookup so [NumericAsTextCodec] serves it —
+        // the untyped path below decodes through java.math.BigDecimal, which throws on the
+        // NaN/±Infinity values PostgreSQL numeric stores.
+        if (metadata.getColumnMetadata(columnIndex).type.name.equals("numeric", ignoreCase = true)) {
+            return row.get(columnIndex, String::class.java)
+        }
+        return when (val v = row.get(columnIndex)) {
+            null -> null
+            // json/jsonb come back as r2dbc-postgresql's Json wrapper; its toString() isn't the raw
+            // text korm's getJson()/text mapping expects, so unwrap it explicitly.
+            is Json -> v.asString()
+            else -> v.toString()
+        }
     }
 
     override fun getBoolean(columnIndex: Int): Boolean? = row.get(columnIndex, Boolean::class.javaObjectType)

@@ -61,7 +61,9 @@ catalog-agnostic.
 ## 4. Create the Table
 
 Kormium maps queries and rows; it does not own schema management. Create tables with raw
-SQL (or a migration tool / `Database.migrate`):
+SQL (or a migration tool / `Database.migrate`). Raw SQL is an explicit escape hatch: it needs
+`@OptIn(DelicateKormiumApi::class)` in scope (e.g. `@file:OptIn(DelicateKormiumApi::class)` at the
+top of the file), and `executeUpdate` always takes `params` and `invalidates` explicitly:
 
 ```kotlin
 import io.github.kormium.transaction
@@ -77,6 +79,8 @@ db.transaction {
             PRIMARY KEY ("id")
         )
         """,
+        params = emptyMap(),
+        invalidates = emptyList(),
     )
 }
 ```

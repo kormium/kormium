@@ -4,7 +4,6 @@ import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
 import io.github.kormium.PostgresDialect
-import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
 import io.github.kormium.TypeMapper
@@ -31,7 +30,7 @@ import kotlinx.coroutines.withContext
  * The phantom catalog tag is [Nothing], so by covariance it fits any
  * `SuspendDatabase<G>`; pin the tag at the call site (`val db: SuspendDatabase<MyCatalog>`).
  */
-class R2dbcDatabase internal constructor(
+public class R2dbcDatabase internal constructor(
     private val pool: ConnectionPool,
     override val dialect: Dialect,
     private val typeMapper: TypeMapper,
@@ -79,7 +78,7 @@ class R2dbcDatabase internal constructor(
         }
     }
 
-    override fun close() = lifecycle.close()
+    override fun close(): Unit = lifecycle.close()
 }
 
 /**
@@ -111,7 +110,7 @@ private val TransactionIsolation.r2dbcLevel: IsolationLevel
  * Opens an async Postgres database over r2dbc with a reactive connection pool of
  * [poolSize]. Returns it tagged [Nothing] (covariance pins the catalog at the call site).
  */
-fun createR2dbcDatabase(
+public fun createR2dbcDatabase(
     host: String,
     port: Int = 5432,
     database: String,
@@ -127,6 +126,9 @@ fun createR2dbcDatabase(
             .database(database)
             .username(user)
             .password(password)
+            // numeric → String decoding that survives NaN/±Infinity (the driver's own
+            // path goes through java.math.BigDecimal and throws on them).
+            .codecRegistrar(NumericAsTextCodecRegistrar)
             .build(),
     )
     val poolConfiguration = ConnectionPoolConfiguration.builder(connectionFactory)
@@ -135,7 +137,7 @@ fun createR2dbcDatabase(
     return R2dbcDatabase(
         ConnectionPool(poolConfiguration),
         PostgresDialect,
-        StandardTypeMapper,
+        PostgresR2dbcTypeMapper,
         PostgresParamMarker,
         StandardR2dbcExceptionTranslator,
         config,

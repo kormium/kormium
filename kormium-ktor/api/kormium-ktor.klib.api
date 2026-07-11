@@ -1,0 +1,33 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-ktor>
+final class io.github.kormium.ktor/KormiumConfig { // io.github.kormium.ktor/KormiumConfig|null[0]
+    constructor <init>() // io.github.kormium.ktor/KormiumConfig.<init>|<init>(){}[0]
+
+    final fun manage(kotlin/AutoCloseable) // io.github.kormium.ktor/KormiumConfig.manage|manage(kotlin.AutoCloseable){}[0]
+}
+
+final value class <#A: io.github.kormium/Catalog> io.github.kormium.ktor/KormiumHandle { // io.github.kormium.ktor/KormiumHandle|null[0]
+    constructor <init>(io.github.kormium.database/SuspendDatabase<#A>) // io.github.kormium.ktor/KormiumHandle.<init>|<init>(io.github.kormium.database.SuspendDatabase<1:0>){}[0]
+
+    final val database // io.github.kormium.ktor/KormiumHandle.database|{}database[0]
+        final fun <get-database>(): io.github.kormium.database/SuspendDatabase<#A> // io.github.kormium.ktor/KormiumHandle.database.<get-database>|<get-database>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.github.kormium.ktor/KormiumHandle.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.github.kormium.ktor/KormiumHandle.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.github.kormium.ktor/KormiumHandle.toString|toString(){}[0]
+}
+
+final val io.github.kormium.ktor/Kormium // io.github.kormium.ktor/Kormium|{}Kormium[0]
+    final fun <get-Kormium>(): io.ktor.server.application/ApplicationPlugin<io.github.kormium.ktor/KormiumConfig> // io.github.kormium.ktor/Kormium.<get-Kormium>|<get-Kormium>(){}[0]
+
+final fun (io.github.kormium/KormiumException).io.github.kormium.ktor/httpStatusCode(): io.ktor.http/HttpStatusCode // io.github.kormium.ktor/httpStatusCode|httpStatusCode@io.github.kormium.KormiumException(){}[0]
+final suspend fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.github.kormium.ktor/KormiumHandle<#A>).io.github.kormium.ktor/autocommit(kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium.ktor/autocommit|autocommit@io.github.kormium.ktor.KormiumHandle<0:0>(kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final suspend fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.github.kormium.ktor/KormiumHandle<#A>).io.github.kormium.ktor/transaction(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium.ktor/transaction|transaction@io.github.kormium.ktor.KormiumHandle<0:0>(io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final suspend fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.ktor.server.application/ApplicationCall).io.github.kormium.ktor/autocommit(io.github.kormium.database/SuspendDatabase<#A>, kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium.ktor/autocommit|autocommit@io.ktor.server.application.ApplicationCall(io.github.kormium.database.SuspendDatabase<0:0>;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final suspend fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.ktor.server.application/ApplicationCall).io.github.kormium.ktor/transaction(io.github.kormium.database/SuspendDatabase<#A>, io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium.ktor/transaction|transaction@io.ktor.server.application.ApplicationCall(io.github.kormium.database.SuspendDatabase<0:0>;io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]

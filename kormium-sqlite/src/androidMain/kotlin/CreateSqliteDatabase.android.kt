@@ -13,19 +13,31 @@ import io.github.kormium.resultset.ResultSet
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration
 
-actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
-    SqliteAndroidDriver(path, poolSize, config)
+public actual fun createSqliteDatabase(
+    path: String,
+    poolSize: Int,
+    acquireTimeout: Duration,
+    config: KormiumConfig,
+): SqliteDriver = SqliteAndroidDriver(path, poolSize, acquireTimeout, config)
 
 // Android can't use the Kotlin/Native sqlite3 cinterop (it runs on the JVM/ART), so it
 // gets this driver on top of androidx.sqlite's bundled SQLite — which ships its own native
 // library, so it works on-device without depending on the framework's sqlite. The shape
 // mirrors the native driver: a fixed pool of connections handed out one-at-a-time via a
 // Channel that doubles as a blocking "free connection" queue.
-private class SqliteAndroidDriver(path: String, private val poolSize: Int, override val config: KormiumConfig) : SqliteDriver {
+private class SqliteAndroidDriver(
+    path: String,
+    private val poolSize: Int,
+    private val acquireTimeout: Duration,
+    override val config: KormiumConfig,
+) : SqliteDriver {
 
     init {
         require(poolSize >= 1) { "poolSize must be >= 1, was $poolSize" }
+        require(acquireTimeout.isPositive()) { "acquireTimeout must be positive, was $acquireTimeout" }
         // androidx.sqlite opens `:memory:` private per connection (no shared-cache URI),
         // unlike the JVM/native targets where a pooled `:memory:` is shared. Reject a larger
         // pool here instead of silently giving each caller its own empty database; use a file
@@ -36,6 +48,14 @@ private class SqliteAndroidDriver(path: String, private val poolSize: Int, overr
                 "Use a file path for a shared pooled database."
         }
     }
+
+    // A bounded borrow: a saturated pool fails with a clear, catchable error instead of
+    // hanging the caller forever (poolSize connections all pinned by long transactions).
+    private fun poolExhausted(): Nothing = throw PoolExhaustedException(
+        "connection pool exhausted: no connection became free within $acquireTimeout " +
+            "(poolSize = $poolSize, all connections busy). Increase poolSize or shorten " +
+            "the transactions/pinned blocks holding connections.",
+    )
 
     override val dialect: Dialect = SqliteDialect
     private val typeMapper: TypeMapper = StandardTypeMapper
@@ -66,7 +86,7 @@ private class SqliteAndroidDriver(path: String, private val poolSize: Int, overr
     private val connectionPool = object : ConnectionPool {
         override fun acquire(): PinnedConnection {
             val connection = pool.tryReceive().getOrNull() ?: try {
-                runBlocking { pool.receive() }
+                runBlocking { withTimeoutOrNull(acquireTimeout) { pool.receive() } } ?: poolExhausted()
             } catch (_: ClosedReceiveChannelException) {
                 throw QueryException("SQLite connection pool is closed")
             }
@@ -75,7 +95,7 @@ private class SqliteAndroidDriver(path: String, private val poolSize: Int, overr
 
         override suspend fun acquireSuspending(): PinnedConnection {
             val connection = pool.tryReceive().getOrNull() ?: try {
-                pool.receive()
+                withTimeoutOrNull(acquireTimeout) { pool.receive() } ?: poolExhausted()
             } catch (_: ClosedReceiveChannelException) {
                 throw QueryException("SQLite connection pool is closed")
             }

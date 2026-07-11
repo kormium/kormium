@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.Catalog
 import io.github.kormium.CheckViolationException
 import io.github.kormium.Column
@@ -289,7 +291,8 @@ class SqliteQueryCoverageTest {
                 // Insert via raw SQL so we can omit the NOT NULL "label" column entirely.
                 executeUpdate(
                     "INSERT INTO qc_notnull (id) VALUES (:id)",
-                    mapOf("id" to Uuid.random().toString()),
+                    params = mapOf("id" to Uuid.random().toString()),
+                    invalidates = emptyList(),
                 )
             }
         }
@@ -299,17 +302,20 @@ class SqliteQueryCoverageTest {
     @Test
     fun foreignKeyViolationIsTyped() {
         db.transaction {
-            executeUpdate("CREATE TABLE IF NOT EXISTS qc_fk_parent (id TEXT PRIMARY KEY)")
+            executeUpdate("CREATE TABLE IF NOT EXISTS qc_fk_parent (id TEXT PRIMARY KEY)", params = emptyMap(), invalidates = emptyList())
             executeUpdate(
                 "CREATE TABLE IF NOT EXISTS qc_fk_child (" +
-                    "id TEXT PRIMARY KEY, parent_id TEXT REFERENCES qc_fk_parent(id))"
+                    "id TEXT PRIMARY KEY, parent_id TEXT REFERENCES qc_fk_parent(id))",
+                params = emptyMap(),
+                invalidates = emptyList(),
             )
         }
         assertFailsWith<ForeignKeyViolationException> {
             db.transaction {
                 executeUpdate(
                     "INSERT INTO qc_fk_child (id, parent_id) VALUES (:id, :p)",
-                    mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    params = mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    invalidates = emptyList(),
                 )
             }
         }

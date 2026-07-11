@@ -150,12 +150,26 @@ The conflict target is validated on two levels:
 ## Raw SQL
 
 Raw SQL is the escape hatch for schema, backend-specific features and complex conflict
-targets. Prefer parameter maps for values:
+targets — `execute`, `executeUpdate`, `execSql` and `RawExpression` all count as raw SQL. It is
+an explicit opt-in: calling any of them requires `@OptIn(DelicateKormiumApi::class)` in scope
+(a `@file:OptIn(DelicateKormiumApi::class)` at the top of the file is the usual form), so reaching
+for raw SQL is a visible, deliberate act rather than something that slips in unnoticed.
+
+`execute` and `executeUpdate` take `params` and `invalidates` as required arguments — there is no
+default to fall back on, even when the answer is "nothing":
 
 ```kotlin
 executeUpdate(
     """CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON "users" ("email")""",
+    params = emptyMap(),
+    invalidates = emptyList(),
 )
 ```
 
-Use `RawExpression` only for controlled SQL fragments, never for concatenated user input.
+Making `params` mandatory means parameterizing a value is never more effort than concatenating it
+into the SQL string — pass `params = mapOf("email" to email)` and reference `:email` in the SQL.
+Making `invalidates` mandatory means a write is never silently invisible to observers — every call
+site states, in the open, which tables it touches (or `emptyList()`, deliberately, if none).
+
+Use `RawExpression` only for controlled SQL fragments, never for concatenated user input; it also
+requires `@OptIn(DelicateKormiumApi::class)`.

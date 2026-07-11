@@ -1,11 +1,11 @@
 package io.github.kormium
 
 import io.github.kormium.resultset.ResultSet
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.toKotlinInstant
+import kotlin.time.toKotlinInstant
 import kotlinx.datetime.toKotlinLocalDate
 import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.datetime.toKotlinLocalTime
@@ -21,7 +21,7 @@ import java.time.OffsetDateTime
  * correct [Instant]. UUID (`CHAR(36)`) and `JSON` columns are plain text via [getString], which
  * lines up with korm's text-based column reading.
  */
-class MySqlResultSetWrapper(private val rs: java.sql.ResultSet) : ResultSet {
+internal class MySqlResultSetWrapper(private val rs: java.sql.ResultSet) : ResultSet {
     // Lazy: the hot read path maps columns positionally and never touches this.
     override val columns: Array<String> by lazy { internalGetColumns() }
 

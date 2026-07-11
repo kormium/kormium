@@ -7,6 +7,8 @@ repositories {
 }
 
 kotlin {
+    explicitApi()
+
     // A SQLite engine for Kotlin running on Node, over the synchronous better-sqlite3 package.
     // Node only (no browser); nodejs() also runs the tests against a real on-disk/in-memory SQLite.
     compilerOptions {
@@ -28,7 +30,7 @@ kotlin {
                 // Shared Wasm driver layer: named-param parser, text ResultSet, binding helper.
                 implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 // better-sqlite3: the de-facto synchronous SQLite for Node. https://github.com/WiseLibs/better-sqlite3
                 implementation(npm("better-sqlite3", "12.11.1"))
             }

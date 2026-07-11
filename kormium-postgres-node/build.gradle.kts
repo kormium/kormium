@@ -7,6 +7,8 @@ repositories {
 }
 
 kotlin {
+    explicitApi()
+
     // A Postgres engine for Kotlin running on Node, over the async node-postgres (`pg`) package
     // talking to a real Postgres server. Node only.
     compilerOptions {
@@ -28,7 +30,7 @@ kotlin {
                 // Shared Wasm driver layer: named-param parser, text ResultSet, binding helper.
                 implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 // node-postgres: pure-JS Postgres client. https://node-postgres.com
                 implementation(npm("pg", "8.13.1"))
             }

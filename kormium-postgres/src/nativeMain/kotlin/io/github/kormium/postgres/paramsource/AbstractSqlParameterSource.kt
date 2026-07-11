@@ -1,7 +1,7 @@
 package io.github.kormium.postgres.paramsource
 
 import io.github.kormium.postgres.exception.AnonymousClassException
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -15,7 +15,7 @@ import kotlin.reflect.KClass
  * [toString] representation.
  * Concrete subclasses must implement [hasValue] and [getValue].
  */
-abstract class AbstractSqlParameterSource : SqlParameterSource {
+internal abstract class AbstractSqlParameterSource : SqlParameterSource {
     private val sqlTypes: MutableMap<String, UInt> = HashMap()
     private val typeNames: MutableMap<String, String> = HashMap()
 
@@ -24,11 +24,11 @@ abstract class AbstractSqlParameterSource : SqlParameterSource {
      * @param paramName the name of the parameter
      * @param sqlType the SQL type of the parameter
      */
-    fun registerSqlType(paramName: String, sqlType: UInt) {
+    public fun registerSqlType(paramName: String, sqlType: UInt) {
         sqlTypes[paramName] = sqlType
     }
 
-    fun registerSqlType(paramName: String, value: Any?) {
+    public fun registerSqlType(paramName: String, value: Any?) {
         registerSqlType(
             paramName = paramName,
             sqlType = value?.let { oidMap[it::class.simpleName ?: throw AnonymousClassException()] }
@@ -41,7 +41,7 @@ abstract class AbstractSqlParameterSource : SqlParameterSource {
      * @param paramName the name of the parameter
      * @param typeName the type name of the parameter
      */
-    fun registerTypeName(paramName: String, typeName: String) {
+    public fun registerTypeName(paramName: String, typeName: String) {
         typeNames[paramName] = typeName
     }
 
@@ -51,7 +51,7 @@ abstract class AbstractSqlParameterSource : SqlParameterSource {
      * @return the SQL type of the parameter,
      * or `TYPE_UNKNOWN` if not registered
      */
-    override fun getSqlType(paramName: String) = sqlTypes[paramName] ?: SqlParameterSource.TYPE_UNKNOWN
+    override fun getSqlType(paramName: String): UInt = sqlTypes[paramName] ?: SqlParameterSource.TYPE_UNKNOWN
 
     /**
      * Return the type name for the given parameter, if registered.
@@ -59,7 +59,7 @@ abstract class AbstractSqlParameterSource : SqlParameterSource {
      * @return the type name of the parameter,
      * or `null` if not registered
      */
-    fun getTypeName(paramName: String) = typeNames[paramName]
+    public fun getTypeName(paramName: String): String? = typeNames[paramName]
 
     /**
      * Enumerate the parameter names and values with their corresponding SQL type if available,

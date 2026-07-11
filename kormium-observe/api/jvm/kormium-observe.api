@@ -1,0 +1,6 @@
+public final class io/github/kormium/observe/ObserveKt {
+	public static final fun observe (Lio/github/kormium/Table;Lio/github/kormium/database/SuspendDatabase;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun observe (Lio/github/kormium/database/SuspendDatabase;Ljava/util/Set;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun observe$default (Lio/github/kormium/Table;Lio/github/kormium/database/SuspendDatabase;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+}
+

@@ -1,4 +1,7 @@
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
+import io.github.kormium.decimal.Decimal
+import io.github.kormium.decimal.decimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity
@@ -65,7 +68,7 @@ class SqliteIntegrationTest {
             Products.execSql(productsDdl)
             Products.insert(Product().apply {
                 this.id = id
-                this.price = BigDecimal.fromInt(100)
+                this.price = Decimal.of(100)
                 this.qty = 5
                 this.displayName = "widget"
                 this.note = null
@@ -80,7 +83,7 @@ class SqliteIntegrationTest {
         assertNull(found?.note)
         // A nullable numeric column that is NULL must read back as null, not 0.
         assertNull(found?.rank)
-        assertEquals(0, BigDecimal.fromInt(100).compareTo(found?.price!!))
+        assertEquals(0, Decimal.of(100).compareTo(found?.price!!))
 
         // Parameterized WHERE on a typed value.
         val byQty = db.autocommit { Products.find(Query(Products.qty eq 5)) }.filter { it.id == id }
@@ -120,7 +123,7 @@ class SqliteIntegrationTest {
         val tag = "one-${Uuid.random()}"
         db.transaction {
             Products.execSql(productsDdl)
-            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 7; displayName = tag; note = null; rank = null })
+            Products.insert(Product().apply { id = Uuid.random(); price = Decimal.of(1); qty = 7; displayName = tag; note = null; rank = null })
         }
         val hit = db.autocommit { Products.findOne { where { Products.displayName eq tag } } }
         assertEquals(7, hit?.qty)
@@ -139,8 +142,8 @@ class SqliteIntegrationTest {
         val tag = "operand-${Uuid.random()}"
         db.transaction {
             Products.execSql(productsDdl)
-            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 100; displayName = tag; note = null; rank = 5 })
-            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 5; displayName = tag; note = null; rank = null })
+            Products.insert(Product().apply { id = Uuid.random(); price = Decimal.of(1); qty = 100; displayName = tag; note = null; rank = 5 })
+            Products.insert(Product().apply { id = Uuid.random(); price = Decimal.of(1); qty = 5; displayName = tag; note = null; rank = null })
         }
 
         // CASE inList — CASE was eq/neq-only before; now any operand supports inList.
@@ -181,8 +184,8 @@ class SqliteIntegrationTest {
         val tag = "isnull-${Uuid.random()}"
         db.transaction {
             Products.execSql(productsDdl)
-            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 1; displayName = tag; note = null; rank = 5 })
-            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 2; displayName = tag; note = null; rank = null })
+            Products.insert(Product().apply { id = Uuid.random(); price = Decimal.of(1); qty = 1; displayName = tag; note = null; rank = 5 })
+            Products.insert(Product().apply { id = Uuid.random(); price = Decimal.of(1); qty = 2; displayName = tag; note = null; rank = null })
         }
         // `rank + 1` is NULL exactly when rank is — .isNull() on the computed expression finds it.
         val nullRank = db.autocommit {
@@ -204,7 +207,7 @@ class SqliteIntegrationTest {
         // upsert as insert (no conflict).
         db.transaction {
             Products.upsert(
-                entity = Product().apply { this.id = id; price = BigDecimal.fromInt(1); qty = 1; displayName = "a"; note = null; rank = null },
+                entity = Product().apply { this.id = id; price = Decimal.of(1); qty = 1; displayName = "a"; note = null; rank = null },
                 onConflict = Products.id,
                 update = Product().apply { qty = 2 },
             )
@@ -214,7 +217,7 @@ class SqliteIntegrationTest {
         // upsert again on the same id → DO UPDATE applies the patch.
         db.transaction {
             Products.upsert(
-                entity = Product().apply { this.id = id; price = BigDecimal.fromInt(1); qty = 99; displayName = "a"; note = null; rank = null },
+                entity = Product().apply { this.id = id; price = Decimal.of(1); qty = 99; displayName = "a"; note = null; rank = null },
                 onConflict = Products.id,
                 update = Product().apply { qty = 2 },
             )
@@ -224,13 +227,13 @@ class SqliteIntegrationTest {
         // insertOrIgnore: existing id → 0 affected, new id → 1 affected.
         assertEquals(0L, db.transaction {
             Products.insertOrIgnore(
-                Product().apply { this.id = id; price = BigDecimal.fromInt(1); qty = 5; displayName = "a"; note = null; rank = null },
+                Product().apply { this.id = id; price = Decimal.of(1); qty = 5; displayName = "a"; note = null; rank = null },
                 onConflict = Products.id,
             )
         })
         assertEquals(1L, db.transaction {
             Products.insertOrIgnore(
-                Product().apply { this.id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 5; displayName = "b"; note = null; rank = null },
+                Product().apply { this.id = Uuid.random(); price = Decimal.of(1); qty = 5; displayName = "b"; note = null; rank = null },
                 onConflict = Products.id,
             )
         })
@@ -240,9 +243,9 @@ class SqliteIntegrationTest {
         val rows = db.transaction {
             Products.insertAll(
                 listOf(
-                    Product().apply { this.id = idA; price = BigDecimal.fromInt(1); qty = 1; displayName = "A"; note = null; rank = null },
-                    Product().apply { this.id = idB; price = BigDecimal.fromInt(1); qty = 2; displayName = "B" }, // different shape (no note/rank)
-                    Product().apply { this.id = idC; price = BigDecimal.fromInt(1); qty = 3; displayName = "C"; note = null; rank = null },
+                    Product().apply { this.id = idA; price = Decimal.of(1); qty = 1; displayName = "A"; note = null; rank = null },
+                    Product().apply { this.id = idB; price = Decimal.of(1); qty = 2; displayName = "B" }, // different shape (no note/rank)
+                    Product().apply { this.id = idC; price = Decimal.of(1); qty = 3; displayName = "C"; note = null; rank = null },
                 ),
                 returning = true,
             )
@@ -258,7 +261,7 @@ class SqliteIntegrationTest {
         db.transaction {
             Products.execSql(productsDdl)
             Products.insert(Product().apply {
-                this.id = id; this.price = BigDecimal.fromInt(1); this.qty = 1
+                this.id = id; this.price = Decimal.of(1); this.qty = 1
                 this.displayName = tricky; this.note = null; this.rank = null
             })
         }
@@ -270,7 +273,7 @@ class SqliteIntegrationTest {
     @Test
     fun testAllColumnTypesRoundTrip() {
         val id = Uuid.random()
-        val instant = kotlinx.datetime.Instant.parse("2024-01-02T03:04:05Z")
+        val instant = kotlin.time.Instant.parse("2024-01-02T03:04:05Z")
         val json = kotlinx.serialization.json.JsonPrimitive("hi")
         val date = kotlinx.datetime.LocalDate.parse("2024-01-02")
         val time = kotlinx.datetime.LocalTime.parse("03:04:05")
@@ -283,7 +286,7 @@ class SqliteIntegrationTest {
                 this.aDouble = 2.5
                 this.aBool = true
                 this.aText = "txt"
-                this.aDecimal = BigDecimal.fromInt(123)
+                this.aDecimal = Decimal.of(123)
                 this.anInstant = instant
                 this.aJson = json
                 this.aLong = 9_000_000_000L
@@ -299,7 +302,7 @@ class SqliteIntegrationTest {
         assertEquals(2.5, row.aDouble)
         assertEquals(true, row.aBool)
         assertEquals("txt", row.aText)
-        assertEquals(0, BigDecimal.fromInt(123).compareTo(row.aDecimal!!))
+        assertEquals(0, Decimal.of(123).compareTo(row.aDecimal!!))
         assertEquals(instant, row.anInstant)
         assertEquals(json, row.aJson)
         assertEquals(9_000_000_000L, row.aLong)
@@ -320,7 +323,7 @@ class SqliteIntegrationTest {
             Products.execSql(productsDdl)
             Products.insertAll(ids.mapIndexed { i, id ->
                 Product().apply {
-                    this.id = id; this.price = BigDecimal.fromInt(i); this.qty = i
+                    this.id = id; this.price = Decimal.of(i); this.qty = i
                     this.displayName = tag; this.note = null; this.rank = null
                 }
             })
@@ -342,7 +345,7 @@ class SqliteIntegrationTest {
             // Two rows of 2_000_000_000 sum to 4_000_000_000, which is past Int.MAX_VALUE.
             Products.insertAll(List(2) {
                 Product().apply {
-                    this.id = Uuid.random(); this.price = BigDecimal.fromInt(0); this.qty = 2_000_000_000
+                    this.id = Uuid.random(); this.price = Decimal.of(0); this.qty = 2_000_000_000
                     this.displayName = tag; this.note = null; this.rank = null
                 }
             })
@@ -357,7 +360,7 @@ class SqliteIntegrationTest {
 
     /**
      * `between` is inclusive on both ends, composes with `not`, and an empty/reversed range
-     * (lo > hi) matches nothing — over an Int column and a BigDecimal column.
+     * (lo > hi) matches nothing — over an Int column and a Decimal column.
      */
     @Test
     fun testBetweenInclusiveAndEmptyRange() {
@@ -366,7 +369,7 @@ class SqliteIntegrationTest {
             Products.execSql(productsDdl)
             listOf(5, 10, 20, 25).forEach { q ->
                 Products.insert(Product().apply {
-                    id = Uuid.random(); price = BigDecimal.fromInt(q); qty = q
+                    id = Uuid.random(); price = Decimal.of(q); qty = q
                     displayName = tag; note = null; rank = null
                 })
             }
@@ -378,10 +381,10 @@ class SqliteIntegrationTest {
         }
         assertEquals(listOf(10, 20), inRange.map { it.qty }.sorted())
 
-        // Same over a BigDecimal column.
+        // Same over a Decimal column.
         val byPrice = db.autocommit {
             Products.find {
-                where { (Products.displayName eq tag) and (Products.price between BigDecimal.fromInt(10)..BigDecimal.fromInt(20)) }
+                where { (Products.displayName eq tag) and (Products.price between Decimal.of(10)..Decimal.of(20)) }
             }
         }
         assertEquals(2, byPrice.size)
@@ -412,7 +415,7 @@ class SqliteIntegrationTest {
             Products.execSql(productsDdl)
             Products.insertAll(List(3) {
                 Product().apply {
-                    this.id = Uuid.random(); this.price = BigDecimal.fromInt(0); this.qty = 10
+                    this.id = Uuid.random(); this.price = Decimal.of(0); this.qty = 10
                     this.displayName = tag; this.note = null; this.rank = null
                 }
             })
@@ -435,7 +438,7 @@ class SqliteIntegrationTest {
         assertFailsWith<RuntimeException> {
             db.transaction {
                 Products.insert(Product().apply {
-                    this.id = id; this.price = BigDecimal.fromInt(1); this.qty = 1
+                    this.id = id; this.price = Decimal.of(1); this.qty = 1
                     this.displayName = "rollback"; this.note = null; this.rank = null
                 })
                 throw RuntimeException("boom")
@@ -451,14 +454,14 @@ class SqliteIntegrationTest {
         db.transaction {
             Products.execSql(productsDdl)
             Products.insert(Product().apply {
-                this.id = id; this.price = BigDecimal.fromInt(1); this.qty = 1
+                this.id = id; this.price = Decimal.of(1); this.qty = 1
                 this.displayName = "dup"; this.note = null; this.rank = null
             })
         }
         assertFailsWith<UniqueViolationException> {
             db.transaction {
                 Products.insert(Product().apply {
-                    this.id = id; this.price = BigDecimal.fromInt(2); this.qty = 2
+                    this.id = id; this.price = Decimal.of(2); this.qty = 2
                     this.displayName = "dup2"; this.note = null; this.rank = null
                 })
             }
@@ -474,17 +477,20 @@ class SqliteIntegrationTest {
     @Test
     fun testForeignKeyViolationIsTyped() {
         db.transaction {
-            executeUpdate("CREATE TABLE IF NOT EXISTS fk_parent (id TEXT PRIMARY KEY)")
+            executeUpdate("CREATE TABLE IF NOT EXISTS fk_parent (id TEXT PRIMARY KEY)", params = emptyMap(), invalidates = emptyList())
             executeUpdate(
                 "CREATE TABLE IF NOT EXISTS fk_child (" +
-                    "id TEXT PRIMARY KEY, parent_id TEXT REFERENCES fk_parent(id))"
+                    "id TEXT PRIMARY KEY, parent_id TEXT REFERENCES fk_parent(id))",
+                params = emptyMap(),
+                invalidates = emptyList(),
             )
         }
         assertFailsWith<ForeignKeyViolationException> {
             db.transaction {
                 executeUpdate(
                     "INSERT INTO fk_child (id, parent_id) VALUES (:id, :p)",
-                    mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    params = mapOf("id" to Uuid.random().toString(), "p" to Uuid.random().toString()),
+                    invalidates = emptyList(),
                 )
             }
         }
@@ -648,8 +654,8 @@ class SqliteIntegrationTest {
         val tag = "coalesce-${Uuid.random()}"
         db.transaction {
             Products.execSql(productsDdl)
-            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 1; displayName = tag; note = null; rank = null })
-            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 1; displayName = tag; note = "set"; rank = 7 })
+            Products.insert(Product().apply { id = Uuid.random(); price = Decimal.of(1); qty = 1; displayName = tag; note = null; rank = null })
+            Products.insert(Product().apply { id = Uuid.random(); price = Decimal.of(1); qty = 1; displayName = tag; note = "set"; rank = 7 })
         }
 
         // SELECT: the null note reads back as the fallback.
@@ -675,7 +681,7 @@ class SqliteIntegrationTest {
         db.transaction {
             Products.execSql(productsDdl)
             listOf(5, 30, 100).forEach { q ->
-                Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = q; displayName = tag; note = null; rank = null })
+                Products.insert(Product().apply { id = Uuid.random(); price = Decimal.of(1); qty = q; displayName = tag; note = null; rank = null })
             }
         }
 
@@ -716,7 +722,7 @@ class SqliteIntegrationTest {
         val tag = "arith-${Uuid.random()}"
         db.transaction {
             Products.execSql(productsDdl)
-            Products.insert(Product().apply { id = Uuid.random(); price = BigDecimal.fromInt(1); qty = 10; displayName = tag; note = null; rank = 5 })
+            Products.insert(Product().apply { id = Uuid.random(); price = Decimal.of(1); qty = 10; displayName = tag; note = null; rank = 5 })
         }
 
         // Selected and read back with brand-new `* 2` instances — no val needed.
@@ -842,8 +848,8 @@ class SqliteIntegrationTest {
         val idB = Uuid.random()
         db.transaction {
             Products.execSql(productsDdl)
-            Products.insert(Product().apply { id = idA; price = BigDecimal.fromInt(1); qty = 1; displayName = "café"; note = null; rank = null }) // 4 chars
-            Products.insert(Product().apply { id = idB; price = BigDecimal.fromInt(1); qty = 1; displayName = "hi"; note = null; rank = null })   // 2 chars
+            Products.insert(Product().apply { id = idA; price = Decimal.of(1); qty = 1; displayName = "café"; note = null; rank = null }) // 4 chars
+            Products.insert(Product().apply { id = idB; price = Decimal.of(1); qty = 1; displayName = "hi"; note = null; rank = null })   // 2 chars
         }
         val scope = listOf(idA, idB)
 
@@ -870,8 +876,8 @@ class SqliteIntegrationTest {
         val idB = Uuid.random()
         db.transaction {
             Products.execSql(productsDdl)
-            Products.insert(Product().apply { id = idA; price = BigDecimal.fromInt(1); qty = 1; displayName = "A"; note = null; rank = null })
-            Products.insert(Product().apply { id = idB; price = BigDecimal.fromInt(1); qty = 1; displayName = "x"; note = "B"; rank = null })
+            Products.insert(Product().apply { id = idA; price = Decimal.of(1); qty = 1; displayName = "A"; note = null; rank = null })
+            Products.insert(Product().apply { id = idB; price = Decimal.of(1); qty = 1; displayName = "x"; note = "B"; rank = null })
         }
 
         // COALESCE("note", "displayName", 'Z'): A's note is NULL -> "A"; B's note -> "B".
@@ -898,7 +904,7 @@ class Product : Entity() {
 
 object Products : Table<SqCatalog, Product>("products", ::Product) {
     val id by Column.UUID().primaryKey()
-    val price by Column.BigDecimal()
+    val price by Column.decimal()
     val qty by Column.Int()
     val displayName by Column.Text()
     val note by Column.Text().nullable()
@@ -984,7 +990,7 @@ object AllTypes : Table<SqCatalog, AllTypesEntity>("all_types", ::AllTypesEntity
     val aDouble by Column.Double()
     val aBool by Column.Boolean()
     val aText by Column.Text()
-    val aDecimal by Column.BigDecimal()
+    val aDecimal by Column.decimal()
     val anInstant by Column.Instant()
     val aJson by Column.Json()
     val aLong by Column.Long()

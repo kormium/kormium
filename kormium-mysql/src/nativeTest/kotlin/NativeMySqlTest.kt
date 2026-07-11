@@ -1,4 +1,7 @@
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
+import io.github.kormium.decimal.Decimal
+import io.github.kormium.decimal.decimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.DatabaseClosedException
@@ -13,7 +16,7 @@ import io.github.kormium.database.createDatabase
 import io.github.kormium.eq
 import io.github.kormium.transaction
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -57,7 +60,7 @@ class NativeMySqlTest {
         driver.close()
         assertEquals(true, driver.isClosed)
         driver.close() // idempotent: must not throw
-        assertFailsWith<DatabaseClosedException> { driver.autocommit { execute("SELECT 1") { rs -> rs.getInt(0) } } }
+        assertFailsWith<DatabaseClosedException> { driver.autocommit { execute("SELECT 1", params = emptyMap(), invalidates = emptyList()) { rs -> rs.getInt(0) } } }
     }
 
     @Test
@@ -80,7 +83,7 @@ class NativeMySqlTest {
                     this.aDouble = 2.5
                     this.aBool = true
                     this.aText = "txt"
-                    this.aDecimal = BigDecimal.fromInt(123)
+                    this.aDecimal = Decimal.of(123)
                     this.anInstant = instant
                     this.aJson = json
                     this.aLong = 9_000_000_000L
@@ -96,7 +99,7 @@ class NativeMySqlTest {
             assertEquals(2.5, row.aDouble)
             assertEquals(true, row.aBool)
             assertEquals("txt", row.aText)
-            assertEquals(0, BigDecimal.fromInt(123).compareTo(row.aDecimal))
+            assertEquals(0, Decimal.of(123).compareTo(row.aDecimal))
             assertEquals(instant, row.anInstant)
             assertEquals(json, row.aJson)
             assertEquals(9_000_000_000L, row.aLong)
@@ -279,7 +282,7 @@ object NativeAllTypes : Table<NativeCatalog, NativeAllTypesEntity>("native_all_t
     val aDouble by Column.Double()
     val aBool by Column.Boolean()
     val aText by Column.Text()
-    val aDecimal by Column.BigDecimal()
+    val aDecimal by Column.decimal()
     val anInstant by Column.Instant()
     val aJson by Column.Json()
     val aLong by Column.Long()

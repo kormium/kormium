@@ -10,12 +10,13 @@ import io.github.kormium.mysql.MySqlNativeDriver
  * (useConnection) offloads each blocking call to the IO dispatcher — there is no portable
  * non-blocking MySQL client API, so this is the same strategy the Postgres driver uses on Windows.
  */
-actual fun createDatabase(
+public actual fun createDatabase(
     host: String,
     port: Int,
     database: String,
     user: String,
     password: String,
     poolSize: Int,
+    acquireTimeout: kotlin.time.Duration,
     config: KormiumConfig,
-): MySqlDriver = MySqlNativeDriver(host, port, database, user, password, poolSize, config)
+): MySqlDriver = MySqlNativeDriver(host, port, database, user, password, poolSize, acquireTimeout, config)

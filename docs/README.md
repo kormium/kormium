@@ -16,15 +16,17 @@ is intentionally short; the deeper material lives here.
    suspend API, async backends and migrations.
 6. [Backends](backends.md) - PostgreSQL, SQLite, r2dbc and platform support.
 7. [Observing changes](observe.md) - reactive `Flow` queries that re-emit on writes.
-8. [Ktor integration](ktor.md) - DI-agnostic, Ktor DI and Koin helpers.
-9. [API cookbook](api-cookbook.md) - copy-pasteable recipes for common tasks.
-10. [API ergonomics](api-ergonomics.md) - current canonical API style and escape hatches.
-11. [Observability](observability.md) - target logging, metrics and failure visibility.
-12. [Production guide](production-guide.md) - conservative guidance for real services.
-13. [Compatibility policy](compatibility.md) - supported versions, targets and API policy.
-14. [Design](design.md) - internal architecture and extension points.
-15. [Roadmap](roadmap.md) - current baseline, pre-1.0 hardening and future work.
-16. [Project guide](project.md) - samples, benchmarks, testing and contribution notes.
+8. [Kormium for AI developers](ai.md) - semantic search with pgvector, storing model output,
+   and working alongside a coding agent.
+9. [Ktor integration](ktor.md) - DI-agnostic, Ktor DI and Koin helpers.
+10. [API cookbook](api-cookbook.md) - copy-pasteable recipes for common tasks.
+11. [API ergonomics](api-ergonomics.md) - current canonical API style and escape hatches.
+12. [Observability](observability.md) - target logging, metrics and failure visibility.
+13. [Production guide](production-guide.md) - conservative guidance for real services.
+14. [Compatibility policy](compatibility.md) - supported versions, targets and API policy.
+15. [Design](design.md) - internal architecture and extension points.
+16. [Roadmap](roadmap.md) - current baseline, pre-1.0 hardening and future work.
+17. [Project guide](project.md) - samples, benchmarks, testing and contribution notes.
 
 ## API Surface
 
@@ -34,7 +36,7 @@ Kormium is split into small artifacts:
 | --- | --- |
 | `kormium-bom` | Bill of Materials for version alignment |
 | `kormium-core` | Backend-agnostic DSL, scopes and transactions |
-| `kormium-postgres` | PostgreSQL dialect and drivers: JDBC/HikariCP on JVM, libpq on Native |
+| `kormium-postgres` | PostgreSQL dialect and drivers: JDBC/HikariCP on JVM, libpq on Native; pgvector vector search |
 | `kormium-sqlite` | SQLite dialect and drivers: sqlite-jdbc, sqlite3 and AndroidX SQLite |
 | `kormium-r2dbc` | True async PostgreSQL on JVM, suspend API only |
 | `kormium-observe` | Reactive `Flow` queries that re-emit when watched tables change |

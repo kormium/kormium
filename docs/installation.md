@@ -39,6 +39,7 @@ dependencies {
 | Artifact | Add when |
 | --- | --- |
 | [`kormium-core`](../kormium-core/README.md) | You implement a custom backend or only need the common DSL types |
+| [`kormium-decimal`](../kormium-decimal/README.md) | You store exact decimals (`numeric`/`DECIMAL` columns) |
 | [`kormium-postgres`](../kormium-postgres/README.md) | You use PostgreSQL through JDBC on JVM or libpq on Native |
 | [`kormium-sqlite`](../kormium-sqlite/README.md) | You use SQLite on JVM, Native or Android |
 | [`kormium-r2dbc`](../kormium-r2dbc/README.md) | You want non-blocking PostgreSQL on JVM |

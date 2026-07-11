@@ -18,7 +18,7 @@ import io.ktor.server.application.ApplicationCall
  * reference. The `kormium-ktor-di` / `kormium-ktor-koin` artifacts add reified overloads that resolve
  * the database for you.
  */
-suspend fun <G : Catalog, R> ApplicationCall.transaction(
+public suspend fun <G : Catalog, R> ApplicationCall.transaction(
     db: SuspendDatabase<G>,
     isolation: TransactionIsolation? = null,
     readOnly: Boolean = false,
@@ -29,7 +29,7 @@ suspend fun <G : Catalog, R> ApplicationCall.transaction(
  * Runs [block] on [db] in autocommit (no surrounding transaction) — the cheap path for reads /
  * single statements. See [transaction] for the DI-agnostic rationale.
  */
-suspend fun <G : Catalog, R> ApplicationCall.autocommit(
+public suspend fun <G : Catalog, R> ApplicationCall.autocommit(
     db: SuspendDatabase<G>,
     block: suspend SuspendScope<G>.() -> R,
 ): R = db.suspendAutocommit(block)

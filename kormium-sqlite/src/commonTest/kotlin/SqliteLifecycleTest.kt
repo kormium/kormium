@@ -1,3 +1,5 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 import io.github.kormium.Catalog
 import io.github.kormium.DatabaseClosedException
 import io.github.kormium.autocommit
@@ -33,14 +35,14 @@ class SqliteLifecycleTest {
     fun useAfterCloseThrowsDatabaseClosed() {
         val db = createSqliteDatabase(":memory:")
         db.close()
-        assertFailsWith<DatabaseClosedException> { db.autocommit { execute("SELECT 1") } }
-        assertFailsWith<DatabaseClosedException> { db.transaction { execute("SELECT 1") } }
+        assertFailsWith<DatabaseClosedException> { db.autocommit { executeUpdate("SELECT 1", params = emptyMap(), invalidates = emptyList()) } }
+        assertFailsWith<DatabaseClosedException> { db.transaction { executeUpdate("SELECT 1", params = emptyMap(), invalidates = emptyList()) } }
     }
 
     @Test
     fun suspendUseAfterCloseThrowsDatabaseClosed() = runTest {
         val db = createSqliteDatabase(":memory:")
         db.close()
-        assertFailsWith<DatabaseClosedException> { db.suspendAutocommit { execute("SELECT 1") } }
+        assertFailsWith<DatabaseClosedException> { db.suspendAutocommit { executeUpdate("SELECT 1", params = emptyMap(), invalidates = emptyList()) } }
     }
 }

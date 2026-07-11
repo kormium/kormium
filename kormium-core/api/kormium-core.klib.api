@@ -1,0 +1,944 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs, wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-core>
+open annotation class io.github.kormium/DelicateKormiumApi : kotlin/Annotation { // io.github.kormium/DelicateKormiumApi|null[0]
+    constructor <init>() // io.github.kormium/DelicateKormiumApi.<init>|<init>(){}[0]
+}
+
+open annotation class io.github.kormium/KormiumDsl : kotlin/Annotation { // io.github.kormium/KormiumDsl|null[0]
+    constructor <init>() // io.github.kormium/KormiumDsl.<init>|<init>(){}[0]
+}
+
+final enum class io.github.kormium/AscDescOrder : kotlin/Enum<io.github.kormium/AscDescOrder> { // io.github.kormium/AscDescOrder|null[0]
+    enum entry ASC // io.github.kormium/AscDescOrder.ASC|null[0]
+    enum entry DESC // io.github.kormium/AscDescOrder.DESC|null[0]
+
+    final val entries // io.github.kormium/AscDescOrder.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.kormium/AscDescOrder> // io.github.kormium/AscDescOrder.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.kormium/AscDescOrder // io.github.kormium/AscDescOrder.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.kormium/AscDescOrder> // io.github.kormium/AscDescOrder.values|values#static(){}[0]
+}
+
+final enum class io.github.kormium/BatchInsertMode : kotlin/Enum<io.github.kormium/BatchInsertMode> { // io.github.kormium/BatchInsertMode|null[0]
+    enum entry GroupByAssignedFields // io.github.kormium/BatchInsertMode.GroupByAssignedFields|null[0]
+    enum entry Strict // io.github.kormium/BatchInsertMode.Strict|null[0]
+    enum entry UnionNulls // io.github.kormium/BatchInsertMode.UnionNulls|null[0]
+
+    final val entries // io.github.kormium/BatchInsertMode.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.kormium/BatchInsertMode> // io.github.kormium/BatchInsertMode.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.kormium/BatchInsertMode // io.github.kormium/BatchInsertMode.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.kormium/BatchInsertMode> // io.github.kormium/BatchInsertMode.values|values#static(){}[0]
+}
+
+final enum class io.github.kormium/QueryKind : kotlin/Enum<io.github.kormium/QueryKind> { // io.github.kormium/QueryKind|null[0]
+    enum entry Delete // io.github.kormium/QueryKind.Delete|null[0]
+    enum entry Insert // io.github.kormium/QueryKind.Insert|null[0]
+    enum entry Other // io.github.kormium/QueryKind.Other|null[0]
+    enum entry Select // io.github.kormium/QueryKind.Select|null[0]
+    enum entry Update // io.github.kormium/QueryKind.Update|null[0]
+
+    final val entries // io.github.kormium/QueryKind.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.kormium/QueryKind> // io.github.kormium/QueryKind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.kormium/QueryKind // io.github.kormium/QueryKind.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.kormium/QueryKind> // io.github.kormium/QueryKind.values|values#static(){}[0]
+
+    final object Companion { // io.github.kormium/QueryKind.Companion|null[0]
+        final fun of(kotlin/String): io.github.kormium/QueryKind // io.github.kormium/QueryKind.Companion.of|of(kotlin.String){}[0]
+    }
+}
+
+final enum class io.github.kormium/TransactionIsolation : kotlin/Enum<io.github.kormium/TransactionIsolation> { // io.github.kormium/TransactionIsolation|null[0]
+    enum entry ReadCommitted // io.github.kormium/TransactionIsolation.ReadCommitted|null[0]
+    enum entry ReadUncommitted // io.github.kormium/TransactionIsolation.ReadUncommitted|null[0]
+    enum entry RepeatableRead // io.github.kormium/TransactionIsolation.RepeatableRead|null[0]
+    enum entry Serializable // io.github.kormium/TransactionIsolation.Serializable|null[0]
+
+    final val entries // io.github.kormium/TransactionIsolation.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.kormium/TransactionIsolation> // io.github.kormium/TransactionIsolation.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val sql // io.github.kormium/TransactionIsolation.sql|{}sql[0]
+        final fun <get-sql>(): kotlin/String // io.github.kormium/TransactionIsolation.sql.<get-sql>|<get-sql>(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.kormium/TransactionIsolation // io.github.kormium/TransactionIsolation.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.kormium/TransactionIsolation> // io.github.kormium/TransactionIsolation.values|values#static(){}[0]
+}
+
+abstract fun interface io.github.kormium/QueryObserver { // io.github.kormium/QueryObserver|null[0]
+    abstract fun onQuery(io.github.kormium/QueryEvent) // io.github.kormium/QueryObserver.onQuery|onQuery(io.github.kormium.QueryEvent){}[0]
+}
+
+abstract fun interface io.github.kormium/Registration { // io.github.kormium/Registration|null[0]
+    abstract fun remove() // io.github.kormium/Registration.remove|remove(){}[0]
+}
+
+abstract fun interface io.github.kormium/WriteListener { // io.github.kormium/WriteListener|null[0]
+    abstract fun onCommit(kotlin.collections/Set<kotlin/String>) // io.github.kormium/WriteListener.onCommit|onCommit(kotlin.collections.Set<kotlin.String>){}[0]
+}
+
+abstract interface <#A: kotlin/Any?> io.github.kormium/ColumnType { // io.github.kormium/ColumnType|null[0]
+    open val description // io.github.kormium/ColumnType.description|{}description[0]
+        open fun <get-description>(): kotlin/String // io.github.kormium/ColumnType.description.<get-description>|<get-description>(){}[0]
+
+    abstract fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): #A? // io.github.kormium/ColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+    open fun toParam(#A): kotlin/Any? // io.github.kormium/ColumnType.toParam|toParam(1:0){}[0]
+}
+
+abstract interface <#A: kotlin/Any?> io.github.kormium/NumericExpr : io.github.kormium/Operand<#A> // io.github.kormium/NumericExpr|null[0]
+
+abstract interface <#A: kotlin/Any?> io.github.kormium/Operand : io.github.kormium/Selectable<#A> { // io.github.kormium/Operand|null[0]
+    abstract val columnType // io.github.kormium/Operand.columnType|{}columnType[0]
+        abstract fun <get-columnType>(): io.github.kormium/ColumnType<#A> // io.github.kormium/Operand.columnType.<get-columnType>|<get-columnType>(){}[0]
+
+    open fun read(io.github.kormium.resultset/ResultSet, kotlin/Int, io.github.kormium/TypeMapper): #A? // io.github.kormium/Operand.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int;io.github.kormium.TypeMapper){}[0]
+}
+
+abstract interface <#A: kotlin/Any?> io.github.kormium/Selectable : io.github.kormium/Expression { // io.github.kormium/Selectable|null[0]
+    abstract fun read(io.github.kormium.resultset/ResultSet, kotlin/Int, io.github.kormium/TypeMapper): #A? // io.github.kormium/Selectable.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int;io.github.kormium.TypeMapper){}[0]
+    abstract fun resultKey(): kotlin/Any // io.github.kormium/Selectable.resultKey|resultKey(){}[0]
+}
+
+abstract interface <#A: out io.github.kormium/Catalog> io.github.kormium.database/Database : kotlin/AutoCloseable { // io.github.kormium.database/Database|null[0]
+    open val config // io.github.kormium.database/Database.config|{}config[0]
+        open fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium.database/Database.config.<get-config>|<get-config>(){}[0]
+    open val dialect // io.github.kormium.database/Database.dialect|{}dialect[0]
+        open fun <get-dialect>(): io.github.kormium/Dialect // io.github.kormium.database/Database.dialect.<get-dialect>|<get-dialect>(){}[0]
+    open val isClosed // io.github.kormium.database/Database.isClosed|{}isClosed[0]
+        open fun <get-isClosed>(): kotlin/Boolean // io.github.kormium.database/Database.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+    open val writeListeners // io.github.kormium.database/Database.writeListeners|{}writeListeners[0]
+        open fun <get-writeListeners>(): io.github.kormium/WriteListeners // io.github.kormium.database/Database.writeListeners.<get-writeListeners>|<get-writeListeners>(){}[0]
+
+    abstract fun <#A1: kotlin/Any?> usePinned(kotlin/Boolean, io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin/Function1<io.github.kormium/SqlExecutor, #A1>): #A1 // io.github.kormium.database/Database.usePinned|usePinned(kotlin.Boolean;io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.Function1<io.github.kormium.SqlExecutor,0:0>){0§<kotlin.Any?>}[0]
+    abstract fun close() // io.github.kormium.database/Database.close|close(){}[0]
+}
+
+abstract interface <#A: out io.github.kormium/Catalog> io.github.kormium.database/SuspendDatabase : kotlin/AutoCloseable { // io.github.kormium.database/SuspendDatabase|null[0]
+    open val config // io.github.kormium.database/SuspendDatabase.config|{}config[0]
+        open fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium.database/SuspendDatabase.config.<get-config>|<get-config>(){}[0]
+    open val dialect // io.github.kormium.database/SuspendDatabase.dialect|{}dialect[0]
+        open fun <get-dialect>(): io.github.kormium/Dialect // io.github.kormium.database/SuspendDatabase.dialect.<get-dialect>|<get-dialect>(){}[0]
+    open val isClosed // io.github.kormium.database/SuspendDatabase.isClosed|{}isClosed[0]
+        open fun <get-isClosed>(): kotlin/Boolean // io.github.kormium.database/SuspendDatabase.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+    open val writeListeners // io.github.kormium.database/SuspendDatabase.writeListeners|{}writeListeners[0]
+        open fun <get-writeListeners>(): io.github.kormium/WriteListeners // io.github.kormium.database/SuspendDatabase.writeListeners.<get-writeListeners>|<get-writeListeners>(){}[0]
+
+    abstract fun close() // io.github.kormium.database/SuspendDatabase.close|close(){}[0]
+    abstract suspend fun <#A1: kotlin/Any?> useConnection(kotlin/Boolean, io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendSqlExecutor, #A1>): #A1 // io.github.kormium.database/SuspendDatabase.useConnection|useConnection(kotlin.Boolean;io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendSqlExecutor,0:0>){0§<kotlin.Any?>}[0]
+}
+
+abstract interface io.github.kormium.resultset/ResultSet { // io.github.kormium.resultset/ResultSet|null[0]
+    abstract val columns // io.github.kormium.resultset/ResultSet.columns|{}columns[0]
+        abstract fun <get-columns>(): kotlin/Array<kotlin/String> // io.github.kormium.resultset/ResultSet.columns.<get-columns>|<get-columns>(){}[0]
+
+    abstract fun getBoolean(kotlin/Int): kotlin/Boolean? // io.github.kormium.resultset/ResultSet.getBoolean|getBoolean(kotlin.Int){}[0]
+    abstract fun getBytes(kotlin/Int): kotlin/ByteArray? // io.github.kormium.resultset/ResultSet.getBytes|getBytes(kotlin.Int){}[0]
+    abstract fun getDate(kotlin/Int): kotlinx.datetime/LocalDate? // io.github.kormium.resultset/ResultSet.getDate|getDate(kotlin.Int){}[0]
+    abstract fun getDouble(kotlin/Int): kotlin/Double? // io.github.kormium.resultset/ResultSet.getDouble|getDouble(kotlin.Int){}[0]
+    abstract fun getFloat(kotlin/Int): kotlin/Float? // io.github.kormium.resultset/ResultSet.getFloat|getFloat(kotlin.Int){}[0]
+    abstract fun getInstant(kotlin/Int): kotlin.time/Instant? // io.github.kormium.resultset/ResultSet.getInstant|getInstant(kotlin.Int){}[0]
+    abstract fun getInt(kotlin/Int): kotlin/Int? // io.github.kormium.resultset/ResultSet.getInt|getInt(kotlin.Int){}[0]
+    abstract fun getLocalDateTime(kotlin/Int): kotlinx.datetime/LocalDateTime? // io.github.kormium.resultset/ResultSet.getLocalDateTime|getLocalDateTime(kotlin.Int){}[0]
+    abstract fun getLong(kotlin/Int): kotlin/Long? // io.github.kormium.resultset/ResultSet.getLong|getLong(kotlin.Int){}[0]
+    abstract fun getShort(kotlin/Int): kotlin/Short? // io.github.kormium.resultset/ResultSet.getShort|getShort(kotlin.Int){}[0]
+    abstract fun getString(kotlin/Int): kotlin/String? // io.github.kormium.resultset/ResultSet.getString|getString(kotlin.Int){}[0]
+    abstract fun getTime(kotlin/Int): kotlinx.datetime/LocalTime? // io.github.kormium.resultset/ResultSet.getTime|getTime(kotlin.Int){}[0]
+    abstract fun next(): kotlin/Boolean // io.github.kormium.resultset/ResultSet.next|next(){}[0]
+}
+
+abstract interface io.github.kormium/Catalog // io.github.kormium/Catalog|null[0]
+
+abstract interface io.github.kormium/ConnectionPool { // io.github.kormium/ConnectionPool|null[0]
+    abstract fun acquire(): io.github.kormium/PinnedConnection // io.github.kormium/ConnectionPool.acquire|acquire(){}[0]
+    open suspend fun acquireSuspending(): io.github.kormium/PinnedConnection // io.github.kormium/ConnectionPool.acquireSuspending|acquireSuspending(){}[0]
+}
+
+abstract interface io.github.kormium/Dialect { // io.github.kormium/Dialect|null[0]
+    open val readOnlyToggle // io.github.kormium/Dialect.readOnlyToggle|{}readOnlyToggle[0]
+        open fun <get-readOnlyToggle>(): io.github.kormium/ReadOnlyToggle? // io.github.kormium/Dialect.readOnlyToggle.<get-readOnlyToggle>|<get-readOnlyToggle>(){}[0]
+    open val supportsReturning // io.github.kormium/Dialect.supportsReturning|{}supportsReturning[0]
+        open fun <get-supportsReturning>(): kotlin/Boolean // io.github.kormium/Dialect.supportsReturning.<get-supportsReturning>|<get-supportsReturning>(){}[0]
+    open val supportsTransactionIsolation // io.github.kormium/Dialect.supportsTransactionIsolation|{}supportsTransactionIsolation[0]
+        open fun <get-supportsTransactionIsolation>(): kotlin/Boolean // io.github.kormium/Dialect.supportsTransactionIsolation.<get-supportsTransactionIsolation>|<get-supportsTransactionIsolation>(){}[0]
+
+    abstract fun quoteIdentifier(kotlin/String): kotlin/String // io.github.kormium/Dialect.quoteIdentifier|quoteIdentifier(kotlin.String){}[0]
+    abstract fun renderBind(kotlin/String, kotlin/Any?): kotlin/String // io.github.kormium/Dialect.renderBind|renderBind(kotlin.String;kotlin.Any?){}[0]
+    abstract fun renderLimit(kotlin/UInt): kotlin/String // io.github.kormium/Dialect.renderLimit|renderLimit(kotlin.UInt){}[0]
+    abstract fun renderOffset(kotlin/UInt): kotlin/String // io.github.kormium/Dialect.renderOffset|renderOffset(kotlin.UInt){}[0]
+    open fun advisoryLockSql(kotlin/Long): kotlin/String? // io.github.kormium/Dialect.advisoryLockSql|advisoryLockSql(kotlin.Long){}[0]
+    open fun renderCharLength(kotlin/String): kotlin/String // io.github.kormium/Dialect.renderCharLength|renderCharLength(kotlin.String){}[0]
+    open fun renderInsertDefaultValues(kotlin/String): kotlin/String // io.github.kormium/Dialect.renderInsertDefaultValues|renderInsertDefaultValues(kotlin.String){}[0]
+    open fun renderInsertOrIgnoreSuffix(kotlin.collections/List<kotlin/String>): kotlin/String // io.github.kormium/Dialect.renderInsertOrIgnoreSuffix|renderInsertOrIgnoreSuffix(kotlin.collections.List<kotlin.String>){}[0]
+    open fun renderLimitOffset(kotlin/UInt, kotlin/UInt): kotlin/String // io.github.kormium/Dialect.renderLimitOffset|renderLimitOffset(kotlin.UInt;kotlin.UInt){}[0]
+    open fun renderUpsertSuffix(kotlin.collections/List<kotlin/String>, kotlin/String): kotlin/String // io.github.kormium/Dialect.renderUpsertSuffix|renderUpsertSuffix(kotlin.collections.List<kotlin.String>;kotlin.String){}[0]
+}
+
+abstract interface io.github.kormium/Expression { // io.github.kormium/Expression|null[0]
+    abstract fun toSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/Expression.toSql|toSql(io.github.kormium.ParamBuilder){}[0]
+}
+
+abstract interface io.github.kormium/NotificationTransport { // io.github.kormium/NotificationTransport|null[0]
+    abstract fun subscribe(): kotlinx.coroutines.flow/Flow<kotlin.collections/Set<kotlin/String>> // io.github.kormium/NotificationTransport.subscribe|subscribe(){}[0]
+    abstract suspend fun publish(kotlin.collections/Set<kotlin/String>) // io.github.kormium/NotificationTransport.publish|publish(kotlin.collections.Set<kotlin.String>){}[0]
+}
+
+abstract interface io.github.kormium/PinnedConnection { // io.github.kormium/PinnedConnection|null[0]
+    abstract val executor // io.github.kormium/PinnedConnection.executor|{}executor[0]
+        abstract fun <get-executor>(): io.github.kormium/SqlExecutor // io.github.kormium/PinnedConnection.executor.<get-executor>|<get-executor>(){}[0]
+
+    abstract fun begin(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ...) // io.github.kormium/PinnedConnection.begin|begin(io.github.kormium.TransactionIsolation?;kotlin.Boolean){}[0]
+    abstract fun commit() // io.github.kormium/PinnedConnection.commit|commit(){}[0]
+    abstract fun release() // io.github.kormium/PinnedConnection.release|release(){}[0]
+    abstract fun rollback() // io.github.kormium/PinnedConnection.rollback|rollback(){}[0]
+}
+
+abstract interface io.github.kormium/SqlExecutor { // io.github.kormium/SqlExecutor|null[0]
+    abstract val dialect // io.github.kormium/SqlExecutor.dialect|{}dialect[0]
+        abstract fun <get-dialect>(): io.github.kormium/Dialect // io.github.kormium/SqlExecutor.dialect.<get-dialect>|<get-dialect>(){}[0]
+    abstract val typeMapper // io.github.kormium/SqlExecutor.typeMapper|{}typeMapper[0]
+        abstract fun <get-typeMapper>(): io.github.kormium/TypeMapper // io.github.kormium/SqlExecutor.typeMapper.<get-typeMapper>|<get-typeMapper>(){}[0]
+
+    abstract fun <#A1: kotlin/Any?> execute(kotlin/String, io.github.kormium/SqlParameterSource, kotlin/Function1<io.github.kormium.resultset/ResultSet, #A1>): kotlin.collections/List<#A1> // io.github.kormium/SqlExecutor.execute|execute(kotlin.String;io.github.kormium.SqlParameterSource;kotlin.Function1<io.github.kormium.resultset.ResultSet,0:0>){0§<kotlin.Any?>}[0]
+    abstract fun <#A1: kotlin/Any?> execute(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?> = ..., kotlin/Function1<io.github.kormium.resultset/ResultSet, #A1>): kotlin.collections/List<#A1> // io.github.kormium/SqlExecutor.execute|execute(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>;kotlin.Function1<io.github.kormium.resultset.ResultSet,0:0>){0§<kotlin.Any?>}[0]
+    abstract fun execute(kotlin/String, io.github.kormium/SqlParameterSource): kotlin/Long // io.github.kormium/SqlExecutor.execute|execute(kotlin.String;io.github.kormium.SqlParameterSource){}[0]
+    abstract fun execute(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?> = ...): kotlin/Long // io.github.kormium/SqlExecutor.execute|execute(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>){}[0]
+    abstract fun executeUpdate(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?> = ...): kotlin/Long // io.github.kormium/SqlExecutor.executeUpdate|executeUpdate(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>){}[0]
+}
+
+abstract interface io.github.kormium/SqlParameterSource { // io.github.kormium/SqlParameterSource|null[0]
+    open val parameterNames // io.github.kormium/SqlParameterSource.parameterNames|{}parameterNames[0]
+        open fun <get-parameterNames>(): kotlin/Array<kotlin/String>? // io.github.kormium/SqlParameterSource.parameterNames.<get-parameterNames>|<get-parameterNames>(){}[0]
+
+    abstract fun getValue(kotlin/String): kotlin/Any? // io.github.kormium/SqlParameterSource.getValue|getValue(kotlin.String){}[0]
+    abstract fun hasValue(kotlin/String): kotlin/Boolean // io.github.kormium/SqlParameterSource.hasValue|hasValue(kotlin.String){}[0]
+    open fun getSqlType(kotlin/String): kotlin/UInt // io.github.kormium/SqlParameterSource.getSqlType|getSqlType(kotlin.String){}[0]
+    open fun getTypeName(kotlin/String?): kotlin/String? // io.github.kormium/SqlParameterSource.getTypeName|getTypeName(kotlin.String?){}[0]
+
+    final object Companion { // io.github.kormium/SqlParameterSource.Companion|null[0]
+        final val TYPE_UNKNOWN // io.github.kormium/SqlParameterSource.Companion.TYPE_UNKNOWN|{}TYPE_UNKNOWN[0]
+            final fun <get-TYPE_UNKNOWN>(): kotlin/UInt // io.github.kormium/SqlParameterSource.Companion.TYPE_UNKNOWN.<get-TYPE_UNKNOWN>|<get-TYPE_UNKNOWN>(){}[0]
+    }
+}
+
+abstract interface io.github.kormium/StringExpr : io.github.kormium/Operand<kotlin/String> { // io.github.kormium/StringExpr|null[0]
+    open val columnType // io.github.kormium/StringExpr.columnType|{}columnType[0]
+        open fun <get-columnType>(): io.github.kormium/ColumnType<kotlin/String> // io.github.kormium/StringExpr.columnType.<get-columnType>|<get-columnType>(){}[0]
+}
+
+abstract interface io.github.kormium/SuspendSqlExecutor { // io.github.kormium/SuspendSqlExecutor|null[0]
+    abstract val dialect // io.github.kormium/SuspendSqlExecutor.dialect|{}dialect[0]
+        abstract fun <get-dialect>(): io.github.kormium/Dialect // io.github.kormium/SuspendSqlExecutor.dialect.<get-dialect>|<get-dialect>(){}[0]
+    abstract val typeMapper // io.github.kormium/SuspendSqlExecutor.typeMapper|{}typeMapper[0]
+        abstract fun <get-typeMapper>(): io.github.kormium/TypeMapper // io.github.kormium/SuspendSqlExecutor.typeMapper.<get-typeMapper>|<get-typeMapper>(){}[0]
+
+    abstract suspend fun <#A1: kotlin/Any?> execute(kotlin/String, io.github.kormium/SqlParameterSource, kotlin/Function1<io.github.kormium.resultset/ResultSet, #A1>): kotlin.collections/List<#A1> // io.github.kormium/SuspendSqlExecutor.execute|execute(kotlin.String;io.github.kormium.SqlParameterSource;kotlin.Function1<io.github.kormium.resultset.ResultSet,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun <#A1: kotlin/Any?> execute(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?> = ..., kotlin/Function1<io.github.kormium.resultset/ResultSet, #A1>): kotlin.collections/List<#A1> // io.github.kormium/SuspendSqlExecutor.execute|execute(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>;kotlin.Function1<io.github.kormium.resultset.ResultSet,0:0>){0§<kotlin.Any?>}[0]
+    abstract suspend fun execute(kotlin/String, io.github.kormium/SqlParameterSource): kotlin/Long // io.github.kormium/SuspendSqlExecutor.execute|execute(kotlin.String;io.github.kormium.SqlParameterSource){}[0]
+    abstract suspend fun execute(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?> = ...): kotlin/Long // io.github.kormium/SuspendSqlExecutor.execute|execute(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>){}[0]
+    abstract suspend fun executeUpdate(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?> = ...): kotlin/Long // io.github.kormium/SuspendSqlExecutor.executeUpdate|executeUpdate(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>){}[0]
+}
+
+abstract interface io.github.kormium/TypeMapper { // io.github.kormium/TypeMapper|null[0]
+    abstract fun toParameter(kotlin/Any?): kotlin/Any? // io.github.kormium/TypeMapper.toParameter|toParameter(kotlin.Any?){}[0]
+}
+
+abstract class <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity> io.github.kormium/Table { // io.github.kormium/Table|null[0]
+    constructor <init>(kotlin/String, kotlin/Function0<#B>) // io.github.kormium/Table.<init>|<init>(kotlin.String;kotlin.Function0<1:1>){}[0]
+
+    final val factory // io.github.kormium/Table.factory|{}factory[0]
+        final fun <get-factory>(): kotlin/Function0<#B> // io.github.kormium/Table.factory.<get-factory>|<get-factory>(){}[0]
+    final val primaryKey // io.github.kormium/Table.primaryKey|{}primaryKey[0]
+        final fun <get-primaryKey>(): kotlin.collections/List<io.github.kormium/Column<*, *, #B>> // io.github.kormium/Table.primaryKey.<get-primaryKey>|<get-primaryKey>(){}[0]
+    final val tableName // io.github.kormium/Table.tableName|{}tableName[0]
+        final fun <get-tableName>(): kotlin/String // io.github.kormium/Table.tableName.<get-tableName>|<get-tableName>(){}[0]
+
+    final fun getFieldDisplayNames(): kotlin.collections/Map<kotlin/String, io.github.kormium/Column<*, *, *>> // io.github.kormium/Table.getFieldDisplayNames|getFieldDisplayNames(){}[0]
+}
+
+abstract class io.github.kormium/Entity { // io.github.kormium/Entity|null[0]
+    constructor <init>() // io.github.kormium/Entity.<init>|<init>(){}[0]
+}
+
+final class <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity, #C: io.github.kormium/Entity> io.github.kormium/JoinPair { // io.github.kormium/JoinPair|null[0]
+    final fun distinct(): io.github.kormium/Join<#A> // io.github.kormium/JoinPair.distinct|distinct(){}[0]
+    final fun groupBy(kotlin/Array<out io.github.kormium/Column<*, *, *>>...): io.github.kormium/Join<#A> // io.github.kormium/JoinPair.groupBy|groupBy(kotlin.Array<out|io.github.kormium.Column<*,*,*>>...){}[0]
+    final fun innerJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/JoinPair.innerJoin|innerJoin(io.github.kormium.Table<1:0,*>){}[0]
+    final fun leftJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/JoinPair.leftJoin|leftJoin(io.github.kormium.Table<1:0,*>){}[0]
+    final fun where(io.github.kormium/Expression): io.github.kormium/JoinPair<#A, #B, #C> // io.github.kormium/JoinPair.where|where(io.github.kormium.Expression){}[0]
+}
+
+final class <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity, #C: io.github.kormium/Entity> io.github.kormium/JoinPairStep { // io.github.kormium/JoinPairStep|null[0]
+    final fun on(io.github.kormium/Expression): io.github.kormium/JoinPair<#A, #B, #C> // io.github.kormium/JoinPairStep.on|on(io.github.kormium.Expression){}[0]
+}
+
+final class <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity, #C: io.github.kormium/Entity> io.github.kormium/LeftJoinPair { // io.github.kormium/LeftJoinPair|null[0]
+    final fun distinct(): io.github.kormium/Join<#A> // io.github.kormium/LeftJoinPair.distinct|distinct(){}[0]
+    final fun groupBy(kotlin/Array<out io.github.kormium/Column<*, *, *>>...): io.github.kormium/Join<#A> // io.github.kormium/LeftJoinPair.groupBy|groupBy(kotlin.Array<out|io.github.kormium.Column<*,*,*>>...){}[0]
+    final fun innerJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/LeftJoinPair.innerJoin|innerJoin(io.github.kormium.Table<1:0,*>){}[0]
+    final fun leftJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/LeftJoinPair.leftJoin|leftJoin(io.github.kormium.Table<1:0,*>){}[0]
+    final fun where(io.github.kormium/Expression): io.github.kormium/LeftJoinPair<#A, #B, #C> // io.github.kormium/LeftJoinPair.where|where(io.github.kormium.Expression){}[0]
+}
+
+final class <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity, #C: io.github.kormium/Entity> io.github.kormium/LeftJoinPairStep { // io.github.kormium/LeftJoinPairStep|null[0]
+    final fun on(io.github.kormium/Expression): io.github.kormium/LeftJoinPair<#A, #B, #C> // io.github.kormium/LeftJoinPairStep.on|on(io.github.kormium.Expression){}[0]
+}
+
+final class <#A: io.github.kormium/Catalog> io.github.kormium/Join { // io.github.kormium/Join|null[0]
+    final fun distinct(): io.github.kormium/Join<#A> // io.github.kormium/Join.distinct|distinct(){}[0]
+    final fun groupBy(kotlin/Array<out io.github.kormium/Column<*, *, *>>...): io.github.kormium/Join<#A> // io.github.kormium/Join.groupBy|groupBy(kotlin.Array<out|io.github.kormium.Column<*,*,*>>...){}[0]
+    final fun having(io.github.kormium/Expression): io.github.kormium/Join<#A> // io.github.kormium/Join.having|having(io.github.kormium.Expression){}[0]
+    final fun innerJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/Join.innerJoin|innerJoin(io.github.kormium.Table<1:0,*>){}[0]
+    final fun leftJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/Join.leftJoin|leftJoin(io.github.kormium.Table<1:0,*>){}[0]
+    final fun where(io.github.kormium/Expression): io.github.kormium/Join<#A> // io.github.kormium/Join.where|where(io.github.kormium.Expression){}[0]
+}
+
+final class <#A: io.github.kormium/Catalog> io.github.kormium/JoinStep { // io.github.kormium/JoinStep|null[0]
+    final fun on(io.github.kormium/Expression): io.github.kormium/Join<#A> // io.github.kormium/JoinStep.on|on(io.github.kormium.Expression){}[0]
+}
+
+final class <#A: io.github.kormium/Catalog> io.github.kormium/RenderScope { // io.github.kormium/RenderScope|null[0]
+    final val dialect // io.github.kormium/RenderScope.dialect|{}dialect[0]
+        final fun <get-dialect>(): io.github.kormium/Dialect // io.github.kormium/RenderScope.dialect.<get-dialect>|<get-dialect>(){}[0]
+    final val typeMapper // io.github.kormium/RenderScope.typeMapper|{}typeMapper[0]
+        final fun <get-typeMapper>(): io.github.kormium/TypeMapper // io.github.kormium/RenderScope.typeMapper.<get-typeMapper>|<get-typeMapper>(){}[0]
+
+    final fun (io.github.kormium/Join<#A>).select(kotlin/Array<out io.github.kormium/Selectable<*>>...): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.select|select@io.github.kormium.Join<1:0>(kotlin.Array<out|io.github.kormium.Selectable<*>>...){}[0]
+    final fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/JoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>...): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.select|select@io.github.kormium.JoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/LeftJoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>...): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.select|select@io.github.kormium.LeftJoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).all(): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.all|all@io.github.kormium.Table<1:0,0:0>(){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).count(io.github.kormium/Query = ...): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.count|count@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).count(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.count|count@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).deleteWhere(io.github.kormium/Query): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.deleteWhere|deleteWhere@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).deleteWhere(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.deleteWhere|deleteWhere@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).find(io.github.kormium/Query): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.find|find@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).find(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.find|find@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).findOne(io.github.kormium/Query): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.findOne|findOne@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).findOne(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.findOne|findOne@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insert(#A1, kotlin/Boolean = ...): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.insert|insert@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.Boolean){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insertAll(kotlin.collections/List<#A1>, kotlin/Boolean = ..., io.github.kormium/BatchInsertMode = ...): kotlin.collections/List<io.github.kormium/RenderedSql> // io.github.kormium/RenderScope.insertAll|insertAll@io.github.kormium.Table<1:0,0:0>(kotlin.collections.List<0:0>;kotlin.Boolean;io.github.kormium.BatchInsertMode){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insertOrIgnore(#A1, io.github.kormium/Column<*, *, #A1>): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.insertOrIgnore|insertOrIgnore@io.github.kormium.Table<1:0,0:0>(0:0;io.github.kormium.Column<*,*,0:0>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insertOrIgnore(#A1, kotlin.collections/List<io.github.kormium/Column<*, *, #A1>>): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.insertOrIgnore|insertOrIgnore@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.collections.List<io.github.kormium.Column<*,*,0:0>>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).update(#A1, io.github.kormium/Query): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.update|update@io.github.kormium.Table<1:0,0:0>(0:0;io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).update(#A1, kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.update|update@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).update(kotlin/Function1<io.github.kormium/UpdateBuilder, kotlin/Unit>): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.update|update@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.UpdateBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).upsert(#A1, io.github.kormium/Column<*, *, #A1>, #A1, kotlin/Boolean = ...): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.upsert|upsert@io.github.kormium.Table<1:0,0:0>(0:0;io.github.kormium.Column<*,*,0:0>;0:0;kotlin.Boolean){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).upsert(#A1, kotlin.collections/List<io.github.kormium/Column<*, *, #A1>>, #A1, kotlin/Boolean = ...): io.github.kormium/RenderedSql // io.github.kormium/RenderScope.upsert|upsert@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.collections.List<io.github.kormium.Column<*,*,0:0>>;0:0;kotlin.Boolean){0§<io.github.kormium.Entity>}[0]
+}
+
+final class <#A: io.github.kormium/Catalog> io.github.kormium/Scope { // io.github.kormium/Scope|null[0]
+    final fun (io.github.kormium/Join<#A>).select(kotlin/Array<out io.github.kormium/Selectable<*>>...): kotlin.collections/List<io.github.kormium/ResultRow> // io.github.kormium/Scope.select|select@io.github.kormium.Join<1:0>(kotlin.Array<out|io.github.kormium.Selectable<*>>...){}[0]
+    final fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity, #C1: kotlin/Any?> (io.github.kormium/JoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>..., kotlin/Function1<io.github.kormium/ResultRow, #C1>): kotlin.collections/List<#C1> // io.github.kormium/Scope.select|select@io.github.kormium.JoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...;kotlin.Function1<io.github.kormium.ResultRow,0:2>){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>;2§<kotlin.Any?>}[0]
+    final fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity, #C1: kotlin/Any?> (io.github.kormium/LeftJoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>..., kotlin/Function1<io.github.kormium/ResultRow, #C1>): kotlin.collections/List<#C1> // io.github.kormium/Scope.select|select@io.github.kormium.LeftJoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...;kotlin.Function1<io.github.kormium.ResultRow,0:2>){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>;2§<kotlin.Any?>}[0]
+    final fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/JoinPair<#A, #A1, #B1>).find(): kotlin.collections/List<kotlin/Pair<#A1, #B1>> // io.github.kormium/Scope.find|find@io.github.kormium.JoinPair<1:0,0:0,0:1>(){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/JoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>...): kotlin.collections/List<io.github.kormium/ResultRow> // io.github.kormium/Scope.select|select@io.github.kormium.JoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/LeftJoinPair<#A, #A1, #B1>).find(): kotlin.collections/List<kotlin/Pair<#A1, #B1?>> // io.github.kormium/Scope.find|find@io.github.kormium.LeftJoinPair<1:0,0:0,0:1>(){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/LeftJoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>...): kotlin.collections/List<io.github.kormium/ResultRow> // io.github.kormium/Scope.select|select@io.github.kormium.LeftJoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).all(): kotlin.collections/List<#A1> // io.github.kormium/Scope.all|all@io.github.kormium.Table<1:0,0:0>(){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).count(io.github.kormium/Query = ...): kotlin/Long // io.github.kormium/Scope.count|count@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).count(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): kotlin/Long // io.github.kormium/Scope.count|count@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).deleteWhere(io.github.kormium/Query): kotlin/Long // io.github.kormium/Scope.deleteWhere|deleteWhere@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).deleteWhere(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): kotlin/Long // io.github.kormium/Scope.deleteWhere|deleteWhere@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).execSql(kotlin/String) // io.github.kormium/Scope.execSql|execSql@io.github.kormium.Table<1:0,0:0>(kotlin.String){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).find(io.github.kormium/Query): kotlin.collections/List<#A1> // io.github.kormium/Scope.find|find@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).find(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): kotlin.collections/List<#A1> // io.github.kormium/Scope.find|find@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).findOne(io.github.kormium/Query): #A1? // io.github.kormium/Scope.findOne|findOne@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).findOne(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): #A1? // io.github.kormium/Scope.findOne|findOne@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insert(#A1, kotlin/Boolean = ...): #A1 // io.github.kormium/Scope.insert|insert@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.Boolean){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insertAll(kotlin.collections/List<#A1>, kotlin/Boolean = ..., io.github.kormium/BatchInsertMode = ...): kotlin.collections/List<#A1> // io.github.kormium/Scope.insertAll|insertAll@io.github.kormium.Table<1:0,0:0>(kotlin.collections.List<0:0>;kotlin.Boolean;io.github.kormium.BatchInsertMode){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insertOrIgnore(#A1, io.github.kormium/Column<*, *, #A1>): kotlin/Long // io.github.kormium/Scope.insertOrIgnore|insertOrIgnore@io.github.kormium.Table<1:0,0:0>(0:0;io.github.kormium.Column<*,*,0:0>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insertOrIgnore(#A1, kotlin.collections/List<io.github.kormium/Column<*, *, #A1>>): kotlin/Long // io.github.kormium/Scope.insertOrIgnore|insertOrIgnore@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.collections.List<io.github.kormium.Column<*,*,0:0>>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).update(#A1, io.github.kormium/Query): kotlin/Long // io.github.kormium/Scope.update|update@io.github.kormium.Table<1:0,0:0>(0:0;io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).update(#A1, kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): kotlin/Long // io.github.kormium/Scope.update|update@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).update(kotlin/Function1<io.github.kormium/UpdateBuilder, kotlin/Unit>): kotlin/Long // io.github.kormium/Scope.update|update@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.UpdateBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).upsert(#A1, io.github.kormium/Column<*, *, #A1>, #A1, kotlin/Boolean = ...): #A1 // io.github.kormium/Scope.upsert|upsert@io.github.kormium.Table<1:0,0:0>(0:0;io.github.kormium.Column<*,*,0:0>;0:0;kotlin.Boolean){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).upsert(#A1, kotlin.collections/List<io.github.kormium/Column<*, *, #A1>>, #A1, kotlin/Boolean = ...): #A1 // io.github.kormium/Scope.upsert|upsert@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.collections.List<io.github.kormium.Column<*,*,0:0>>;0:0;kotlin.Boolean){0§<io.github.kormium.Entity>}[0]
+    final fun <#A1: kotlin/Any?> (io.github.kormium/Join<#A>).select(kotlin/Array<out io.github.kormium/Selectable<*>>..., kotlin/Function1<io.github.kormium/ResultRow, #A1>): kotlin.collections/List<#A1> // io.github.kormium/Scope.select|select@io.github.kormium.Join<1:0>(kotlin.Array<out|io.github.kormium.Selectable<*>>...;kotlin.Function1<io.github.kormium.ResultRow,0:0>){0§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> execute(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?>, kotlin.collections/List<io.github.kormium/Table<#A, *>>, kotlin/Function1<io.github.kormium.resultset/ResultSet, #A1>): kotlin.collections/List<#A1> // io.github.kormium/Scope.execute|execute(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>;kotlin.collections.List<io.github.kormium.Table<1:0,*>>;kotlin.Function1<io.github.kormium.resultset.ResultSet,0:0>){0§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> savepoint(kotlin/Function1<io.github.kormium/Scope<#A>, #A1>): #A1 // io.github.kormium/Scope.savepoint|savepoint(kotlin.Function1<io.github.kormium.Scope<1:0>,0:0>){0§<kotlin.Any?>}[0]
+    final fun executeUpdate(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?>, kotlin.collections/List<io.github.kormium/Table<#A, *>>): kotlin/Long // io.github.kormium/Scope.executeUpdate|executeUpdate(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>;kotlin.collections.List<io.github.kormium.Table<1:0,*>>){}[0]
+}
+
+final class <#A: io.github.kormium/Catalog> io.github.kormium/SuspendScope { // io.github.kormium/SuspendScope|null[0]
+    final suspend fun (io.github.kormium/Join<#A>).select(kotlin/Array<out io.github.kormium/Selectable<*>>...): kotlin.collections/List<io.github.kormium/ResultRow> // io.github.kormium/SuspendScope.select|select@io.github.kormium.Join<1:0>(kotlin.Array<out|io.github.kormium.Selectable<*>>...){}[0]
+    final suspend fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity, #C1: kotlin/Any?> (io.github.kormium/JoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>..., kotlin/Function1<io.github.kormium/ResultRow, #C1>): kotlin.collections/List<#C1> // io.github.kormium/SuspendScope.select|select@io.github.kormium.JoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...;kotlin.Function1<io.github.kormium.ResultRow,0:2>){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>;2§<kotlin.Any?>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity, #C1: kotlin/Any?> (io.github.kormium/LeftJoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>..., kotlin/Function1<io.github.kormium/ResultRow, #C1>): kotlin.collections/List<#C1> // io.github.kormium/SuspendScope.select|select@io.github.kormium.LeftJoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...;kotlin.Function1<io.github.kormium.ResultRow,0:2>){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>;2§<kotlin.Any?>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/JoinPair<#A, #A1, #B1>).find(): kotlin.collections/List<kotlin/Pair<#A1, #B1>> // io.github.kormium/SuspendScope.find|find@io.github.kormium.JoinPair<1:0,0:0,0:1>(){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/JoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>...): kotlin.collections/List<io.github.kormium/ResultRow> // io.github.kormium/SuspendScope.select|select@io.github.kormium.JoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/LeftJoinPair<#A, #A1, #B1>).find(): kotlin.collections/List<kotlin/Pair<#A1, #B1?>> // io.github.kormium/SuspendScope.find|find@io.github.kormium.LeftJoinPair<1:0,0:0,0:1>(){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity, #B1: io.github.kormium/Entity> (io.github.kormium/LeftJoinPair<#A, #A1, #B1>).select(kotlin/Array<out io.github.kormium/Selectable<*>>...): kotlin.collections/List<io.github.kormium/ResultRow> // io.github.kormium/SuspendScope.select|select@io.github.kormium.LeftJoinPair<1:0,0:0,0:1>(kotlin.Array<out|io.github.kormium.Selectable<*>>...){0§<io.github.kormium.Entity>;1§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).all(): kotlin.collections/List<#A1> // io.github.kormium/SuspendScope.all|all@io.github.kormium.Table<1:0,0:0>(){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).count(io.github.kormium/Query = ...): kotlin/Long // io.github.kormium/SuspendScope.count|count@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).count(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): kotlin/Long // io.github.kormium/SuspendScope.count|count@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).deleteWhere(io.github.kormium/Query): kotlin/Long // io.github.kormium/SuspendScope.deleteWhere|deleteWhere@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).deleteWhere(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): kotlin/Long // io.github.kormium/SuspendScope.deleteWhere|deleteWhere@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).execSql(kotlin/String) // io.github.kormium/SuspendScope.execSql|execSql@io.github.kormium.Table<1:0,0:0>(kotlin.String){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).find(io.github.kormium/Query): kotlin.collections/List<#A1> // io.github.kormium/SuspendScope.find|find@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).find(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): kotlin.collections/List<#A1> // io.github.kormium/SuspendScope.find|find@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).findOne(io.github.kormium/Query): #A1? // io.github.kormium/SuspendScope.findOne|findOne@io.github.kormium.Table<1:0,0:0>(io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).findOne(kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): #A1? // io.github.kormium/SuspendScope.findOne|findOne@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insert(#A1, kotlin/Boolean = ...): #A1 // io.github.kormium/SuspendScope.insert|insert@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.Boolean){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insertAll(kotlin.collections/List<#A1>, kotlin/Boolean = ..., io.github.kormium/BatchInsertMode = ...): kotlin.collections/List<#A1> // io.github.kormium/SuspendScope.insertAll|insertAll@io.github.kormium.Table<1:0,0:0>(kotlin.collections.List<0:0>;kotlin.Boolean;io.github.kormium.BatchInsertMode){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insertOrIgnore(#A1, io.github.kormium/Column<*, *, #A1>): kotlin/Long // io.github.kormium/SuspendScope.insertOrIgnore|insertOrIgnore@io.github.kormium.Table<1:0,0:0>(0:0;io.github.kormium.Column<*,*,0:0>){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).insertOrIgnore(#A1, kotlin.collections/List<io.github.kormium/Column<*, *, #A1>>): kotlin/Long // io.github.kormium/SuspendScope.insertOrIgnore|insertOrIgnore@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.collections.List<io.github.kormium.Column<*,*,0:0>>){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).update(#A1, io.github.kormium/Query): kotlin/Long // io.github.kormium/SuspendScope.update|update@io.github.kormium.Table<1:0,0:0>(0:0;io.github.kormium.Query){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).update(#A1, kotlin/Function1<io.github.kormium/QueryBuilder, kotlin/Unit>): kotlin/Long // io.github.kormium/SuspendScope.update|update@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.Function1<io.github.kormium.QueryBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).update(kotlin/Function1<io.github.kormium/UpdateBuilder, kotlin/Unit>): kotlin/Long // io.github.kormium/SuspendScope.update|update@io.github.kormium.Table<1:0,0:0>(kotlin.Function1<io.github.kormium.UpdateBuilder,kotlin.Unit>){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).upsert(#A1, io.github.kormium/Column<*, *, #A1>, #A1, kotlin/Boolean = ...): #A1 // io.github.kormium/SuspendScope.upsert|upsert@io.github.kormium.Table<1:0,0:0>(0:0;io.github.kormium.Column<*,*,0:0>;0:0;kotlin.Boolean){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: io.github.kormium/Entity> (io.github.kormium/Table<#A, #A1>).upsert(#A1, kotlin.collections/List<io.github.kormium/Column<*, *, #A1>>, #A1, kotlin/Boolean = ...): #A1 // io.github.kormium/SuspendScope.upsert|upsert@io.github.kormium.Table<1:0,0:0>(0:0;kotlin.collections.List<io.github.kormium.Column<*,*,0:0>>;0:0;kotlin.Boolean){0§<io.github.kormium.Entity>}[0]
+    final suspend fun <#A1: kotlin/Any?> (io.github.kormium/Join<#A>).select(kotlin/Array<out io.github.kormium/Selectable<*>>..., kotlin/Function1<io.github.kormium/ResultRow, #A1>): kotlin.collections/List<#A1> // io.github.kormium/SuspendScope.select|select@io.github.kormium.Join<1:0>(kotlin.Array<out|io.github.kormium.Selectable<*>>...;kotlin.Function1<io.github.kormium.ResultRow,0:0>){0§<kotlin.Any?>}[0]
+    final suspend fun <#A1: kotlin/Any?> execute(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?>, kotlin.collections/List<io.github.kormium/Table<#A, *>>, kotlin/Function1<io.github.kormium.resultset/ResultSet, #A1>): kotlin.collections/List<#A1> // io.github.kormium/SuspendScope.execute|execute(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>;kotlin.collections.List<io.github.kormium.Table<1:0,*>>;kotlin.Function1<io.github.kormium.resultset.ResultSet,0:0>){0§<kotlin.Any?>}[0]
+    final suspend fun <#A1: kotlin/Any?> savepoint(kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #A1>): #A1 // io.github.kormium/SuspendScope.savepoint|savepoint(kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<1:0>,0:0>){0§<kotlin.Any?>}[0]
+    final suspend fun executeUpdate(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?>, kotlin.collections/List<io.github.kormium/Table<#A, *>>): kotlin/Long // io.github.kormium/SuspendScope.executeUpdate|executeUpdate(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>;kotlin.collections.List<io.github.kormium.Table<1:0,*>>){}[0]
+}
+
+final class <#A: kotlin/Any?> io.github.kormium/CaseBuilder { // io.github.kormium/CaseBuilder|null[0]
+    final fun otherwise(#A) // io.github.kormium/CaseBuilder.otherwise|otherwise(1:0){}[0]
+    final fun whenever(io.github.kormium/Expression): io.github.kormium/CaseBuilder.WhenStep<#A> // io.github.kormium/CaseBuilder.whenever|whenever(io.github.kormium.Expression){}[0]
+
+    final inner class WhenStep { // io.github.kormium/CaseBuilder.WhenStep|null[0]
+        final fun then(#A) // io.github.kormium/CaseBuilder.WhenStep.then|then(2:0){}[0]
+    }
+}
+
+final class <#A: kotlin/Any?> io.github.kormium/CaseOp : io.github.kormium/Operand<#A> { // io.github.kormium/CaseOp|null[0]
+    final val columnType // io.github.kormium/CaseOp.columnType|{}columnType[0]
+        final fun <get-columnType>(): io.github.kormium/ColumnType<#A> // io.github.kormium/CaseOp.columnType.<get-columnType>|<get-columnType>(){}[0]
+
+    final fun resultKey(): kotlin/Any // io.github.kormium/CaseOp.resultKey|resultKey(){}[0]
+    final fun toSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/CaseOp.toSql|toSql(io.github.kormium.ParamBuilder){}[0]
+}
+
+final class <#A: kotlin/Any?> io.github.kormium/CoalesceOp : io.github.kormium/Operand<#A> { // io.github.kormium/CoalesceOp|null[0]
+    final val columnType // io.github.kormium/CoalesceOp.columnType|{}columnType[0]
+        final fun <get-columnType>(): io.github.kormium/ColumnType<#A> // io.github.kormium/CoalesceOp.columnType.<get-columnType>|<get-columnType>(){}[0]
+
+    final fun resultKey(): kotlin/Any // io.github.kormium/CoalesceOp.resultKey|resultKey(){}[0]
+    final fun toSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/CoalesceOp.toSql|toSql(io.github.kormium.ParamBuilder){}[0]
+}
+
+final class io.github.kormium/CheckViolationException : io.github.kormium/QueryException { // io.github.kormium/CheckViolationException|null[0]
+    constructor <init>(kotlin/String, kotlin/String?, kotlin/Throwable? = ...) // io.github.kormium/CheckViolationException.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
+}
+
+final class io.github.kormium/ConcurrencyConflictException : io.github.kormium/QueryException { // io.github.kormium/ConcurrencyConflictException|null[0]
+    constructor <init>(kotlin/String, kotlin/String?, kotlin/Throwable? = ...) // io.github.kormium/ConcurrencyConflictException.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
+}
+
+final class io.github.kormium/DatabaseClosedException : io.github.kormium/KormiumException { // io.github.kormium/DatabaseClosedException|null[0]
+    constructor <init>(kotlin/String = ...) // io.github.kormium/DatabaseClosedException.<init>|<init>(kotlin.String){}[0]
+}
+
+final class io.github.kormium/DatabaseLifecycle { // io.github.kormium/DatabaseLifecycle|null[0]
+    constructor <init>(kotlin/Function0<kotlin/Unit>) // io.github.kormium/DatabaseLifecycle.<init>|<init>(kotlin.Function0<kotlin.Unit>){}[0]
+
+    final val isClosed // io.github.kormium/DatabaseLifecycle.isClosed|{}isClosed[0]
+        final fun <get-isClosed>(): kotlin/Boolean // io.github.kormium/DatabaseLifecycle.isClosed.<get-isClosed>|<get-isClosed>(){}[0]
+
+    final fun checkOpen() // io.github.kormium/DatabaseLifecycle.checkOpen|checkOpen(){}[0]
+    final fun close() // io.github.kormium/DatabaseLifecycle.close|close(){}[0]
+}
+
+final class io.github.kormium/ExistsOp : io.github.kormium/Expression { // io.github.kormium/ExistsOp|null[0]
+    final fun toSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/ExistsOp.toSql|toSql(io.github.kormium.ParamBuilder){}[0]
+}
+
+final class io.github.kormium/ForeignKeyViolationException : io.github.kormium/QueryException { // io.github.kormium/ForeignKeyViolationException|null[0]
+    constructor <init>(kotlin/String, kotlin/String?, kotlin/Throwable? = ...) // io.github.kormium/ForeignKeyViolationException.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
+}
+
+final class io.github.kormium/KormiumBuilder { // io.github.kormium/KormiumBuilder|null[0]
+    constructor <init>() // io.github.kormium/KormiumBuilder.<init>|<init>(){}[0]
+
+    final fun <#A1: io.github.kormium.database/Database<kotlin/Nothing>> finish(kotlin/Function1<io.github.kormium/KormiumConfig, #A1>): #A1 // io.github.kormium/KormiumBuilder.finish|finish(kotlin.Function1<io.github.kormium.KormiumConfig,0:0>){0§<io.github.kormium.database.Database<kotlin.Nothing>>}[0]
+    final fun beforeStart(kotlin/Function1<io.github.kormium.database/Database<kotlin/Nothing>, kotlin/Unit>) // io.github.kormium/KormiumBuilder.beforeStart|beforeStart(kotlin.Function1<io.github.kormium.database.Database<kotlin.Nothing>,kotlin.Unit>){}[0]
+    final fun config(kotlin/Function1<io.github.kormium/KormiumConfigBuilder, kotlin/Unit>) // io.github.kormium/KormiumBuilder.config|config(kotlin.Function1<io.github.kormium.KormiumConfigBuilder,kotlin.Unit>){}[0]
+}
+
+final class io.github.kormium/KormiumConfig { // io.github.kormium/KormiumConfig|null[0]
+    constructor <init>(io.github.kormium/BatchInsertMode = ..., io.github.kormium/QueryObserver? = ...) // io.github.kormium/KormiumConfig.<init>|<init>(io.github.kormium.BatchInsertMode;io.github.kormium.QueryObserver?){}[0]
+
+    final val batchInsertMode // io.github.kormium/KormiumConfig.batchInsertMode|{}batchInsertMode[0]
+        final fun <get-batchInsertMode>(): io.github.kormium/BatchInsertMode // io.github.kormium/KormiumConfig.batchInsertMode.<get-batchInsertMode>|<get-batchInsertMode>(){}[0]
+    final val queryObserver // io.github.kormium/KormiumConfig.queryObserver|{}queryObserver[0]
+        final fun <get-queryObserver>(): io.github.kormium/QueryObserver? // io.github.kormium/KormiumConfig.queryObserver.<get-queryObserver>|<get-queryObserver>(){}[0]
+
+    final fun component1(): io.github.kormium/BatchInsertMode // io.github.kormium/KormiumConfig.component1|component1(){}[0]
+    final fun component2(): io.github.kormium/QueryObserver? // io.github.kormium/KormiumConfig.component2|component2(){}[0]
+    final fun copy(io.github.kormium/BatchInsertMode = ..., io.github.kormium/QueryObserver? = ...): io.github.kormium/KormiumConfig // io.github.kormium/KormiumConfig.copy|copy(io.github.kormium.BatchInsertMode;io.github.kormium.QueryObserver?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.github.kormium/KormiumConfig.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.github.kormium/KormiumConfig.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.github.kormium/KormiumConfig.toString|toString(){}[0]
+}
+
+final class io.github.kormium/KormiumConfigBuilder { // io.github.kormium/KormiumConfigBuilder|null[0]
+    final var batchInsertMode // io.github.kormium/KormiumConfigBuilder.batchInsertMode|{}batchInsertMode[0]
+        final fun <get-batchInsertMode>(): io.github.kormium/BatchInsertMode // io.github.kormium/KormiumConfigBuilder.batchInsertMode.<get-batchInsertMode>|<get-batchInsertMode>(){}[0]
+        final fun <set-batchInsertMode>(io.github.kormium/BatchInsertMode) // io.github.kormium/KormiumConfigBuilder.batchInsertMode.<set-batchInsertMode>|<set-batchInsertMode>(io.github.kormium.BatchInsertMode){}[0]
+}
+
+final class io.github.kormium/NotNullViolationException : io.github.kormium/QueryException { // io.github.kormium/NotNullViolationException|null[0]
+    constructor <init>(kotlin/String, kotlin/String?, kotlin/Throwable? = ...) // io.github.kormium/NotNullViolationException.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
+}
+
+final class io.github.kormium/OrderByDsl { // io.github.kormium/OrderByDsl|null[0]
+    final fun ASC(io.github.kormium/Selectable<*>) // io.github.kormium/OrderByDsl.ASC|ASC(io.github.kormium.Selectable<*>){}[0]
+    final fun DESC(io.github.kormium/Selectable<*>) // io.github.kormium/OrderByDsl.DESC|DESC(io.github.kormium.Selectable<*>){}[0]
+}
+
+final class io.github.kormium/ParamBuilder { // io.github.kormium/ParamBuilder|null[0]
+    constructor <init>(io.github.kormium/Dialect, io.github.kormium/TypeMapper, kotlin/Boolean = ...) // io.github.kormium/ParamBuilder.<init>|<init>(io.github.kormium.Dialect;io.github.kormium.TypeMapper;kotlin.Boolean){}[0]
+
+    final val dialect // io.github.kormium/ParamBuilder.dialect|{}dialect[0]
+        final fun <get-dialect>(): io.github.kormium/Dialect // io.github.kormium/ParamBuilder.dialect.<get-dialect>|<get-dialect>(){}[0]
+    final val params // io.github.kormium/ParamBuilder.params|{}params[0]
+        final fun <get-params>(): kotlin.collections/Map<kotlin/String, kotlin/Any?> // io.github.kormium/ParamBuilder.params.<get-params>|<get-params>(){}[0]
+
+    final var qualifyColumns // io.github.kormium/ParamBuilder.qualifyColumns|{}qualifyColumns[0]
+        final fun <get-qualifyColumns>(): kotlin/Boolean // io.github.kormium/ParamBuilder.qualifyColumns.<get-qualifyColumns>|<get-qualifyColumns>(){}[0]
+
+    final fun bind(kotlin/Any?): kotlin/String // io.github.kormium/ParamBuilder.bind|bind(kotlin.Any?){}[0]
+
+    final object Companion // io.github.kormium/ParamBuilder.Companion|null[0]
+}
+
+final class io.github.kormium/PoolExhaustedException : io.github.kormium/KormiumException { // io.github.kormium/PoolExhaustedException|null[0]
+    constructor <init>(kotlin/String) // io.github.kormium/PoolExhaustedException.<init>|<init>(kotlin.String){}[0]
+}
+
+final class io.github.kormium/Query { // io.github.kormium/Query|null[0]
+    constructor <init>(io.github.kormium/Expression? = ..., kotlin/UInt = ..., kotlin/UInt = ..., kotlin.collections/Map<io.github.kormium/Selectable<*>, io.github.kormium/AscDescOrder>? = ...) // io.github.kormium/Query.<init>|<init>(io.github.kormium.Expression?;kotlin.UInt;kotlin.UInt;kotlin.collections.Map<io.github.kormium.Selectable<*>,io.github.kormium.AscDescOrder>?){}[0]
+
+    final val limit // io.github.kormium/Query.limit|{}limit[0]
+        final fun <get-limit>(): kotlin/UInt // io.github.kormium/Query.limit.<get-limit>|<get-limit>(){}[0]
+    final val offset // io.github.kormium/Query.offset|{}offset[0]
+        final fun <get-offset>(): kotlin/UInt // io.github.kormium/Query.offset.<get-offset>|<get-offset>(){}[0]
+    final val orderBy // io.github.kormium/Query.orderBy|{}orderBy[0]
+        final fun <get-orderBy>(): kotlin.collections/Map<io.github.kormium/Selectable<*>, io.github.kormium/AscDescOrder>? // io.github.kormium/Query.orderBy.<get-orderBy>|<get-orderBy>(){}[0]
+    final val whereExpression // io.github.kormium/Query.whereExpression|{}whereExpression[0]
+        final fun <get-whereExpression>(): io.github.kormium/Expression? // io.github.kormium/Query.whereExpression.<get-whereExpression>|<get-whereExpression>(){}[0]
+
+    final fun component1(): io.github.kormium/Expression? // io.github.kormium/Query.component1|component1(){}[0]
+    final fun component2(): kotlin/UInt // io.github.kormium/Query.component2|component2(){}[0]
+    final fun component3(): kotlin/UInt // io.github.kormium/Query.component3|component3(){}[0]
+    final fun component4(): kotlin.collections/Map<io.github.kormium/Selectable<*>, io.github.kormium/AscDescOrder>? // io.github.kormium/Query.component4|component4(){}[0]
+    final fun copy(io.github.kormium/Expression? = ..., kotlin/UInt = ..., kotlin/UInt = ..., kotlin.collections/Map<io.github.kormium/Selectable<*>, io.github.kormium/AscDescOrder>? = ...): io.github.kormium/Query // io.github.kormium/Query.copy|copy(io.github.kormium.Expression?;kotlin.UInt;kotlin.UInt;kotlin.collections.Map<io.github.kormium.Selectable<*>,io.github.kormium.AscDescOrder>?){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.github.kormium/Query.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.github.kormium/Query.hashCode|hashCode(){}[0]
+    final fun toSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/Query.toSql|toSql(io.github.kormium.ParamBuilder){}[0]
+    final fun toString(): kotlin/String // io.github.kormium/Query.toString|toString(){}[0]
+    final fun toWhereSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/Query.toWhereSql|toWhereSql(io.github.kormium.ParamBuilder){}[0]
+}
+
+final class io.github.kormium/QueryBuilder { // io.github.kormium/QueryBuilder|null[0]
+    constructor <init>() // io.github.kormium/QueryBuilder.<init>|<init>(){}[0]
+
+    final val orderBy // io.github.kormium/QueryBuilder.orderBy|{}orderBy[0]
+        final fun <get-orderBy>(): io.github.kormium/OrderByDsl // io.github.kormium/QueryBuilder.orderBy.<get-orderBy>|<get-orderBy>(){}[0]
+
+    final var limit // io.github.kormium/QueryBuilder.limit|{}limit[0]
+        final fun <get-limit>(): kotlin/Int? // io.github.kormium/QueryBuilder.limit.<get-limit>|<get-limit>(){}[0]
+        final fun <set-limit>(kotlin/Int?) // io.github.kormium/QueryBuilder.limit.<set-limit>|<set-limit>(kotlin.Int?){}[0]
+    final var offset // io.github.kormium/QueryBuilder.offset|{}offset[0]
+        final fun <get-offset>(): kotlin/Int? // io.github.kormium/QueryBuilder.offset.<get-offset>|<get-offset>(){}[0]
+        final fun <set-offset>(kotlin/Int?) // io.github.kormium/QueryBuilder.offset.<set-offset>|<set-offset>(kotlin.Int?){}[0]
+
+    final fun where(kotlin/Function0<io.github.kormium/Expression>) // io.github.kormium/QueryBuilder.where|where(kotlin.Function0<io.github.kormium.Expression>){}[0]
+}
+
+final class io.github.kormium/QueryEvent { // io.github.kormium/QueryEvent|null[0]
+    constructor <init>(kotlin/String, kotlin/String, io.github.kormium/QueryKind, kotlin/Long, kotlin/Long?, kotlin/Throwable?, kotlin/String?) // io.github.kormium/QueryEvent.<init>|<init>(kotlin.String;kotlin.String;io.github.kormium.QueryKind;kotlin.Long;kotlin.Long?;kotlin.Throwable?;kotlin.String?){}[0]
+
+    final val backend // io.github.kormium/QueryEvent.backend|{}backend[0]
+        final fun <get-backend>(): kotlin/String // io.github.kormium/QueryEvent.backend.<get-backend>|<get-backend>(){}[0]
+    final val durationNanos // io.github.kormium/QueryEvent.durationNanos|{}durationNanos[0]
+        final fun <get-durationNanos>(): kotlin/Long // io.github.kormium/QueryEvent.durationNanos.<get-durationNanos>|<get-durationNanos>(){}[0]
+    final val error // io.github.kormium/QueryEvent.error|{}error[0]
+        final fun <get-error>(): kotlin/Throwable? // io.github.kormium/QueryEvent.error.<get-error>|<get-error>(){}[0]
+    final val kind // io.github.kormium/QueryEvent.kind|{}kind[0]
+        final fun <get-kind>(): io.github.kormium/QueryKind // io.github.kormium/QueryEvent.kind.<get-kind>|<get-kind>(){}[0]
+    final val rowCount // io.github.kormium/QueryEvent.rowCount|{}rowCount[0]
+        final fun <get-rowCount>(): kotlin/Long? // io.github.kormium/QueryEvent.rowCount.<get-rowCount>|<get-rowCount>(){}[0]
+    final val sql // io.github.kormium/QueryEvent.sql|{}sql[0]
+        final fun <get-sql>(): kotlin/String // io.github.kormium/QueryEvent.sql.<get-sql>|<get-sql>(){}[0]
+    final val sqlState // io.github.kormium/QueryEvent.sqlState|{}sqlState[0]
+        final fun <get-sqlState>(): kotlin/String? // io.github.kormium/QueryEvent.sqlState.<get-sqlState>|<get-sqlState>(){}[0]
+    final val succeeded // io.github.kormium/QueryEvent.succeeded|{}succeeded[0]
+        final fun <get-succeeded>(): kotlin/Boolean // io.github.kormium/QueryEvent.succeeded.<get-succeeded>|<get-succeeded>(){}[0]
+}
+
+final class io.github.kormium/RawExpression : io.github.kormium/Expression { // io.github.kormium/RawExpression|null[0]
+    constructor <init>(kotlin/String) // io.github.kormium/RawExpression.<init>|<init>(kotlin.String){}[0]
+
+    final val expression // io.github.kormium/RawExpression.expression|{}expression[0]
+        final fun <get-expression>(): kotlin/String // io.github.kormium/RawExpression.expression.<get-expression>|<get-expression>(){}[0]
+
+    final fun toSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/RawExpression.toSql|toSql(io.github.kormium.ParamBuilder){}[0]
+}
+
+final class io.github.kormium/ReadOnlyToggle { // io.github.kormium/ReadOnlyToggle|null[0]
+    constructor <init>(kotlin/String, kotlin/String) // io.github.kormium/ReadOnlyToggle.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val enter // io.github.kormium/ReadOnlyToggle.enter|{}enter[0]
+        final fun <get-enter>(): kotlin/String // io.github.kormium/ReadOnlyToggle.enter.<get-enter>|<get-enter>(){}[0]
+    final val exit // io.github.kormium/ReadOnlyToggle.exit|{}exit[0]
+        final fun <get-exit>(): kotlin/String // io.github.kormium/ReadOnlyToggle.exit.<get-exit>|<get-exit>(){}[0]
+
+    final fun component1(): kotlin/String // io.github.kormium/ReadOnlyToggle.component1|component1(){}[0]
+    final fun component2(): kotlin/String // io.github.kormium/ReadOnlyToggle.component2|component2(){}[0]
+    final fun copy(kotlin/String = ..., kotlin/String = ...): io.github.kormium/ReadOnlyToggle // io.github.kormium/ReadOnlyToggle.copy|copy(kotlin.String;kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.github.kormium/ReadOnlyToggle.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.github.kormium/ReadOnlyToggle.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.github.kormium/ReadOnlyToggle.toString|toString(){}[0]
+}
+
+final class io.github.kormium/RenderedSql { // io.github.kormium/RenderedSql|null[0]
+    constructor <init>(kotlin/String, kotlin.collections/Map<kotlin/String, kotlin/Any?>) // io.github.kormium/RenderedSql.<init>|<init>(kotlin.String;kotlin.collections.Map<kotlin.String,kotlin.Any?>){}[0]
+
+    final val params // io.github.kormium/RenderedSql.params|{}params[0]
+        final fun <get-params>(): kotlin.collections/Map<kotlin/String, kotlin/Any?> // io.github.kormium/RenderedSql.params.<get-params>|<get-params>(){}[0]
+    final val sql // io.github.kormium/RenderedSql.sql|{}sql[0]
+        final fun <get-sql>(): kotlin/String // io.github.kormium/RenderedSql.sql.<get-sql>|<get-sql>(){}[0]
+
+    final fun toString(): kotlin/String // io.github.kormium/RenderedSql.toString|toString(){}[0]
+}
+
+final class io.github.kormium/ResultMappingException : io.github.kormium/KormiumException { // io.github.kormium/ResultMappingException|null[0]
+    constructor <init>(kotlin/String, kotlin/Throwable? = ...) // io.github.kormium/ResultMappingException.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
+}
+
+final class io.github.kormium/ResultRow { // io.github.kormium/ResultRow|null[0]
+    final fun <#A1: kotlin/Any?> get(io.github.kormium/Selectable<#A1>): #A1 // io.github.kormium/ResultRow.get|get(io.github.kormium.Selectable<0:0>){0§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> getOrNull(io.github.kormium/Selectable<#A1>): #A1? // io.github.kormium/ResultRow.getOrNull|getOrNull(io.github.kormium.Selectable<0:0>){0§<kotlin.Any?>}[0]
+}
+
+final class io.github.kormium/UniqueViolationException : io.github.kormium/QueryException { // io.github.kormium/UniqueViolationException|null[0]
+    constructor <init>(kotlin/String, kotlin/String?, kotlin/Throwable? = ...) // io.github.kormium/UniqueViolationException.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
+}
+
+final class io.github.kormium/UpdateBuilder { // io.github.kormium/UpdateBuilder|null[0]
+    constructor <init>() // io.github.kormium/UpdateBuilder.<init>|<init>(){}[0]
+
+    final fun <#A1: kotlin/Any?> (io.github.kormium/Column<#A1, *, *>).set(#A1) // io.github.kormium/UpdateBuilder.set|set@io.github.kormium.Column<0:0,*,*>(0:0){0§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> (io.github.kormium/Column<#A1, *, *>).set(io.github.kormium/Expression) // io.github.kormium/UpdateBuilder.set|set@io.github.kormium.Column<0:0,*,*>(io.github.kormium.Expression){0§<kotlin.Any?>}[0]
+    final fun where(kotlin/Function0<io.github.kormium/Expression>) // io.github.kormium/UpdateBuilder.where|where(kotlin.Function0<io.github.kormium.Expression>){}[0]
+}
+
+final class io.github.kormium/Value : io.github.kormium/Expression { // io.github.kormium/Value|null[0]
+    constructor <init>(kotlin/Any?) // io.github.kormium/Value.<init>|<init>(kotlin.Any?){}[0]
+
+    final fun toSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/Value.toSql|toSql(io.github.kormium.ParamBuilder){}[0]
+}
+
+open class io.github.kormium/KormiumException : kotlin/Exception { // io.github.kormium/KormiumException|null[0]
+    constructor <init>(kotlin/String, kotlin/Throwable? = ...) // io.github.kormium/KormiumException.<init>|<init>(kotlin.String;kotlin.Throwable?){}[0]
+}
+
+open class io.github.kormium/QueryException : io.github.kormium/KormiumException { // io.github.kormium/QueryException|null[0]
+    constructor <init>(kotlin/String, kotlin/String? = ..., kotlin/Throwable? = ...) // io.github.kormium/QueryException.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
+
+    final val sqlState // io.github.kormium/QueryException.sqlState|{}sqlState[0]
+        final fun <get-sqlState>(): kotlin/String? // io.github.kormium/QueryException.sqlState.<get-sqlState>|<get-sqlState>(){}[0]
+}
+
+open class io.github.kormium/WriteListeners { // io.github.kormium/WriteListeners|null[0]
+    constructor <init>() // io.github.kormium/WriteListeners.<init>|<init>(){}[0]
+
+    final val isActive // io.github.kormium/WriteListeners.isActive|{}isActive[0]
+        final fun <get-isActive>(): kotlin/Boolean // io.github.kormium/WriteListeners.isActive.<get-isActive>|<get-isActive>(){}[0]
+
+    final fun fire(kotlin.collections/Set<kotlin/String>) // io.github.kormium/WriteListeners.fire|fire(kotlin.collections.Set<kotlin.String>){}[0]
+    final fun publishCommit(kotlin.collections/Set<kotlin/String>) // io.github.kormium/WriteListeners.publishCommit|publishCommit(kotlin.collections.Set<kotlin.String>){}[0]
+    open fun add(io.github.kormium/WriteListener): io.github.kormium/Registration // io.github.kormium/WriteListeners.add|add(io.github.kormium.WriteListener){}[0]
+    open fun setCommitPublish(kotlin/Function1<kotlin.collections/Set<kotlin/String>, kotlin/Unit>?) // io.github.kormium/WriteListeners.setCommitPublish|setCommitPublish(kotlin.Function1<kotlin.collections.Set<kotlin.String>,kotlin.Unit>?){}[0]
+
+    final object Disabled : io.github.kormium/WriteListeners { // io.github.kormium/WriteListeners.Disabled|null[0]
+        final fun add(io.github.kormium/WriteListener): io.github.kormium/Registration // io.github.kormium/WriteListeners.Disabled.add|add(io.github.kormium.WriteListener){}[0]
+        final fun setCommitPublish(kotlin/Function1<kotlin.collections/Set<kotlin/String>, kotlin/Unit>?) // io.github.kormium/WriteListeners.Disabled.setCommitPublish|setCommitPublish(kotlin.Function1<kotlin.collections.Set<kotlin.String>,kotlin.Unit>?){}[0]
+    }
+}
+
+sealed class <#A: kotlin/Any?, #B: io.github.kormium/Table<*, #C>, #C: io.github.kormium/Entity> io.github.kormium/Column : io.github.kormium/Expression, io.github.kormium/Operand<#A> { // io.github.kormium/Column|null[0]
+    final val fieldKey // io.github.kormium/Column.fieldKey|{}fieldKey[0]
+        final fun <get-fieldKey>(): kotlin/String // io.github.kormium/Column.fieldKey.<get-fieldKey>|<get-fieldKey>(){}[0]
+    final val name // io.github.kormium/Column.name|{}name[0]
+        final fun <get-name>(): kotlin/String // io.github.kormium/Column.name.<get-name>|<get-name>(){}[0]
+    final val nullable // io.github.kormium/Column.nullable|{}nullable[0]
+        final fun <get-nullable>(): kotlin/Boolean // io.github.kormium/Column.nullable.<get-nullable>|<get-nullable>(){}[0]
+    open val columnType // io.github.kormium/Column.columnType|{}columnType[0]
+        open fun <get-columnType>(): io.github.kormium/ColumnType<#A> // io.github.kormium/Column.columnType.<get-columnType>|<get-columnType>(){}[0]
+
+    open fun init() // io.github.kormium/Column.init|init(){}[0]
+    open fun resultKey(): kotlin/Any // io.github.kormium/Column.resultKey|resultKey(){}[0]
+    open fun toSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/Column.toSql|toSql(io.github.kormium.ParamBuilder){}[0]
+    open fun toString(): kotlin/String // io.github.kormium/Column.toString|toString(){}[0]
+
+    final class <#A1: kotlin/Any?, #B1: io.github.kormium/Table<*, #C1>, #C1: io.github.kormium/Entity> NotNullColumn : io.github.kormium/Column<#A1, #B1, #C1> { // io.github.kormium/Column.NotNullColumn|null[0]
+        constructor <init>(#B1, kotlin/String, kotlin/String, io.github.kormium/ColumnType<#A1>) // io.github.kormium/Column.NotNullColumn.<init>|<init>(1:1;kotlin.String;kotlin.String;io.github.kormium.ColumnType<1:0>){}[0]
+
+        final fun getValue(#C1, kotlin.reflect/KProperty<*>): #A1 // io.github.kormium/Column.NotNullColumn.getValue|getValue(1:2;kotlin.reflect.KProperty<*>){}[0]
+        final fun setValue(#C1, kotlin.reflect/KProperty<*>, #A1) // io.github.kormium/Column.NotNullColumn.setValue|setValue(1:2;kotlin.reflect.KProperty<*>;1:0){}[0]
+    }
+
+    final class <#A1: kotlin/Any?, #B1: io.github.kormium/Table<*, #C1>, #C1: io.github.kormium/Entity> NullableColumn : io.github.kormium/Column<#A1, #B1, #C1> { // io.github.kormium/Column.NullableColumn|null[0]
+        constructor <init>(#B1, kotlin/String, kotlin/String, io.github.kormium/ColumnType<#A1>) // io.github.kormium/Column.NullableColumn.<init>|<init>(1:1;kotlin.String;kotlin.String;io.github.kormium.ColumnType<1:0>){}[0]
+
+        final fun getValue(#C1, kotlin.reflect/KProperty<*>): #A1? // io.github.kormium/Column.NullableColumn.getValue|getValue(1:2;kotlin.reflect.KProperty<*>){}[0]
+        final fun setValue(#C1, kotlin.reflect/KProperty<*>, #A1?) // io.github.kormium/Column.NullableColumn.setValue|setValue(1:2;kotlin.reflect.KProperty<*>;1:0?){}[0]
+    }
+
+    final class <#A1: kotlin/Any?> NullableSpec { // io.github.kormium/Column.NullableSpec|null[0]
+        final fun <#A2: io.github.kormium/Table<*, #B2>, #B2: io.github.kormium/Entity> provideDelegate(#A2, kotlin.reflect/KProperty<*>): kotlin.properties/ReadOnlyProperty<#A2, io.github.kormium/Column.NullableColumn<#A1, #A2, #B2>> // io.github.kormium/Column.NullableSpec.provideDelegate|provideDelegate(0:0;kotlin.reflect.KProperty<*>){0§<io.github.kormium.Table<*,0:1>>;1§<io.github.kormium.Entity>}[0]
+    }
+
+    final class <#A1: kotlin/Any?> PrimaryKeySpec { // io.github.kormium/Column.PrimaryKeySpec|null[0]
+        final fun <#A2: io.github.kormium/Table<*, #B2>, #B2: io.github.kormium/Entity> provideDelegate(#A2, kotlin.reflect/KProperty<*>): kotlin.properties/ReadOnlyProperty<#A2, io.github.kormium/Column.NotNullColumn<#A1, #A2, #B2>> // io.github.kormium/Column.PrimaryKeySpec.provideDelegate|provideDelegate(0:0;kotlin.reflect.KProperty<*>){0§<io.github.kormium.Table<*,0:1>>;1§<io.github.kormium.Entity>}[0]
+    }
+
+    final class Boolean : io.github.kormium/Column.Spec<kotlin/Boolean> { // io.github.kormium/Column.Boolean|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Boolean.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class Bytes : io.github.kormium/Column.Spec<kotlin/ByteArray> { // io.github.kormium/Column.Bytes|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Bytes.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class Double : io.github.kormium/Column.Spec<kotlin/Double> { // io.github.kormium/Column.Double|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Double.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class Float : io.github.kormium/Column.Spec<kotlin/Float> { // io.github.kormium/Column.Float|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Float.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class Instant : io.github.kormium/Column.Spec<kotlin.time/Instant> { // io.github.kormium/Column.Instant|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Instant.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class Int : io.github.kormium/Column.Spec<kotlin/Int> { // io.github.kormium/Column.Int|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Int.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class Json : io.github.kormium/Column.Spec<kotlinx.serialization.json/JsonElement> { // io.github.kormium/Column.Json|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Json.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class LocalDate : io.github.kormium/Column.Spec<kotlinx.datetime/LocalDate> { // io.github.kormium/Column.LocalDate|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.LocalDate.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class LocalDateTime : io.github.kormium/Column.Spec<kotlinx.datetime/LocalDateTime> { // io.github.kormium/Column.LocalDateTime|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.LocalDateTime.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class LocalTime : io.github.kormium/Column.Spec<kotlinx.datetime/LocalTime> { // io.github.kormium/Column.LocalTime|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.LocalTime.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class Long : io.github.kormium/Column.Spec<kotlin/Long> { // io.github.kormium/Column.Long|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Long.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class Short : io.github.kormium/Column.Spec<kotlin/Short> { // io.github.kormium/Column.Short|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Short.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class Text : io.github.kormium/Column.Spec<kotlin/String> { // io.github.kormium/Column.Text|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.Text.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    final class UUID : io.github.kormium/Column.Spec<kotlin.uuid/Uuid> { // io.github.kormium/Column.UUID|null[0]
+        constructor <init>(kotlin/String? = ...) // io.github.kormium/Column.UUID.<init>|<init>(kotlin.String?){}[0]
+    }
+
+    open class <#A1: kotlin/Any?> Spec { // io.github.kormium/Column.Spec|null[0]
+        constructor <init>(kotlin/String?, io.github.kormium/ColumnType<#A1>) // io.github.kormium/Column.Spec.<init>|<init>(kotlin.String?;io.github.kormium.ColumnType<1:0>){}[0]
+
+        final fun <#A2: io.github.kormium/Table<*, #B2>, #B2: io.github.kormium/Entity> provideDelegate(#A2, kotlin.reflect/KProperty<*>): kotlin.properties/ReadOnlyProperty<#A2, io.github.kormium/Column.NotNullColumn<#A1, #A2, #B2>> // io.github.kormium/Column.Spec.provideDelegate|provideDelegate(0:0;kotlin.reflect.KProperty<*>){0§<io.github.kormium.Table<*,0:1>>;1§<io.github.kormium.Entity>}[0]
+        final fun nullable(): io.github.kormium/Column.NullableSpec<#A1> // io.github.kormium/Column.Spec.nullable|nullable(){}[0]
+        final fun primaryKey(): io.github.kormium/Column.PrimaryKeySpec<#A1> // io.github.kormium/Column.Spec.primaryKey|primaryKey(){}[0]
+    }
+
+    final object Companion { // io.github.kormium/Column.Companion|null[0]
+        final fun <#A2: kotlin/Any?> of(io.github.kormium/ColumnType<#A2>, kotlin/String? = ...): io.github.kormium/Column.Spec<#A2> // io.github.kormium/Column.Companion.of|of(io.github.kormium.ColumnType<0:0>;kotlin.String?){0§<kotlin.Any?>}[0]
+        final inline fun <#A2: reified kotlin/Any?> json(kotlin/String? = ...): io.github.kormium/Column.Spec<#A2> // io.github.kormium/Column.Companion.json|json(kotlin.String?){0§<kotlin.Any?>}[0]
+        final inline fun <#A2: reified kotlin/Enum<#A2>> enum(kotlin/String? = ...): io.github.kormium/Column.Spec<#A2> // io.github.kormium/Column.Companion.enum|enum(kotlin.String?){0§<kotlin.Enum<0:0>>}[0]
+    }
+}
+
+final object io.github.kormium/BooleanColumnType : io.github.kormium/ColumnType<kotlin/Boolean> { // io.github.kormium/BooleanColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin/Boolean? // io.github.kormium/BooleanColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/BytesColumnType : io.github.kormium/ColumnType<kotlin/ByteArray> { // io.github.kormium/BytesColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin/ByteArray? // io.github.kormium/BytesColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/DoubleColumnType : io.github.kormium/ColumnType<kotlin/Double> { // io.github.kormium/DoubleColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin/Double? // io.github.kormium/DoubleColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/FloatColumnType : io.github.kormium/ColumnType<kotlin/Float> { // io.github.kormium/FloatColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin/Float? // io.github.kormium/FloatColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/InstantColumnType : io.github.kormium/ColumnType<kotlin.time/Instant> { // io.github.kormium/InstantColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin.time/Instant? // io.github.kormium/InstantColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/IntColumnType : io.github.kormium/ColumnType<kotlin/Int> { // io.github.kormium/IntColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin/Int? // io.github.kormium/IntColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/JsonColumnType : io.github.kormium/ColumnType<kotlinx.serialization.json/JsonElement> { // io.github.kormium/JsonColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlinx.serialization.json/JsonElement? // io.github.kormium/JsonColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/LocalDateColumnType : io.github.kormium/ColumnType<kotlinx.datetime/LocalDate> { // io.github.kormium/LocalDateColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlinx.datetime/LocalDate? // io.github.kormium/LocalDateColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/LocalDateTimeColumnType : io.github.kormium/ColumnType<kotlinx.datetime/LocalDateTime> { // io.github.kormium/LocalDateTimeColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlinx.datetime/LocalDateTime? // io.github.kormium/LocalDateTimeColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/LocalTimeColumnType : io.github.kormium/ColumnType<kotlinx.datetime/LocalTime> { // io.github.kormium/LocalTimeColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlinx.datetime/LocalTime? // io.github.kormium/LocalTimeColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/LongColumnType : io.github.kormium/ColumnType<kotlin/Long> { // io.github.kormium/LongColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin/Long? // io.github.kormium/LongColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/ShortColumnType : io.github.kormium/ColumnType<kotlin/Short> { // io.github.kormium/ShortColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin/Short? // io.github.kormium/ShortColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/StandardDialect : io.github.kormium/Dialect { // io.github.kormium/StandardDialect|null[0]
+    final fun quoteIdentifier(kotlin/String): kotlin/String // io.github.kormium/StandardDialect.quoteIdentifier|quoteIdentifier(kotlin.String){}[0]
+    final fun renderBind(kotlin/String, kotlin/Any?): kotlin/String // io.github.kormium/StandardDialect.renderBind|renderBind(kotlin.String;kotlin.Any?){}[0]
+    final fun renderLimit(kotlin/UInt): kotlin/String // io.github.kormium/StandardDialect.renderLimit|renderLimit(kotlin.UInt){}[0]
+    final fun renderOffset(kotlin/UInt): kotlin/String // io.github.kormium/StandardDialect.renderOffset|renderOffset(kotlin.UInt){}[0]
+}
+
+final object io.github.kormium/StandardTypeMapper : io.github.kormium/TypeMapper { // io.github.kormium/StandardTypeMapper|null[0]
+    final fun toParameter(kotlin/Any?): kotlin/Any? // io.github.kormium/StandardTypeMapper.toParameter|toParameter(kotlin.Any?){}[0]
+}
+
+final object io.github.kormium/TextColumnType : io.github.kormium/ColumnType<kotlin/String> { // io.github.kormium/TextColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin/String? // io.github.kormium/TextColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final object io.github.kormium/UuidColumnType : io.github.kormium/ColumnType<kotlin.uuid/Uuid> { // io.github.kormium/UuidColumnType|null[0]
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): kotlin.uuid/Uuid? // io.github.kormium/UuidColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+}
+
+final fun (io.github.kormium.resultset/ResultSet).io.github.kormium.sql/getJson(kotlin/Int): kotlinx.serialization.json/JsonElement? // io.github.kormium.sql/getJson|getJson@io.github.kormium.resultset.ResultSet(kotlin.Int){}[0]
+final fun (io.github.kormium.resultset/ResultSet).io.github.kormium.sql/getUUID(kotlin/Int): kotlin.uuid/Uuid? // io.github.kormium.sql/getUUID|getUUID@io.github.kormium.resultset.ResultSet(kotlin.Int){}[0]
+final fun (io.github.kormium/Column.NullableColumn<*, *, *>).io.github.kormium/eq(kotlin/Nothing?): io.github.kormium/Expression // io.github.kormium/eq|eq@io.github.kormium.Column.NullableColumn<*,*,*>(kotlin.Nothing?){}[0]
+final fun (io.github.kormium/Column.NullableColumn<*, *, *>).io.github.kormium/neq(kotlin/Nothing?): io.github.kormium/Expression // io.github.kormium/neq|neq@io.github.kormium.Column.NullableColumn<*,*,*>(kotlin.Nothing?){}[0]
+final fun (io.github.kormium/Column<*, *, *>).io.github.kormium/avg(): io.github.kormium/Operand<kotlin/Double> // io.github.kormium/avg|avg@io.github.kormium.Column<*,*,*>(){}[0]
+final fun (io.github.kormium/Column<*, *, *>).io.github.kormium/count(): io.github.kormium/Operand<kotlin/Long> // io.github.kormium/count|count@io.github.kormium.Column<*,*,*>(){}[0]
+final fun (io.github.kormium/Column<kotlin/Int, *, *>).io.github.kormium/sum(): io.github.kormium/Operand<kotlin/Long> // io.github.kormium/sum|sum@io.github.kormium.Column<kotlin.Int,*,*>(){}[0]
+final fun (io.github.kormium/Column<kotlin/Long, *, *>).io.github.kormium/sum(): io.github.kormium/Operand<kotlin/Long> // io.github.kormium/sum|sum@io.github.kormium.Column<kotlin.Long,*,*>(){}[0]
+final fun (io.github.kormium/Column<kotlin/Short, *, *>).io.github.kormium/sum(): io.github.kormium/Operand<kotlin/Long> // io.github.kormium/sum|sum@io.github.kormium.Column<kotlin.Short,*,*>(){}[0]
+final fun (io.github.kormium/Column<kotlin/String, *, *>).io.github.kormium/length(): io.github.kormium/NumericExpr<kotlin/Int> // io.github.kormium/length|length@io.github.kormium.Column<kotlin.String,*,*>(){}[0]
+final fun (io.github.kormium/Column<kotlin/String, *, *>).io.github.kormium/lower(): io.github.kormium/StringExpr // io.github.kormium/lower|lower@io.github.kormium.Column<kotlin.String,*,*>(){}[0]
+final fun (io.github.kormium/Column<kotlin/String, *, *>).io.github.kormium/ltrim(): io.github.kormium/StringExpr // io.github.kormium/ltrim|ltrim@io.github.kormium.Column<kotlin.String,*,*>(){}[0]
+final fun (io.github.kormium/Column<kotlin/String, *, *>).io.github.kormium/rtrim(): io.github.kormium/StringExpr // io.github.kormium/rtrim|rtrim@io.github.kormium.Column<kotlin.String,*,*>(){}[0]
+final fun (io.github.kormium/Column<kotlin/String, *, *>).io.github.kormium/trim(): io.github.kormium/StringExpr // io.github.kormium/trim|trim@io.github.kormium.Column<kotlin.String,*,*>(){}[0]
+final fun (io.github.kormium/Column<kotlin/String, *, *>).io.github.kormium/upper(): io.github.kormium/StringExpr // io.github.kormium/upper|upper@io.github.kormium.Column<kotlin.String,*,*>(){}[0]
+final fun (io.github.kormium/Operand<*>).io.github.kormium/isNotNull(): io.github.kormium/Expression // io.github.kormium/isNotNull|isNotNull@io.github.kormium.Operand<*>(){}[0]
+final fun (io.github.kormium/Operand<*>).io.github.kormium/isNull(): io.github.kormium/Expression // io.github.kormium/isNull|isNull@io.github.kormium.Operand<*>(){}[0]
+final fun (io.github.kormium/Operand<kotlin/String>).io.github.kormium/like(io.github.kormium/Operand<kotlin/String>): io.github.kormium/Expression // io.github.kormium/like|like@io.github.kormium.Operand<kotlin.String>(io.github.kormium.Operand<kotlin.String>){}[0]
+final fun (io.github.kormium/Operand<kotlin/String>).io.github.kormium/like(kotlin/String): io.github.kormium/Expression // io.github.kormium/like|like@io.github.kormium.Operand<kotlin.String>(kotlin.String){}[0]
+final fun (io.github.kormium/StringExpr).io.github.kormium/length(): io.github.kormium/NumericExpr<kotlin/Int> // io.github.kormium/length|length@io.github.kormium.StringExpr(){}[0]
+final fun (io.github.kormium/StringExpr).io.github.kormium/lower(): io.github.kormium/StringExpr // io.github.kormium/lower|lower@io.github.kormium.StringExpr(){}[0]
+final fun (io.github.kormium/StringExpr).io.github.kormium/ltrim(): io.github.kormium/StringExpr // io.github.kormium/ltrim|ltrim@io.github.kormium.StringExpr(){}[0]
+final fun (io.github.kormium/StringExpr).io.github.kormium/rtrim(): io.github.kormium/StringExpr // io.github.kormium/rtrim|rtrim@io.github.kormium.StringExpr(){}[0]
+final fun (io.github.kormium/StringExpr).io.github.kormium/trim(): io.github.kormium/StringExpr // io.github.kormium/trim|trim@io.github.kormium.StringExpr(){}[0]
+final fun (io.github.kormium/StringExpr).io.github.kormium/upper(): io.github.kormium/StringExpr // io.github.kormium/upper|upper@io.github.kormium.StringExpr(){}[0]
+final fun <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity, #C: io.github.kormium/Entity> (io.github.kormium/Table<#A, #B>).io.github.kormium/innerJoin(io.github.kormium/Table<#A, #C>): io.github.kormium/JoinPairStep<#A, #B, #C> // io.github.kormium/innerJoin|innerJoin@io.github.kormium.Table<0:0,0:1>(io.github.kormium.Table<0:0,0:2>){0§<io.github.kormium.Catalog>;1§<io.github.kormium.Entity>;2§<io.github.kormium.Entity>}[0]
+final fun <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity, #C: io.github.kormium/Entity> (io.github.kormium/Table<#A, #B>).io.github.kormium/leftJoin(io.github.kormium/Table<#A, #C>): io.github.kormium/LeftJoinPairStep<#A, #B, #C> // io.github.kormium/leftJoin|leftJoin@io.github.kormium.Table<0:0,0:1>(io.github.kormium.Table<0:0,0:2>){0§<io.github.kormium.Catalog>;1§<io.github.kormium.Entity>;2§<io.github.kormium.Entity>}[0]
+final fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.github.kormium.database/Database<#A>).io.github.kormium/autocommit(kotlin/Function1<io.github.kormium/Scope<#A>, #B>): #B // io.github.kormium/autocommit|autocommit@io.github.kormium.database.Database<0:0>(kotlin.Function1<io.github.kormium.Scope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.github.kormium.database/Database<#A>).io.github.kormium/renderSql(kotlin/Function1<io.github.kormium/RenderScope<#A>, #B>): #B // io.github.kormium/renderSql|renderSql@io.github.kormium.database.Database<0:0>(kotlin.Function1<io.github.kormium.RenderScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.github.kormium.database/Database<#A>).io.github.kormium/transaction(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin/Function1<io.github.kormium/Scope<#A>, #B>): #B // io.github.kormium/transaction|transaction@io.github.kormium.database.Database<0:0>(io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.Function1<io.github.kormium.Scope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> io.github.kormium/renderSql(#A, io.github.kormium/Dialect = ..., io.github.kormium/TypeMapper = ..., kotlin/Function1<io.github.kormium/RenderScope<#A>, #B>): #B // io.github.kormium/renderSql|renderSql(0:0;io.github.kormium.Dialect;io.github.kormium.TypeMapper;kotlin.Function1<io.github.kormium.RenderScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final fun <#A: io.github.kormium/Catalog> (io.github.kormium.database/SuspendDatabase<#A>).io.github.kormium/connectNotifications(io.github.kormium/NotificationTransport): io.github.kormium/Registration // io.github.kormium/connectNotifications|connectNotifications@io.github.kormium.database.SuspendDatabase<0:0>(io.github.kormium.NotificationTransport){0§<io.github.kormium.Catalog>}[0]
+final fun <#A: io.github.kormium/Catalog> (io.github.kormium/Table<#A, *>).io.github.kormium/query(): io.github.kormium/Join<#A> // io.github.kormium/query|query@io.github.kormium.Table<0:0,*>(){0§<io.github.kormium.Catalog>}[0]
+final fun <#A: io.github.kormium/Entity> (#A).io.github.kormium/isSet(io.github.kormium/Column<*, *, #A>): kotlin/Boolean // io.github.kormium/isSet|isSet@0:0(io.github.kormium.Column<*,*,0:0>){0§<io.github.kormium.Entity>}[0]
+final fun <#A: io.github.kormium/Entity> (#A).io.github.kormium/unset(io.github.kormium/Column<*, *, #A>) // io.github.kormium/unset|unset@0:0(io.github.kormium.Column<*,*,0:0>){0§<io.github.kormium.Entity>}[0]
+final fun <#A: io.github.kormium/Entity> (io.github.kormium/ResultRow).io.github.kormium/entity(io.github.kormium/Table<*, #A>): #A // io.github.kormium/entity|entity@io.github.kormium.ResultRow(io.github.kormium.Table<*,0:0>){0§<io.github.kormium.Entity>}[0]
+final fun <#A: io.github.kormium/Entity> (io.github.kormium/Table<*, #A>).io.github.kormium/any(kotlin/Function0<io.github.kormium/Expression>): io.github.kormium/Expression // io.github.kormium/any|any@io.github.kormium.Table<*,0:0>(kotlin.Function0<io.github.kormium.Expression>){0§<io.github.kormium.Entity>}[0]
+final fun <#A: io.github.kormium/Entity> (io.github.kormium/Table<*, #A>).io.github.kormium/none(kotlin/Function0<io.github.kormium/Expression>): io.github.kormium/Expression // io.github.kormium/none|none@io.github.kormium.Table<*,0:0>(kotlin.Function0<io.github.kormium.Expression>){0§<io.github.kormium.Entity>}[0]
+final fun <#A: io.github.kormium/Expression, #B: io.github.kormium/Expression> (#A).io.github.kormium/and(#B): io.github.kormium/Expression // io.github.kormium/and|and@0:0(0:1){0§<io.github.kormium.Expression>;1§<io.github.kormium.Expression>}[0]
+final fun <#A: io.github.kormium/Expression, #B: io.github.kormium/Expression> (#A).io.github.kormium/eq(#B): io.github.kormium/Expression // io.github.kormium/eq|eq@0:0(0:1){0§<io.github.kormium.Expression>;1§<io.github.kormium.Expression>}[0]
+final fun <#A: io.github.kormium/Expression, #B: io.github.kormium/Expression> (#A).io.github.kormium/gt(#B): io.github.kormium/Expression // io.github.kormium/gt|gt@0:0(0:1){0§<io.github.kormium.Expression>;1§<io.github.kormium.Expression>}[0]
+final fun <#A: io.github.kormium/Expression, #B: io.github.kormium/Expression> (#A).io.github.kormium/gtEq(#B): io.github.kormium/Expression // io.github.kormium/gtEq|gtEq@0:0(0:1){0§<io.github.kormium.Expression>;1§<io.github.kormium.Expression>}[0]
+final fun <#A: io.github.kormium/Expression, #B: io.github.kormium/Expression> (#A).io.github.kormium/lt(#B): io.github.kormium/Expression // io.github.kormium/lt|lt@0:0(0:1){0§<io.github.kormium.Expression>;1§<io.github.kormium.Expression>}[0]
+final fun <#A: io.github.kormium/Expression, #B: io.github.kormium/Expression> (#A).io.github.kormium/ltEq(#B): io.github.kormium/Expression // io.github.kormium/ltEq|ltEq@0:0(0:1){0§<io.github.kormium.Expression>;1§<io.github.kormium.Expression>}[0]
+final fun <#A: io.github.kormium/Expression, #B: io.github.kormium/Expression> (#A).io.github.kormium/neq(#B): io.github.kormium/Expression // io.github.kormium/neq|neq@0:0(0:1){0§<io.github.kormium.Expression>;1§<io.github.kormium.Expression>}[0]
+final fun <#A: io.github.kormium/Expression, #B: io.github.kormium/Expression> (#A).io.github.kormium/or(#B): io.github.kormium/Expression // io.github.kormium/or|or@0:0(0:1){0§<io.github.kormium.Expression>;1§<io.github.kormium.Expression>}[0]
+final fun <#A: kotlin/Any?, #B: kotlin/Any?> (io.github.kormium/ColumnType<#B>).io.github.kormium/convert(kotlin/Function1<#A, #B>, kotlin/Function1<#B, #A>): io.github.kormium/ColumnType<#A> // io.github.kormium/convert|convert@io.github.kormium.ColumnType<0:1>(kotlin.Function1<0:0,0:1>;kotlin.Function1<0:1,0:0>){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/CoalesceOp<#A>).io.github.kormium/coalesce(#A): io.github.kormium/CoalesceOp<#A> // io.github.kormium/coalesce|coalesce@io.github.kormium.CoalesceOp<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/CoalesceOp<#A>).io.github.kormium/coalesce(kotlin/Array<out io.github.kormium/Column<#A, *, *>>...): io.github.kormium/CoalesceOp<#A> // io.github.kormium/coalesce|coalesce@io.github.kormium.CoalesceOp<0:0>(kotlin.Array<out|io.github.kormium.Column<0:0,*,*>>...){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/coalesce(#A): io.github.kormium/CoalesceOp<#A> // io.github.kormium/coalesce|coalesce@io.github.kormium.Column<0:0,*,*>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/coalesce(kotlin/Array<out io.github.kormium/Column<#A, *, *>>...): io.github.kormium/CoalesceOp<#A> // io.github.kormium/coalesce|coalesce@io.github.kormium.Column<0:0,*,*>(kotlin.Array<out|io.github.kormium.Column<0:0,*,*>>...){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/div(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/div|div@io.github.kormium.Column<0:0,*,*>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/div(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/div|div@io.github.kormium.Column<0:0,*,*>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/div(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/div|div@io.github.kormium.Column<0:0,*,*>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/max(): io.github.kormium/Operand<#A> // io.github.kormium/max|max@io.github.kormium.Column<0:0,*,*>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/min(): io.github.kormium/Operand<#A> // io.github.kormium/min|min@io.github.kormium.Column<0:0,*,*>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/minus(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/minus|minus@io.github.kormium.Column<0:0,*,*>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/minus(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/minus|minus@io.github.kormium.Column<0:0,*,*>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/minus(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/minus|minus@io.github.kormium.Column<0:0,*,*>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/plus(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/plus|plus@io.github.kormium.Column<0:0,*,*>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/plus(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/plus|plus@io.github.kormium.Column<0:0,*,*>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/plus(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/plus|plus@io.github.kormium.Column<0:0,*,*>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/rem(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/rem|rem@io.github.kormium.Column<0:0,*,*>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/rem(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/rem|rem@io.github.kormium.Column<0:0,*,*>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/rem(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/rem|rem@io.github.kormium.Column<0:0,*,*>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/sum(): io.github.kormium/Operand<#A> // io.github.kormium/sum|sum@io.github.kormium.Column<0:0,*,*>(){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/times(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/times|times@io.github.kormium.Column<0:0,*,*>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/times(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/times|times@io.github.kormium.Column<0:0,*,*>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Column<#A, *, *>).io.github.kormium/times(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/times|times@io.github.kormium.Column<0:0,*,*>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/ConnectionPool).io.github.kormium/runPinned(kotlin/Boolean, io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin/Function1<io.github.kormium/SqlExecutor, #A>): #A // io.github.kormium/runPinned|runPinned@io.github.kormium.ConnectionPool(kotlin.Boolean;io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.Function1<io.github.kormium.SqlExecutor,0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/div(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/div|div@io.github.kormium.NumericExpr<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/div(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/div|div@io.github.kormium.NumericExpr<0:0>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/div(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/div|div@io.github.kormium.NumericExpr<0:0>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/minus(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/minus|minus@io.github.kormium.NumericExpr<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/minus(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/minus|minus@io.github.kormium.NumericExpr<0:0>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/minus(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/minus|minus@io.github.kormium.NumericExpr<0:0>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/plus(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/plus|plus@io.github.kormium.NumericExpr<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/plus(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/plus|plus@io.github.kormium.NumericExpr<0:0>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/plus(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/plus|plus@io.github.kormium.NumericExpr<0:0>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/rem(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/rem|rem@io.github.kormium.NumericExpr<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/rem(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/rem|rem@io.github.kormium.NumericExpr<0:0>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/rem(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/rem|rem@io.github.kormium.NumericExpr<0:0>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/times(#A): io.github.kormium/NumericExpr<#A> // io.github.kormium/times|times@io.github.kormium.NumericExpr<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/times(io.github.kormium/Column<#A, *, *>): io.github.kormium/NumericExpr<#A> // io.github.kormium/times|times@io.github.kormium.NumericExpr<0:0>(io.github.kormium.Column<0:0,*,*>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/NumericExpr<#A>).io.github.kormium/times(io.github.kormium/NumericExpr<#A>): io.github.kormium/NumericExpr<#A> // io.github.kormium/times|times@io.github.kormium.NumericExpr<0:0>(io.github.kormium.NumericExpr<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Operand<#A>).io.github.kormium/eq(#A): io.github.kormium/Expression // io.github.kormium/eq|eq@io.github.kormium.Operand<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Operand<#A>).io.github.kormium/gt(#A): io.github.kormium/Expression // io.github.kormium/gt|gt@io.github.kormium.Operand<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Operand<#A>).io.github.kormium/gtEq(#A): io.github.kormium/Expression // io.github.kormium/gtEq|gtEq@io.github.kormium.Operand<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Operand<#A>).io.github.kormium/inList(kotlin.collections/List<#A>): io.github.kormium/Expression // io.github.kormium/inList|inList@io.github.kormium.Operand<0:0>(kotlin.collections.List<0:0>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Operand<#A>).io.github.kormium/lt(#A): io.github.kormium/Expression // io.github.kormium/lt|lt@io.github.kormium.Operand<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Operand<#A>).io.github.kormium/ltEq(#A): io.github.kormium/Expression // io.github.kormium/ltEq|ltEq@io.github.kormium.Operand<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> (io.github.kormium/Operand<#A>).io.github.kormium/neq(#A): io.github.kormium/Expression // io.github.kormium/neq|neq@io.github.kormium.Operand<0:0>(0:0){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Any?> io.github.kormium/case(io.github.kormium/ColumnType<#A>, kotlin/Function1<io.github.kormium/CaseBuilder<#A>, kotlin/Unit>): io.github.kormium/CaseOp<#A> // io.github.kormium/case|case(io.github.kormium.ColumnType<0:0>;kotlin.Function1<io.github.kormium.CaseBuilder<0:0>,kotlin.Unit>){0§<kotlin.Any?>}[0]
+final fun <#A: kotlin/Comparable<#A>> (io.github.kormium/Operand<#A>).io.github.kormium/between(kotlin.ranges/ClosedRange<#A>): io.github.kormium/Expression // io.github.kormium/between|between@io.github.kormium.Operand<0:0>(kotlin.ranges.ClosedRange<0:0>){0§<kotlin.Comparable<0:0>>}[0]
+final fun io.github.kormium/count(): io.github.kormium/Operand<kotlin/Long> // io.github.kormium/count|count(){}[0]
+final fun io.github.kormium/decodeTablePayload(kotlin/String): kotlin.collections/Set<kotlin/String> // io.github.kormium/decodeTablePayload|decodeTablePayload(kotlin.String){}[0]
+final fun io.github.kormium/encodeTablePayload(kotlin.collections/Set<kotlin/String>): kotlin/String // io.github.kormium/encodeTablePayload|encodeTablePayload(kotlin.collections.Set<kotlin.String>){}[0]
+final fun io.github.kormium/not(io.github.kormium/Expression): io.github.kormium/Expression // io.github.kormium/not|not(io.github.kormium.Expression){}[0]
+final fun io.github.kormium/sqlException(kotlin/String, kotlin/String?, kotlin/Throwable? = ...): io.github.kormium/QueryException // io.github.kormium/sqlException|sqlException(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
+final inline fun <#A: reified kotlin/Any?> io.github.kormium/case(noinline kotlin/Function1<io.github.kormium/CaseBuilder<#A>, kotlin/Unit>): io.github.kormium/CaseOp<#A> // io.github.kormium/case|case(kotlin.Function1<io.github.kormium.CaseBuilder<0:0>,kotlin.Unit>){0§<kotlin.Any?>}[0]
+final inline fun <#A: reified kotlin/Any?> io.github.kormium/jsonColumnType(kotlinx.serialization.json/Json = ...): io.github.kormium/ColumnType<#A> // io.github.kormium/jsonColumnType|jsonColumnType(kotlinx.serialization.json.Json){0§<kotlin.Any?>}[0]
+final inline fun <#A: reified kotlin/Enum<#A>> io.github.kormium/enumColumnType(): io.github.kormium/ColumnType<#A> // io.github.kormium/enumColumnType|enumColumnType(){0§<kotlin.Enum<0:0>>}[0]
+final suspend fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.github.kormium.database/SuspendDatabase<#A>).io.github.kormium/suspendAutocommit(kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium/suspendAutocommit|suspendAutocommit@io.github.kormium.database.SuspendDatabase<0:0>(kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final suspend fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> (io.github.kormium.database/SuspendDatabase<#A>).io.github.kormium/suspendTransaction(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScope<#A>, #B>): #B // io.github.kormium/suspendTransaction|suspendTransaction@io.github.kormium.database.SuspendDatabase<0:0>(io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScope<0:0>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]
+final suspend fun <#A: kotlin/Any?> (io.github.kormium/ConnectionPool).io.github.kormium/runConnection(kotlin/Boolean, io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendSqlExecutor, #A>): #A // io.github.kormium/runConnection|runConnection@io.github.kormium.ConnectionPool(kotlin.Boolean;io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendSqlExecutor,0:0>){0§<kotlin.Any?>}[0]

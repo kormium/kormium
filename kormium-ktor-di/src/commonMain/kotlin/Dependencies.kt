@@ -19,29 +19,29 @@ import io.ktor.server.plugins.di.resolve
  * ```
  * This is the chain form (c): `call.kormium<AppCatalog>().transaction { ... }`.
  */
-suspend inline fun <reified G : Catalog> ApplicationCall.kormium(): KormiumHandle<G> =
+public suspend inline fun <reified G : Catalog> ApplicationCall.kormium(): KormiumHandle<G> =
     KormiumHandle(application.dependencies.resolve<SuspendDatabase<G>>())
 
 // --- (a) catalog as a TYPE argument — `call.transaction<AppCatalog, _> { ... }` ---------------
 // The `_` lets the return type infer while the catalog is given explicitly as a type.
 
-suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
+public suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
     noinline block: suspend SuspendScope<G>.() -> R,
 ): R = kormium<G>().database.suspendTransaction(block = block)
 
-suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
+public suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
     noinline block: suspend SuspendScope<G>.() -> R,
 ): R = kormium<G>().database.suspendAutocommit(block)
 
 // --- (b) catalog as a VALUE — `call.transaction(AppCatalog) { ... }` --------------------------
 // Both type parameters infer (G from the catalog argument, R from the block); no `_` needed.
 
-suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
+public suspend inline fun <reified G : Catalog, R> ApplicationCall.transaction(
     catalog: G,
     noinline block: suspend SuspendScope<G>.() -> R,
 ): R = kormium<G>().database.suspendTransaction(block = block)
 
-suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
+public suspend inline fun <reified G : Catalog, R> ApplicationCall.autocommit(
     catalog: G,
     noinline block: suspend SuspendScope<G>.() -> R,
 ): R = kormium<G>().database.suspendAutocommit(block)

@@ -40,7 +40,8 @@ db.transaction {
 ```
 
 On PostgreSQL / SQLite, a one-statement `… RETURNING` is available through `RawExpression` /
-`execute(...)` for callers who specifically want it.
+`execute(...)` for callers who specifically want it (both require
+`@OptIn(DelicateKormiumApi::class)`; `execute` also requires `params`/`invalidates` explicitly).
 
 ## Consequences
 

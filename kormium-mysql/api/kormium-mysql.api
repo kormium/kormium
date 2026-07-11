@@ -1,0 +1,31 @@
+public abstract interface class io/github/kormium/MySqlDriver : io/github/kormium/database/Database, io/github/kormium/database/SuspendDatabase, java/lang/AutoCloseable {
+	public abstract fun getConfig ()Lio/github/kormium/KormiumConfig;
+	public abstract fun getDialect ()Lio/github/kormium/Dialect;
+	public abstract fun getWriteListeners ()Lio/github/kormium/WriteListeners;
+	public abstract fun isClosed ()Z
+}
+
+public final class io/github/kormium/MySqlErrorsKt {
+	public static final fun mysqlVendorException (Ljava/lang/String;ILjava/lang/String;Ljava/lang/Throwable;)Lio/github/kormium/QueryException;
+	public static synthetic fun mysqlVendorException$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lio/github/kormium/QueryException;
+}
+
+public final class io/github/kormium/MySqlExceptionTranslatorKt {
+	public static final fun getMySqlExceptionTranslator ()Lkotlin/jvm/functions/Function1;
+}
+
+public final class io/github/kormium/MySqlJvmTypeMapper : io/github/kormium/TypeMapper {
+	public static final field INSTANCE Lio/github/kormium/MySqlJvmTypeMapper;
+	public fun toParameter (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/database/CreateDatabaseKt {
+	public static final fun createDatabase-GajXJrc (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLkotlin/jvm/functions/Function1;)Lio/github/kormium/MySqlDriver;
+	public static synthetic fun createDatabase-GajXJrc$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/MySqlDriver;
+}
+
+public final class io/github/kormium/database/Database_jvmKt {
+	public static final fun createDatabase-GajXJrc (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLio/github/kormium/KormiumConfig;)Lio/github/kormium/MySqlDriver;
+	public static synthetic fun createDatabase-GajXJrc$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;IJLio/github/kormium/KormiumConfig;ILjava/lang/Object;)Lio/github/kormium/MySqlDriver;
+}
+

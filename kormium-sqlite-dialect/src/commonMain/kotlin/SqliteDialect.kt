@@ -7,7 +7,7 @@ package io.github.kormium
  * `TEXT` and parsed back by the result-set wrapper. Kormium does not own schema DDL, so
  * the dialect carries no column-type mapping.
  */
-object SqliteDialect : Dialect by StandardDialect {
+public object SqliteDialect : Dialect by StandardDialect {
     // SQLite has a single isolation level (effectively SERIALIZABLE), so a requested level is ignored.
     override val supportsTransactionIsolation: Boolean get() = false
 

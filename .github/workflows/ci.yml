@@ -53,10 +53,17 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Public-ABI guard (dumps in <module>/api/). On Linux this covers the JVM dumps —
+      # the klib checks run in the macOS job, the only host that builds every declared
+      # target (see the note in the root build.gradle.kts). Fails in seconds when a change
+      # alters the API surface without a reviewed `./gradlew apiDump`.
+      - name: API compatibility check (JVM)
+        run: ./gradlew apiCheck --console=plain
+
       # JVM unit tests. kormium-sqlite runs against an in-memory database (no Docker); it covers
       # both the blocking and the suspend (offload) paths.
       - name: JVM tests
-        run: ./gradlew :kormium-core:jvmTest :kormium-sqlite:jvmTest :kormium-migrate:jvmTest --console=plain
+        run: ./gradlew :kormium-core:jvmTest :kormium-decimal:jvmTest :kormium-sqlite:jvmTest :kormium-migrate:jvmTest --console=plain
 
       # Native (libpq) tests against the Postgres service above. The host native test task
       # on a Linux runner is linuxX64Test (the modules now declare real native targets).
@@ -74,7 +81,7 @@ jobs:
           MYSQL_DB: kormium_test
           MYSQL_USER: kormium
           MYSQL_PASSWORD: kormium
-        run: ./gradlew :kormium-core:linuxX64Test :kormium-postgres:linuxX64Test :kormium-sqlite:linuxX64Test :kormium-migrate:linuxX64Test :kormium-mysql:linuxX64Test --console=plain
+        run: ./gradlew :kormium-core:linuxX64Test :kormium-decimal:linuxX64Test :kormium-postgres:linuxX64Test :kormium-sqlite:linuxX64Test :kormium-migrate:linuxX64Test :kormium-mysql:linuxX64Test --console=plain
 
       # The ktor integration libraries are libraries (no native exe link), so assemble
       # builds their JVM + native artifacts to verify they compile on every target.
@@ -228,6 +235,24 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      # The Kotlin/Native toolchain for the klib ABI checks below is a multi-hundred-MB download.
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-macos-kotlin-2.4.0
+
+      # The klib cinterops (libpq/libmariadb) resolve their headers from brew, like the
+      # publish workflow; macOS cross-compiles every declared target's klib from them.
+      - name: Install libpq + mariadb-connector-c (for the Kotlin/Native cinterops)
+        run: brew install libpq mariadb-connector-c
+
+      # Full ABI check (JVM + klib). The klib checks only run on macOS — the host profile
+      # that builds every declared target, same as publishing; see the note in the root
+      # build.gradle.kts. The Linux job's apiCheck covers the JVM dumps early and fast.
+      - name: API compatibility check (full, incl. klib)
+        run: ./gradlew apiCheck --console=plain
 
       # Compile the Android and iOS variants of every Compose-Multiplatform-enabled module.
       # sqlite3.h is vendored and iOS/macOS ship libsqlite3, so no extra system deps are needed.

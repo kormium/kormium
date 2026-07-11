@@ -1,6 +1,6 @@
 package io.github.kormium.resultset
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -16,50 +16,50 @@ import kotlinx.datetime.LocalTime
  * The cursor starts before the first row; call [next] to advance.
  */
 @Suppress("TooManyFunctions")
-interface ResultSet {
+public interface ResultSet {
 
     /** The selected column names, in select-list order. */
-    val columns: Array<String>
+    public val columns: Array<String>
 
     /**
      * Moves the cursor forward one row. Returns `true` if the new current row is
      * valid, `false` when there are no more rows.
      */
-    fun next(): Boolean
+    public fun next(): Boolean
 
     /** Reads column [columnIndex] (0-based) as a [String], or `null` for SQL `NULL`. */
-    fun getString(columnIndex: Int): String?
+    public fun getString(columnIndex: Int): String?
 
     /** Reads column [columnIndex] (0-based) as a [Boolean], or `null` for SQL `NULL`. */
-    fun getBoolean(columnIndex: Int): Boolean?
+    public fun getBoolean(columnIndex: Int): Boolean?
 
     /** Reads column [columnIndex] (0-based) as a [Short], or `null` for SQL `NULL`. */
-    fun getShort(columnIndex: Int): Short?
+    public fun getShort(columnIndex: Int): Short?
 
     /** Reads column [columnIndex] (0-based) as an [Int], or `null` for SQL `NULL`. */
-    fun getInt(columnIndex: Int): Int?
+    public fun getInt(columnIndex: Int): Int?
 
     /** Reads column [columnIndex] (0-based) as a [Long], or `null` for SQL `NULL`. */
-    fun getLong(columnIndex: Int): Long?
+    public fun getLong(columnIndex: Int): Long?
 
     /** Reads column [columnIndex] (0-based) as a [Float], or `null` for SQL `NULL`. */
-    fun getFloat(columnIndex: Int): Float?
+    public fun getFloat(columnIndex: Int): Float?
 
     /** Reads column [columnIndex] (0-based) as a [Double], or `null` for SQL `NULL`. */
-    fun getDouble(columnIndex: Int): Double?
+    public fun getDouble(columnIndex: Int): Double?
 
     /** Reads column [columnIndex] (0-based) as the driver's raw bytes, or `null` for SQL `NULL`. */
-    fun getBytes(columnIndex: Int): ByteArray?
+    public fun getBytes(columnIndex: Int): ByteArray?
 
     /** Reads column [columnIndex] (0-based) as a [LocalDate], or `null` for SQL `NULL`. */
-    fun getDate(columnIndex: Int): LocalDate?
+    public fun getDate(columnIndex: Int): LocalDate?
 
     /** Reads column [columnIndex] (0-based) as a [LocalTime], or `null` for SQL `NULL`. */
-    fun getTime(columnIndex: Int): LocalTime?
+    public fun getTime(columnIndex: Int): LocalTime?
 
     /** Reads column [columnIndex] (0-based) as a [LocalDateTime], or `null` for SQL `NULL`. */
-    fun getLocalDateTime(columnIndex: Int): LocalDateTime?
+    public fun getLocalDateTime(columnIndex: Int): LocalDateTime?
 
     /** Reads column [columnIndex] (0-based) as an [Instant], or `null` for SQL `NULL`. */
-    fun getInstant(columnIndex: Int): Instant?
+    public fun getInstant(columnIndex: Int): Instant?
 }

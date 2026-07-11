@@ -1,6 +1,9 @@
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 package kormium.bench
 
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import io.github.kormium.decimal.Decimal
+import io.github.kormium.decimal.decimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity
@@ -39,7 +42,7 @@ class BenchRow : Entity() {
 object BenchTable : Table<Bench, BenchRow>("bench", ::BenchRow) {
     val id by Column.UUID().primaryKey()
     val name by Column.Text()
-    val amount by Column.BigDecimal()
+    val amount by Column.decimal()
 
     init { id; name; amount }
 }
@@ -79,7 +82,7 @@ open class KormiumBenchmark {
         )
         db.transaction {
             BenchTable.execSql(benchDdl)
-            executeUpdate("""CREATE INDEX IF NOT EXISTS bench_name_idx ON "public"."bench" ("name")""")
+            executeUpdate("""CREATE INDEX IF NOT EXISTS bench_name_idx ON "public"."bench" ("name")""", params = emptyMap(), invalidates = emptyList())
         }
     }
 
@@ -88,8 +91,8 @@ open class KormiumBenchmark {
     @Setup(Level.Iteration)
     fun resetTable() {
         db.transaction {
-            executeUpdate("""TRUNCATE "public"."bench"""")
-            BenchTable.insert(BenchRow().apply { id = seededId; name = "seed"; amount = BigDecimal.fromInt(1) })
+            executeUpdate("""TRUNCATE "public"."bench"""", params = emptyMap(), invalidates = emptyList())
+            BenchTable.insert(BenchRow().apply { id = seededId; name = "seed"; amount = Decimal.of(1) })
         }
     }
 
@@ -101,7 +104,7 @@ open class KormiumBenchmark {
 
     @Benchmark
     fun insert(): Any? = db.transaction {
-        BenchTable.insert(BenchRow().apply { id = Uuid.random(); name = "x"; amount = BigDecimal.fromInt(1) })
+        BenchTable.insert(BenchRow().apply { id = Uuid.random(); name = "x"; amount = Decimal.of(1) })
     }
 
     @Benchmark

@@ -20,9 +20,9 @@ import io.github.kormium.WriteListeners
  * itself an [SqlExecutor]. Run one-off statements via `autocommit { execute(...) }` so every
  * write goes through a scope (and is therefore transactional and observable).
  */
-interface Database<out G : Catalog> : AutoCloseable {
+public interface Database<out G : Catalog> : AutoCloseable {
     /** Per-database configuration; defaults to [KormiumConfig] defaults unless a backend overrides it. */
-    val config: KormiumConfig get() = KormiumConfig()
+    public val config: KormiumConfig get() = KormiumConfig()
 
     /**
      * The SQL dialect this database renders to (placeholder style, identifier quoting, LIMIT/OFFSET,
@@ -30,14 +30,14 @@ interface Database<out G : Catalog> : AutoCloseable {
      * [StandardDialect] default keeps custom/test implementations compiling. Exposed so a query can
      * be rendered to its SQL without a connection — see [io.github.kormium.renderSql].
      */
-    val dialect: Dialect get() = StandardDialect
+    public val dialect: Dialect get() = StandardDialect
 
     /**
      * The write-notification registry for this database. The default [WriteListeners.Disabled]
      * means change observation (e.g. `kormium-observe`) does nothing; a backend opts in by
      * overriding this with a real [WriteListeners] instance.
      */
-    val writeListeners: WriteListeners get() = WriteListeners.Disabled
+    public val writeListeners: WriteListeners get() = WriteListeners.Disabled
 
     /**
      * Pins one connection for the duration of [block]; the [SqlExecutor] passed to it
@@ -46,7 +46,7 @@ interface Database<out G : Catalog> : AutoCloseable {
      * (if non-null) and [readOnly] are applied to the opened transaction; both are ignored in
      * autocommit. Backend-specific.
      */
-    fun <R> usePinned(
+    public fun <R> usePinned(
         transactional: Boolean,
         isolation: TransactionIsolation? = null,
         readOnly: Boolean = false,
@@ -58,7 +58,7 @@ interface Database<out G : Catalog> : AutoCloseable {
      * Once `true`, [usePinned] (and any `transaction` / `autocommit`) throws
      * [io.github.kormium.DatabaseClosedException].
      */
-    val isClosed: Boolean get() = false
+    public val isClosed: Boolean get() = false
 
     /**
      * Closes the underlying connection(s); the database is unusable afterwards. The contract,

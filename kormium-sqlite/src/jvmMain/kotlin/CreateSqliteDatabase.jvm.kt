@@ -3,6 +3,7 @@ package io.github.kormium
 import io.github.kormium.jdbc.JdbcDatabase
 import io.github.kormium.jdbc.SqlExceptionTranslator
 import java.sql.SQLException
+import kotlin.time.Duration
 
 // sqlite-jdbc exposes the SQLite (extended) result code via SQLException.getErrorCode().
 private val sqliteTranslator: SqlExceptionTranslator = { e: SQLException ->
@@ -20,15 +21,22 @@ private fun sqliteJdbcUrl(path: String): String =
         "jdbc:sqlite:$path?journal_mode=WAL&foreign_keys=on&busy_timeout=5000"
     }
 
-private class SqliteJdbcDriver(path: String, poolSize: Int, config: KormiumConfig) : JdbcDatabase(
-    jdbcUrl = sqliteJdbcUrl(path),
-    poolSize = poolSize,
-    dialect = SqliteDialect,
-    typeMapper = StandardTypeMapper,
-    wrap = ::SqliteResultSetWrapper,
-    translate = sqliteTranslator,
-    config = config,
-), SqliteDriver
+private class SqliteJdbcDriver(path: String, poolSize: Int, acquireTimeout: Duration, config: KormiumConfig) :
+    JdbcDatabase(
+        jdbcUrl = sqliteJdbcUrl(path),
+        poolSize = poolSize,
+        acquireTimeout = acquireTimeout,
+        dialect = SqliteDialect,
+        typeMapper = StandardTypeMapper,
+        wrap = ::SqliteResultSetWrapper,
+        translate = sqliteTranslator,
+        config = config,
+    ),
+    SqliteDriver
 
-actual fun createSqliteDatabase(path: String, poolSize: Int, config: KormiumConfig): SqliteDriver =
-    SqliteJdbcDriver(path, poolSize, config)
+public actual fun createSqliteDatabase(
+    path: String,
+    poolSize: Int,
+    acquireTimeout: Duration,
+    config: KormiumConfig,
+): SqliteDriver = SqliteJdbcDriver(path, poolSize, acquireTimeout, config)

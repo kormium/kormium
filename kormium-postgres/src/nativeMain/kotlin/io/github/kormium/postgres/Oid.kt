@@ -35,7 +35,7 @@ private val supportedBinaryOids = hashSetOf(
 
 
 @Suppress("MagicNumber")
-enum class Oid(val value: Int) {
+internal enum class Oid(public val value: Int) {
     UNSPECIFIED(0),
     INT2(21),
     INT2_ARRAY(1005),

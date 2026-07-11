@@ -1,0 +1,81 @@
+// Klib ABI Dump
+// Targets: [js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs, wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-postgres-dialect>
+final enum class io.github.kormium/VectorMetric : kotlin/Enum<io.github.kormium/VectorMetric> { // io.github.kormium/VectorMetric|null[0]
+    enum entry COSINE // io.github.kormium/VectorMetric.COSINE|null[0]
+    enum entry DOT // io.github.kormium/VectorMetric.DOT|null[0]
+    enum entry EUCLIDEAN // io.github.kormium/VectorMetric.EUCLIDEAN|null[0]
+
+    final val entries // io.github.kormium/VectorMetric.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.kormium/VectorMetric> // io.github.kormium/VectorMetric.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.kormium/VectorMetric // io.github.kormium/VectorMetric.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.kormium/VectorMetric> // io.github.kormium/VectorMetric.values|values#static(){}[0]
+}
+
+final class io.github.kormium/Vector { // io.github.kormium/Vector|null[0]
+    constructor <init>(kotlin.collections/List<kotlin/Float>) // io.github.kormium/Vector.<init>|<init>(kotlin.collections.List<kotlin.Float>){}[0]
+    constructor <init>(kotlin/FloatArray) // io.github.kormium/Vector.<init>|<init>(kotlin.FloatArray){}[0]
+
+    final val data // io.github.kormium/Vector.data|{}data[0]
+        final fun <get-data>(): kotlin/FloatArray // io.github.kormium/Vector.data.<get-data>|<get-data>(){}[0]
+    final val size // io.github.kormium/Vector.size|{}size[0]
+        final fun <get-size>(): kotlin/Int // io.github.kormium/Vector.size.<get-size>|<get-size>(){}[0]
+
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.github.kormium/Vector.equals|equals(kotlin.Any?){}[0]
+    final fun get(kotlin/Int): kotlin/Float // io.github.kormium/Vector.get|get(kotlin.Int){}[0]
+    final fun hashCode(): kotlin/Int // io.github.kormium/Vector.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.github.kormium/Vector.toString|toString(){}[0]
+
+    final object Companion { // io.github.kormium/Vector.Companion|null[0]
+        final fun of(kotlin/FloatArray...): io.github.kormium/Vector // io.github.kormium/Vector.Companion.of|of(kotlin.FloatArray...){}[0]
+        final fun parse(kotlin/String): io.github.kormium/Vector // io.github.kormium/Vector.Companion.parse|parse(kotlin.String){}[0]
+    }
+}
+
+final class io.github.kormium/VectorColumnType : io.github.kormium/ColumnType<io.github.kormium/Vector> { // io.github.kormium/VectorColumnType|null[0]
+    constructor <init>(kotlin/Int? = ...) // io.github.kormium/VectorColumnType.<init>|<init>(kotlin.Int?){}[0]
+
+    final val description // io.github.kormium/VectorColumnType.description|{}description[0]
+        final fun <get-description>(): kotlin/String // io.github.kormium/VectorColumnType.description.<get-description>|<get-description>(){}[0]
+    final val dimensions // io.github.kormium/VectorColumnType.dimensions|{}dimensions[0]
+        final fun <get-dimensions>(): kotlin/Int? // io.github.kormium/VectorColumnType.dimensions.<get-dimensions>|<get-dimensions>(){}[0]
+
+    final fun read(io.github.kormium.resultset/ResultSet, kotlin/Int): io.github.kormium/Vector? // io.github.kormium/VectorColumnType.read|read(io.github.kormium.resultset.ResultSet;kotlin.Int){}[0]
+    final fun toParam(io.github.kormium/Vector): kotlin/Any? // io.github.kormium/VectorColumnType.toParam|toParam(io.github.kormium.Vector){}[0]
+}
+
+final object io.github.kormium/PostgresDialect : io.github.kormium/Dialect { // io.github.kormium/PostgresDialect|null[0]
+    final val readOnlyToggle // io.github.kormium/PostgresDialect.readOnlyToggle|{}readOnlyToggle[0]
+        final fun <get-readOnlyToggle>(): io.github.kormium/ReadOnlyToggle? // io.github.kormium/PostgresDialect.readOnlyToggle.<get-readOnlyToggle>|<get-readOnlyToggle>(){}[0]
+    final val supportsReturning // io.github.kormium/PostgresDialect.supportsReturning|{}supportsReturning[0]
+        final fun <get-supportsReturning>(): kotlin/Boolean // io.github.kormium/PostgresDialect.supportsReturning.<get-supportsReturning>|<get-supportsReturning>(){}[0]
+    final val supportsTransactionIsolation // io.github.kormium/PostgresDialect.supportsTransactionIsolation|{}supportsTransactionIsolation[0]
+        final fun <get-supportsTransactionIsolation>(): kotlin/Boolean // io.github.kormium/PostgresDialect.supportsTransactionIsolation.<get-supportsTransactionIsolation>|<get-supportsTransactionIsolation>(){}[0]
+
+    final fun advisoryLockSql(kotlin/Long): kotlin/String // io.github.kormium/PostgresDialect.advisoryLockSql|advisoryLockSql(kotlin.Long){}[0]
+    final fun quoteIdentifier(kotlin/String): kotlin/String // io.github.kormium/PostgresDialect.quoteIdentifier|quoteIdentifier(kotlin.String){}[0]
+    final fun renderBind(kotlin/String, kotlin/Any?): kotlin/String // io.github.kormium/PostgresDialect.renderBind|renderBind(kotlin.String;kotlin.Any?){}[0]
+    final fun renderCharLength(kotlin/String): kotlin/String // io.github.kormium/PostgresDialect.renderCharLength|renderCharLength(kotlin.String){}[0]
+    final fun renderInsertDefaultValues(kotlin/String): kotlin/String // io.github.kormium/PostgresDialect.renderInsertDefaultValues|renderInsertDefaultValues(kotlin.String){}[0]
+    final fun renderInsertOrIgnoreSuffix(kotlin.collections/List<kotlin/String>): kotlin/String // io.github.kormium/PostgresDialect.renderInsertOrIgnoreSuffix|renderInsertOrIgnoreSuffix(kotlin.collections.List<kotlin.String>){}[0]
+    final fun renderLimit(kotlin/UInt): kotlin/String // io.github.kormium/PostgresDialect.renderLimit|renderLimit(kotlin.UInt){}[0]
+    final fun renderLimitOffset(kotlin/UInt, kotlin/UInt): kotlin/String // io.github.kormium/PostgresDialect.renderLimitOffset|renderLimitOffset(kotlin.UInt;kotlin.UInt){}[0]
+    final fun renderOffset(kotlin/UInt): kotlin/String // io.github.kormium/PostgresDialect.renderOffset|renderOffset(kotlin.UInt){}[0]
+    final fun renderUpsertSuffix(kotlin.collections/List<kotlin/String>, kotlin/String): kotlin/String // io.github.kormium/PostgresDialect.renderUpsertSuffix|renderUpsertSuffix(kotlin.collections.List<kotlin.String>;kotlin.String){}[0]
+}
+
+final fun (io.github.kormium/Column.Companion).io.github.kormium/Vector(kotlin/Int? = ..., kotlin/String? = ...): io.github.kormium/Column.Spec<io.github.kormium/Vector> // io.github.kormium/Vector|Vector@io.github.kormium.Column.Companion(kotlin.Int?;kotlin.String?){}[0]
+final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/cosineDistance(io.github.kormium/Operand<io.github.kormium/Vector>): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/cosineDistance|cosineDistance@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Operand<io.github.kormium.Vector>){}[0]
+final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/cosineDistance(io.github.kormium/Vector): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/cosineDistance|cosineDistance@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Vector){}[0]
+final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/distance(io.github.kormium/Operand<io.github.kormium/Vector>, io.github.kormium/VectorMetric = ...): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/distance|distance@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Operand<io.github.kormium.Vector>;io.github.kormium.VectorMetric){}[0]
+final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/distance(io.github.kormium/Vector, io.github.kormium/VectorMetric = ...): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/distance|distance@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Vector;io.github.kormium.VectorMetric){}[0]
+final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/euclideanDistance(io.github.kormium/Operand<io.github.kormium/Vector>): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/euclideanDistance|euclideanDistance@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Operand<io.github.kormium.Vector>){}[0]
+final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/euclideanDistance(io.github.kormium/Vector): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/euclideanDistance|euclideanDistance@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Vector){}[0]
+final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/innerProduct(io.github.kormium/Operand<io.github.kormium/Vector>): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/innerProduct|innerProduct@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Operand<io.github.kormium.Vector>){}[0]
+final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/innerProduct(io.github.kormium/Vector): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/innerProduct|innerProduct@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Vector){}[0]

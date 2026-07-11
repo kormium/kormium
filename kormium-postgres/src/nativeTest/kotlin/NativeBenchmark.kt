@@ -1,4 +1,7 @@
-import com.ionspin.kotlin.bignum.decimal.BigDecimal
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
+import io.github.kormium.decimal.Decimal
+import io.github.kormium.decimal.decimal
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity
@@ -42,7 +45,7 @@ class BenchRow : Entity() {
 object BenchTable : Table<BenchCatalog, BenchRow>("cmp_bench", ::BenchRow) {
     val id by Column.UUID().primaryKey()
     val name by Column.Text()
-    val amount by Column.BigDecimal()
+    val amount by Column.decimal()
 
     init { id; name; amount }
 }
@@ -58,7 +61,7 @@ private val updateIds = List(UPDATE_ROWS) { Uuid.random() }
 private enum class Op { FIND_BY_ID, SELECT_WHERE, SELECT_MANY, INSERT, BATCH_INSERT, UPDATE_BY_ID }
 
 private fun newRow(rowName: String) =
-    BenchRow().apply { id = Uuid.random(); name = rowName; amount = BigDecimal.fromInt(1) }
+    BenchRow().apply { id = Uuid.random(); name = rowName; amount = Decimal.of(1) }
 
 private fun runOp(db: Database<BenchCatalog>, op: Op) {
     when (op) {
@@ -69,7 +72,7 @@ private fun runOp(db: Database<BenchCatalog>, op: Op) {
         Op.BATCH_INSERT -> db.transaction { BenchTable.insertAll(List(BATCH_SIZE) { newRow("x") }) }
         Op.UPDATE_BY_ID -> db.transaction {
             BenchTable.update(
-            BenchRow().apply { amount = BigDecimal.fromInt(2) },
+            BenchRow().apply { amount = Decimal.of(2) },
             Query(BenchTable.id eq updateIds[Random.nextInt(UPDATE_ROWS)]),
         )
         }
@@ -95,7 +98,7 @@ class NativeBenchmark {
         driver.transaction {
             BenchTable.execSql("DROP TABLE IF EXISTS \"cmp_bench\"")
             BenchTable.execSql(benchDdl)
-            executeUpdate("""CREATE INDEX IF NOT EXISTS cmp_bench_name_idx ON "public"."cmp_bench" ("name")""")
+            executeUpdate("""CREATE INDEX IF NOT EXISTS cmp_bench_name_idx ON "public"."cmp_bench" ("name")""", params = emptyMap(), invalidates = emptyList())
         }
 
         val threads = 8
@@ -138,11 +141,11 @@ class NativeBenchmark {
     /** Same per-iteration state as the JVM harness: seed row, bulk rows, update targets. */
     private fun reset(driver: Database<BenchCatalog>) {
         driver.transaction {
-            executeUpdate("""TRUNCATE "public"."cmp_bench"""")
-            BenchTable.insert(BenchRow().apply { id = benchSeedId; name = "seed"; amount = BigDecimal.fromInt(1) })
+            executeUpdate("""TRUNCATE "public"."cmp_bench"""", params = emptyMap(), invalidates = emptyList())
+            BenchTable.insert(BenchRow().apply { id = benchSeedId; name = "seed"; amount = Decimal.of(1) })
             BenchTable.insertAll(List(BULK_ROWS) { newRow("bulk") })
             BenchTable.insertAll(updateIds.map { rowId ->
-                BenchRow().apply { id = rowId; name = "upd"; amount = BigDecimal.fromInt(1) }
+                BenchRow().apply { id = rowId; name = "upd"; amount = Decimal.of(1) }
             })
         }
     }

@@ -7,6 +7,7 @@ import io.github.kormium.MySqlExceptionTranslator
 import io.github.kormium.MySqlJvmTypeMapper
 import io.github.kormium.MySqlResultSetWrapper
 import io.github.kormium.jdbc.JdbcDatabase
+import kotlin.time.Duration
 
 /**
  * A MySQL/MariaDB [MySqlDriver] backed by the shared [JdbcDatabase] (HikariCP pool over
@@ -16,7 +17,7 @@ import io.github.kormium.jdbc.JdbcDatabase
  *  - `cachePrepStmts` + `useServerPrepStmts` make repeated statements server-prepared and cached,
  *    so each execution is one round-trip (the MySQL analogue of pgjdbc's prepareThreshold=1).
  *  - `connectionTimeZone=UTC` + `forceConnectionTimeZoneToSession=true` pin the session to UTC so
- *    an [kotlinx.datetime.Instant] bound as a UTC `OffsetDateTime` round-trips through a
+ *    an [kotlin.time.Instant] bound as a UTC `OffsetDateTime` round-trips through a
  *    `TIMESTAMP` unchanged, and is read back correctly by [MySqlResultSetWrapper.getInstant].
  *
  * Integrity violations are mapped by vendor code through [MySqlExceptionTranslator] (MySQL reports
@@ -29,6 +30,7 @@ private class MySqlJdbcDriver(
     user: String,
     password: String,
     poolSize: Int,
+    acquireTimeout: Duration,
     config: KormiumConfig,
 ) : JdbcDatabase(
     jdbcUrl = "jdbc:mysql://$host:$port/$database" +
@@ -37,6 +39,7 @@ private class MySqlJdbcDriver(
     username = user,
     password = password,
     poolSize = poolSize,
+    acquireTimeout = acquireTimeout,
     dialect = MySqlDialect,
     typeMapper = MySqlJvmTypeMapper,
     wrap = ::MySqlResultSetWrapper,
@@ -44,12 +47,13 @@ private class MySqlJdbcDriver(
     config = config,
 ), MySqlDriver
 
-actual fun createDatabase(
+public actual fun createDatabase(
     host: String,
     port: Int,
     database: String,
     user: String,
     password: String,
     poolSize: Int,
+    acquireTimeout: Duration,
     config: KormiumConfig,
-): MySqlDriver = MySqlJdbcDriver(host, port, database, user, password, poolSize, config)
+): MySqlDriver = MySqlJdbcDriver(host, port, database, user, password, poolSize, acquireTimeout, config)

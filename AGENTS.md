@@ -204,7 +204,7 @@ val total  = Orders.total.sum()
 db.autocommit {
     (Users innerJoin Orders on (Users.id eq Orders.userId))
         .groupBy(Users.id)
-        .having(total gt BigDecimal.fromInt(100))   // aggregate vs a typed literal, no Value(...) wrapper
+        .having(total gt Decimal.of(100))   // aggregate vs a typed literal, no Value(...) wrapper
         .select(Users.name, orders, total)
 }.forEach { row ->
     println("${row[Users.name]}: ${row[orders]} orders, ${row[total]}")
@@ -213,6 +213,9 @@ db.autocommit {
 
 Aggregates: `count()` → `Long`, `col.count()` → `Long`, `col.min()` / `col.max()` → the
 column's type, `col.sum()` (integer columns widen to `Long`), `col.avg()` → `Double`.
+Exact decimal columns (`Column.decimal()`, values of type `Decimal`) come from the
+`kormium-decimal` artifact — `import io.github.kormium.decimal.Decimal` and
+`import io.github.kormium.decimal.decimal`.
 Single-table grouping starts from `Table.query()`:
 `Users.query().groupBy(Users.age).distinct().select(Users.age)`.
 
@@ -345,6 +348,36 @@ retrying {
 }
 ```
 
+**Vector / semantic search (pgvector, Postgres).** Store an embedding in a `Column.Vector` and
+rank by a distance operator — nearest-neighbour search is a plain ascending `orderBy` (for every
+metric, smaller = more similar). Kormium does not own DDL, so enable the extension and declare the
+column in a migration (`CREATE EXTENSION vector; ... embedding vector(1536)`):
+
+```kotlin
+object Docs : Table<App, Doc>("docs", ::Doc) {
+    val id        by Column.UUID().primaryKey()
+    val embedding by Column.Vector(dimensions = 1536)   // entity property: Vector
+}
+class Doc : Entity() { var id by Docs.id; var embedding by Docs.embedding }
+
+// embed(...) is YOUR embedding model (OpenAI/Cohere/local ...), not a Kormium function; it returns a
+// FloatArray / List<Float>. Kormium stores and searches vectors, it does not generate them.
+db.transaction { Docs.insert(Doc().apply { id = docId; embedding = Vector(embed(text)) }) }
+
+val query = Vector(embed(question))
+val hits = db.autocommit {
+    Docs.find {
+        orderBy ASC Docs.embedding.distance(query, VectorMetric.COSINE)   // <=>
+        limit = 5
+    }
+}
+```
+
+`distance(query, metric)` (metric defaults to `COSINE`) has aliases `euclideanDistance` (`<->`),
+`cosineDistance` (`<=>`), `innerProduct` (`<#>`). The query vector binds as a parameter with a
+`::vector` cast (never interpolated). `Vector` wraps a `FloatArray` (or `List<Float>`); `dimensions`
+is validated on write. See [docs/queries.md](docs/queries.md#vector-search-pgvector).
+
 ## Gotchas
 
 - Operations are scope extensions — they don't compile outside `db.transaction { }` /
@@ -367,4 +400,14 @@ retrying {
   compare against a `RawExpression`), `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
   `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, simple `CASE expr WHEN` (searched
   `case { }` is supported), scalar functions beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`/`length`,
-  `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for those.
+  `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for
+  those — both require `@OptIn(DelicateKormiumApi::class)`, and `execute`/`executeUpdate` require
+  `params`/`invalidates` explicitly (`emptyMap()`/`emptyList()` when there's nothing to pass).
+
+## Changing kormium's own public API (contributors)
+
+Every published module compiles with Kotlin `explicitApi()` — new public declarations need
+explicit visibility and return types (the compiler errors until they do; prefer `internal`
+unless the symbol is meant for consumers). The public ABI is dumped per module in
+`<module>/api/` and checked by CI: after any deliberate API change run `./gradlew apiDump`
+and commit the `.api` diffs — they are the review artifact for the change.

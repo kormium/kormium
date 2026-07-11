@@ -68,8 +68,7 @@ Supported column types:
 | `Column.Long` | `Long` |
 | `Column.Float` | `Float` |
 | `Column.Double` | `Double` |
-| `Column.BigDecimal` | `com.ionspin.kotlin.bignum.decimal.BigDecimal` |
-| `Column.Instant` | `kotlinx.datetime.Instant` |
+| `Column.Instant` | `kotlin.time.Instant` |
 | `Column.LocalDate` | `kotlinx.datetime.LocalDate` |
 | `Column.LocalTime` | `kotlinx.datetime.LocalTime` |
 | `Column.LocalDateTime` | `kotlinx.datetime.LocalDateTime` |
@@ -78,6 +77,12 @@ Supported column types:
 
 These are the built-ins; the type list is open — see [Custom column types](#custom-column-types)
 for enums, JSON-mapped values and your own types.
+
+Exact decimals live in the `kormium-decimal` artifact (kept out of core so core carries no
+type implementations): add `io.github.kormium:kormium-decimal` and declare
+`val price by Column.decimal()` — the entity property is `io.github.kormium.decimal.Decimal`.
+Values are read as text and parsed; on the JVM parameters bind as `java.math.BigDecimal` so
+JDBC/r2dbc declare a real `numeric` parameter.
 
 Every column accepts:
 
@@ -125,6 +130,38 @@ new storage type; most custom types are a `convert` over `TextColumnType` / `Jso
 `IntColumnType`. Conversion applies on insert, update and in predicates, so
 `where { Users.role eq Role.ADMIN }` binds the stored form automatically.
 
+## Vector Columns (pgvector)
+
+For AI / RAG workloads, `kormium-postgres` ships a column type for the
+[pgvector](https://github.com/pgvector/pgvector) `vector` type, storing an embedding as a
+`Vector` (an unboxed `FloatArray` with value semantics):
+
+```kotlin
+object Docs : Table<App, Doc>("docs", ::Doc) {
+    val id        by Column.UUID().primaryKey()
+    val embedding by Column.Vector(dimensions = 1536)   // entity property: Vector
+}
+
+doc.embedding = Vector(openAiClient.embed(text))        // FloatArray or List<Float>
+```
+
+`dimensions` (optional) is validated on every write, so a wrong-length embedding fails fast with
+a clear message instead of an opaque server error. As always Kormium does not own DDL — enable the
+extension and declare the column in raw SQL or a migration:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE TABLE docs (id uuid PRIMARY KEY, embedding vector(1536) NOT NULL);
+```
+
+> **pgvector is a third-party extension, not part of core PostgreSQL** — it ships with no standard
+> distribution. Install the binary first (an OS package like `postgresql-16-pgvector`, the
+> `pgvector/pgvector` Docker image, or enabling it on a managed service such as RDS/Cloud SQL/Supabase),
+> then run `CREATE EXTENSION vector`. Without the installed binary that statement fails with
+> "could not open extension control file".
+
+See [Queries → Vector search](queries.md#vector-search-pgvector) for nearest-neighbour ordering.
+
 ## Entities
 
 ```kotlin
@@ -157,7 +194,8 @@ Kormium does not own schema management. A `Table` describes how rows map to enti
 queries, inserts and updates — not the full database schema. Create and evolve schema with
 a migration tool (Flyway, Liquibase) or raw SQL, which also gives you indexes, foreign
 keys, checks, defaults and generated columns that the mapping layer intentionally does not
-model:
+model. Raw SQL needs `@OptIn(DelicateKormiumApi::class)` in scope, and `executeUpdate` always
+takes `params` and `invalidates` explicitly:
 
 ```kotlin
 db.transaction {
@@ -170,8 +208,14 @@ db.transaction {
             PRIMARY KEY ("id")
         )
         """,
+        params = emptyMap(),
+        invalidates = emptyList(),
     )
-    executeUpdate("""CREATE INDEX IF NOT EXISTS users_name_idx ON "users" ("name")""")
+    executeUpdate(
+        """CREATE INDEX IF NOT EXISTS users_name_idx ON "users" ("name")""",
+        params = emptyMap(),
+        invalidates = emptyList(),
+    )
 }
 ```
 

@@ -9,19 +9,19 @@ import kotlinx.coroutines.withContext
  * suspend [runConnection] drive these the same way; only how they're scheduled
  * differs.
  */
-interface PinnedConnection {
-    val executor: SqlExecutor
+public interface PinnedConnection {
+    public val executor: SqlExecutor
 
     /**
      * Opens a transaction. [isolation] (when non-null) and [readOnly] are applied here; how
      * each backend honors them — and any state it must restore on [release] — is backend-specific
      * (see [TransactionIsolation]).
      */
-    fun begin(isolation: TransactionIsolation? = null, readOnly: Boolean = false)
-    fun commit()
-    fun rollback()
+    public fun begin(isolation: TransactionIsolation? = null, readOnly: Boolean = false)
+    public fun commit()
+    public fun rollback()
     /** Returns the connection to the pool (and restores any per-borrow state). */
-    fun release()
+    public fun release()
 }
 
 /**
@@ -32,19 +32,19 @@ interface PinnedConnection {
  * it overrides [acquireSuspending] for that free path — otherwise the default just
  * offloads the blocking [acquire] to the IO dispatcher.
  */
-interface ConnectionPool {
+public interface ConnectionPool {
     /** Borrows a connection, blocking until one is free. */
-    fun acquire(): PinnedConnection
+    public fun acquire(): PinnedConnection
 
     /** Borrows a connection, suspending until one is free. */
-    suspend fun acquireSuspending(): PinnedConnection = withContext(ioDispatcher) { acquire() }
+    public suspend fun acquireSuspending(): PinnedConnection = withContext(ioDispatcher) { acquire() }
 }
 
 /**
  * Blocking pinned-connection run: borrow, BEGIN/COMMIT/ROLLBACK around [block] when
  * [transactional], always release. Backs [Database.usePinned].
  */
-fun <R> ConnectionPool.runPinned(
+public fun <R> ConnectionPool.runPinned(
     transactional: Boolean,
     isolation: TransactionIsolation? = null,
     readOnly: Boolean = false,
@@ -74,7 +74,7 @@ fun <R> ConnectionPool.runPinned(
  * [io.github.kormium.database.SuspendDatabase.useConnection] for blocking drivers;
  * a truly async backend (r2dbc) implements useConnection itself instead.
  */
-suspend fun <R> ConnectionPool.runConnection(
+public suspend fun <R> ConnectionPool.runConnection(
     transactional: Boolean,
     isolation: TransactionIsolation? = null,
     readOnly: Boolean = false,

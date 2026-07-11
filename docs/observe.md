@@ -57,17 +57,26 @@ val dashboard: Flow<Dashboard> = db.observe(setOf("users", "orders")) {
 
 ## Raw SQL
 
-Kormium cannot see which tables raw SQL touches, so declare them with `invalidates` so observers
+Kormium cannot see which tables raw SQL touches, so `executeUpdate`/`execute` require `invalidates`
+as an explicit argument — there's no defaulted-away value to forget. List the tables so observers
 (and any future cache) are notified on commit — the analog of Room's
-`@RawQuery(observedEntities = …)`:
+`@RawQuery(observedEntities = …)`. Raw SQL also requires `@OptIn(DelicateKormiumApi::class)`:
 
 ```kotlin
+@file:OptIn(io.github.kormium.DelicateKormiumApi::class)
+
 db.transaction {
-    executeUpdate("UPDATE products SET price = price * 2", invalidates = listOf(Products))
+    executeUpdate(
+        "UPDATE products SET price = price * 2",
+        params = emptyMap(),
+        invalidates = listOf(Products),
+    )
 }
 ```
 
-Without `invalidates`, a raw write commits normally but does not fire observers.
+Pass `invalidates = emptyList()` for a raw write that genuinely touches no observed table; passing
+the wrong (too-narrow) list still commits normally but does not fire observers for the tables you
+left out.
 
 ## Boundaries
 
