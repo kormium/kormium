@@ -6,6 +6,18 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **Browser SQLite on the Kotlin/JS target — `kormium-sqlite-js`.** A new module that runs the
+  same wa-sqlite engine as `kormium-sqlite-wasm`, but bound with Kotlin/JS interop so it links
+  against **js-only** consumers such as the `kotlin-react` wrappers (which ship no `wasmJs`
+  artifact). `createSqliteJsDatabase(dataDir = "name")` opens an IndexedDB-persisted database
+  (`IDBBatchAtomicVFS`), `dataDir = null` an in-memory one; the returned `SqliteJsDatabase` is the
+  same `SuspendDatabase` and typed DSL every other backend exposes. Single-connection, main-thread
+  (a `Mutex` serialises transactions), no COOP/COEP requirement. The Worker/pooled engines stay
+  Kotlin/Wasm-only (they depend on wasmJs companion executables). Consumers must emit ES modules
+  (`js { useEsModules() }`) since wa-sqlite is ESM-only. Verified end-to-end under Node (in-memory
+  `:memory:`): CRUD, blob round-trip and transaction rollback.
+
 ## [0.10.0] — pgvector, API lock, three browser SQLite engines, bounded pools
 
 ### Changed (breaking, pre-1.0)
