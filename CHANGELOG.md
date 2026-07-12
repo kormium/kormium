@@ -6,6 +6,8 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.11.0] — SQLite on the Kotlin/JS target (`kormium-sqlite-js`)
+
 ### Added
 - **Browser SQLite on the Kotlin/JS target — `kormium-sqlite-js`.** A new module that runs the
   same wa-sqlite engine as `kormium-sqlite-wasm`, but bound with Kotlin/JS interop so it links
