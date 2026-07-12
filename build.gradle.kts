@@ -111,6 +111,7 @@ val publishableModules = setOf(
     "kormium-sqlite-dialect",
     "kormium-wasm-driver",
     "kormium-sqlite-wasm",
+    "kormium-sqlite-js",
     "kormium-sqlite-node",
     "kormium-postgres-node",
     "kormium-mysql-node",
