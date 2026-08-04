@@ -6,6 +6,19 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **Kotlin/Native CPU path: entity field reads 4.3x faster, SELECT rendering 2.7x, row
+  hydration 1.5x.** No API change — every improvement is internal to `kormium-core`, and all
+  targets benefit (the gap was widest on Native, which has no JIT escape analysis).
+  Four changes: the internal logging facade takes a formatted message behind an `inline`
+  guard, so `trace { }` no longer allocates a closure on every field read and write, and the
+  column accessors stop tracing entirely; `NotNullColumn.getValue` does one storage lookup
+  instead of two; entity field values move from a `String`-keyed `HashMap` to an array indexed
+  by column position, keeping a fallback map so one entity type may still back columns of
+  several tables; and the rendered select list is cached per dialect, with `trimIndent()`
+  dropped from the statement builders, `Table.primaryKey` made lazy and `Column.resultKey`
+  precomputed. Measurements and method are in [`reports/`](reports/README.md).
+
 ## [0.11.0] — SQLite on the Kotlin/JS target (`kormium-sqlite-js`)
 
 ### Added

@@ -252,16 +252,15 @@ internal fun pairSelectFields(left: Table<*, *>, right: Table<*, *>): List<Selec
 
 private fun <T : Entity> Table<*, T>.hydrateFrom(row: ResultRow): T {
     val columns = getFieldDisplayNames()
-    // One pass, one map allocation, one fieldKey() per column; the absent set is allocated only if
-    // a column is actually missing (the common all-columns-selected case stays allocation-free).
-    val fields = HashMap<String, Any?>(columns.size * 2)
-    var absent: MutableSet<String>? = null
-    for ((fieldName, c) in columns) {
+    // One pass, one array, one fieldKey() per column. A column the projection did not select
+    // keeps its ABSENT slot, which is what hydrate() reports as "was not selected" — no
+    // separate set of missing names needed.
+    val values = Array<Any?>(columns.size) { ABSENT }
+    for (c in columns.values) {
         val key = fieldKey(c)
-        if (!row.containsKey(key)) (absent ?: mutableSetOf<String>().also { absent = it }).add(fieldName)
-        fields[fieldName] = row.getByKey(key)
+        if (row.containsKey(key)) values[c.ordinal] = row.getByKey(key)
     }
-    return hydrate(fields, absentFields = absent ?: emptySet())
+    return hydrate(values)
 }
 
 internal fun <A : Entity, B : Entity> hydrateInnerPairs(

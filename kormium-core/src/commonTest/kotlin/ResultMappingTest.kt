@@ -16,7 +16,7 @@ class ResultMappingTest {
     @Test
     fun nonNullColumnMappedToNullThrowsNamingTableAndColumn() {
         val ex = assertFailsWith<ResultMappingException> {
-            MapTable.hydrate(mutableMapOf("id" to Uuid.random(), "name" to null, "note" to null))
+            MapTable.hydrateNamed(mapOf("id" to Uuid.random(), "name" to null, "note" to null))
         }
         val msg = ex.message ?: ""
         assertTrue("map_t" in msg, "message should name the table: $msg")
@@ -25,7 +25,7 @@ class ResultMappingTest {
 
     @Test
     fun nullableColumnMappedToNullHydratesNormally() {
-        val row = MapTable.hydrate(mutableMapOf("id" to Uuid.random(), "name" to "ok", "note" to null))
+        val row = MapTable.hydrateNamed(mapOf("id" to Uuid.random(), "name" to "ok", "note" to null))
         assertEquals("ok", row.name)
         assertNull(row.note)
     }
@@ -33,7 +33,7 @@ class ResultMappingTest {
     @Test
     fun fullyPopulatedRowHydrates() {
         val id = Uuid.random()
-        val row = MapTable.hydrate(mutableMapOf("id" to id, "name" to "ok", "note" to "n"))
+        val row = MapTable.hydrateNamed(mapOf("id" to id, "name" to "ok", "note" to "n"))
         assertEquals(id, row.id)
         assertEquals("ok", row.name)
         assertEquals("n", row.note)
