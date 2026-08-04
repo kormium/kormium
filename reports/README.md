@@ -14,6 +14,7 @@ report**, not for quoting as absolute throughput.
 | 03 | [ordinal-storage.md](03-ordinal-storage.md) | Fix 3 — ordinal-indexed entity storage | hydration −28.3%, field reads −45.4% |
 | 04 | [sql-rendering.md](04-sql-rendering.md) | Fix 4 — per-query SQL rendering | SELECT rendering −60.9% |
 | 05 | [column-iteration.md](05-column-iteration.md) | Fix 5 — per-row `LinkedHashMap` walk | hydration −62.1%; boxing measured and dismissed |
+| 06 | [end-to-end.md](06-end-to-end.md) | Through a real driver (native SQLite) | 100-row SELECT 1.96x; ~70% of what remains is driver-side |
 
 ## Cumulative result (Kotlin/Native, `mingwX64`, fixes 1–5)
 
@@ -34,12 +35,35 @@ zero failures.
   every driver. Not worth it (report 05).
 - **`try`/`catch` per cell** in `readColumn` — measured free.
 
+## Through a real driver
+
+The table above is core in isolation (fake `ResultSet`). Report 06 measures the same fixes
+end-to-end on native SQLite in memory:
+
+| Operation | baseline | now | change |
+| --- | ---: | ---: | ---: |
+| `SELECT` 100 rows | 211 022 ns | 107 578 ns | **1.96x** |
+| `SELECT` 1 row by primary key | 15 691 ns | 9 804 ns | **1.6x** |
+| `INSERT` one row | 18 158 ns | 16 214 ns | 1.12x |
+
+After the fixes, roughly **70% of a 100-row read is driver-side** — cinterop calls and
+`toKString()` UTF-8 decoding per text cell — so further core CPU work has little left to give.
+
 ### Not yet investigated
 
-The harness uses a fake `ResultSet`, so nothing driver-side is in these numbers: libpq
-cinterop calls, `toKString()` UTF-8 decoding per text cell, and server-side statement
-planning (the native Postgres driver has no `PQprepare` path, while pgjdbc switches to
-server-side prepared statements after five executions). Measuring those needs a real database.
+Per-cell C-string conversion and bind/step machinery in the drivers, and server-side statement
+planning in the native PostgreSQL driver (it uses `PQexecParams` with `paramTypes = null`, so
+the server re-plans every execution, while pgjdbc switches to server-side prepared statements
+after five). The latter needs a Windows `libpq` and a running PostgreSQL.
+
+### Second harness
+
+`kormium-sqlite/src/commonTest/kotlin/SqliteE2EBench.kt` — end-to-end, real driver.
+
+```bash
+./gradlew :kormium-sqlite:linkBenchReleaseTestMingwX64
+./kormium-sqlite/build/bin/mingwX64/benchReleaseTest/bench.exe --ktest_filter=SqliteE2EBench.benchmark
+```
 
 ## Measuring a change
 

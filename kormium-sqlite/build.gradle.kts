@@ -120,6 +120,13 @@ kotlin {
         }
         tasks.named("cinteropSqlite3$capName").configure { dependsOn(archiveSqlite) }
     }
+    // Optimized test binary (linkBenchReleaseTest<Target>) for SqliteE2EBench: the default debug
+    // test kexe is unoptimized K/N code and misrepresents CPU-bound throughput by ~10x. Linked
+    // only when explicitly requested, so regular test and CI builds don't pay for it.
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
+        binaries.test("bench", listOf(org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType.RELEASE))
+    }
+
     applyDefaultHierarchyTemplate()
 
     sourceSets {
