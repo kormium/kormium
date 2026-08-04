@@ -29,9 +29,10 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
      * different, actionable messages.
      */
     internal fun hydrate(values: Array<Any?>): T {
-        for ((fieldName, column) in fieldDisplayName) {
+        for (column in columns) {
             val value = values[column.ordinal]
             if (!column.nullable && (value == null || value === ABSENT)) {
+                val fieldName = column.fieldKey
                 val expected = column.columnType.description
                 throw ResultMappingException(
                     if (value === ABSENT) {
@@ -60,12 +61,33 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
      * The primary-key column(s): those declared with `primaryKey = true`, or the column
      * named "id" if none are marked.
      */
-    public val primaryKey: List<Column<*, *, T>> by lazy {
-        fieldDisplayName.values.filter { it.isPrimaryKey }
-            .ifEmpty { fieldDisplayName.values.filter { it.fieldKey == "id" } }
-    }
+    public val primaryKey: List<Column<*, *, T>>
+        get() = primaryKeyCache ?: columns.filter { it.isPrimaryKey }
+            .ifEmpty { columns.filter { it.fieldKey == "id" } }
+            .also { primaryKeyCache = it }
+
     /** Number of declared columns; the size of an entity's value array for this table. */
     internal val columnCount: Int get() = fieldDisplayName.size
+
+    /**
+     * The declared columns in declaration order, so `columns[i].ordinal == i`.
+     *
+     * Every per-row path walks this. Iterating a `LinkedHashMap` costs ~47 ns per entry on
+     * Kotlin/Native against ~0.5 ns for an array element, and hydration walks the registry
+     * twice per row — so the flat copy is what the hot paths use, while [fieldDisplayName]
+     * stays the lookup-by-name structure behind [getFieldDisplayNames].
+     */
+    internal val columns: Array<Column<*, *, T>>
+        get() = columnsCache ?: fieldDisplayName.values.toTypedArray().also { columnsCache = it }
+
+    // Derived views of the registry. Invalidated on registration rather than computed lazily,
+    // because Column.init() is public and open: a column could in principle be registered after
+    // the first read. @Volatile publishes the built value safely; a lost race only recomputes.
+    @Volatile
+    private var columnsCache: Array<Column<*, *, T>>? = null
+
+    @Volatile
+    private var primaryKeyCache: List<Column<*, *, T>>? = null
 
     internal fun addColumn(fieldName: String, column: Column<*, *, T>) {
         logger.trace { "add column/field ${column.name}/$fieldName" }
@@ -73,6 +95,9 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
         // keeps its original slot rather than opening a second one.
         column.ordinal = fieldDisplayName[fieldName]?.ordinal ?: fieldDisplayName.size
         fieldDisplayName[fieldName] = column
+        columnsCache = null
+        primaryKeyCache = null
+        columnListCache = null
     }
 
     // The rendered select list ("a", "b", ...) for one dialect. Constant per (table, dialect),
@@ -88,7 +113,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
         val cached = columnListCache
         if (cached != null && cached.dialect === dialect) return cached.rendered
         logger.trace { "render column list" }
-        val rendered = fieldDisplayName.values.joinToString(", ") { dialect.quoteIdentifier(it.name) }
+        val rendered = columns.joinToString(", ") { dialect.quoteIdentifier(it.name) }
         columnListCache = ColumnList(dialect, rendered)
         return rendered
     }
@@ -102,12 +127,12 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
     // per-row name→index map or intermediate allocations.
     private fun mapToDao(rs: ResultSet, typeMapper: TypeMapper): T {
         // A column's ordinal IS its position in the select list here, since both come from
-        // fieldDisplayName's declaration order — so one array, filled straight through.
-        val values = arrayOfNulls<Any?>(fieldDisplayName.size)
-        var index = 0
-        for ((fieldName, column) in fieldDisplayName) {
-            values[index] = readColumn(column, fieldName, rs, index)
-            index++
+        // declaration order — so one array, filled straight through.
+        val cols = columns
+        val values = arrayOfNulls<Any?>(cols.size)
+        for (index in cols.indices) {
+            val column = cols[index]
+            values[index] = readColumn(column, column.fieldKey, rs, index)
         }
         return hydrate(values)
     }
@@ -131,8 +156,9 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
     // Only the columns the entity actually assigned (slot not ABSENT), so update() can tell
     // "leave untouched" (absent) from "set to NULL" (assigned and null).
     private fun generatePresentFields(dao: T): List<Pair<String, Any?>> {
-        val present = ArrayList<Pair<String, Any?>>(fieldDisplayName.size)
-        for (column in fieldDisplayName.values) {
+        val cols = columns
+        val present = ArrayList<Pair<String, Any?>>(cols.size)
+        for (column in cols) {
             val value = dao.slotGet(column)
             if (value !== ABSENT) present.add(column.name to column.bindParam(value))
         }
@@ -190,7 +216,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
 
     // The present columns of [entity] (its "shape"), in table-declaration order.
     private fun presentColumns(entity: T): List<Column<*, *, *>> =
-        fieldDisplayName.values.filter { entity.slotGet(it) !== ABSENT }
+        columns.filter { entity.slotGet(it) !== ABSENT }
 
     private class BatchGroup(val columns: List<Column<*, *, *>>, val entityIndices: List<Int>)
 
@@ -212,7 +238,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
                 byShape.values.map { idxs -> BatchGroup(shapes[idxs.first()], idxs) }
             }
             BatchInsertMode.UnionNulls -> {
-                val union = fieldDisplayName.values.filter { col -> entities.any { it.slotGet(col) !== ABSENT } }
+                val union = columns.filter { col -> entities.any { it.slotGet(col) !== ABSENT } }
                 listOf(BatchGroup(union, entities.indices.toList()))
             }
         }

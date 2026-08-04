@@ -251,12 +251,12 @@ internal fun pairSelectFields(left: Table<*, *>, right: Table<*, *>): List<Selec
     (left.getFieldDisplayNames().values + right.getFieldDisplayNames().values).toList()
 
 private fun <T : Entity> Table<*, T>.hydrateFrom(row: ResultRow): T {
-    val columns = getFieldDisplayNames()
+    val cols = columns
     // One pass, one array, one fieldKey() per column. A column the projection did not select
     // keeps its ABSENT slot, which is what hydrate() reports as "was not selected" — no
     // separate set of missing names needed.
-    val values = Array<Any?>(columns.size) { ABSENT }
-    for (c in columns.values) {
+    val values = Array<Any?>(cols.size) { ABSENT }
+    for (c in cols) {
         val key = fieldKey(c)
         if (row.containsKey(key)) values[c.ordinal] = row.getByKey(key)
     }

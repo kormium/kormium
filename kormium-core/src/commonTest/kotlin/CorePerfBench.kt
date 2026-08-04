@@ -46,6 +46,20 @@ class CorePerfBench {
         // and the UUID text->value parse it runs per row. Separates "collections" from "parsing".
         report("probeMapBuild100", 5_000) { probeMapBuild() }
         report("probeUuidParse100", 5_000) { probeUuidParse() }
+        // Boxing attribution. Each pair differs only in whether a primitive is boxed, so the
+        // gap between the two is the cost of boxing on this platform — on the store side
+        // (Array<Any?> vs LongArray) and on the read side (a T? return vs a primitive one,
+        // which is what ResultSet.getInt(): Int? forces today).
+        report("probeBoxStore500", 20_000) { probeBoxStore() }
+        report("probeLongStore500", 20_000) { probeLongStore() }
+        report("probeNullableRead500", 20_000) { probeNullableRead() }
+        report("probePrimitiveRead500", 20_000) { probePrimitiveRead() }
+        report("probeTryCatchRead500", 20_000) { probeTryCatchRead() }
+        // Per-row column iteration. mapToDao and hydrate each walk the table's column registry
+        // once per row, so a row of 6 columns costs 12 map-entry iterations. These two probes
+        // price that walk against the array walk it could be.
+        report("probeMapIterate100", 20_000) { probeMapIterate() }
+        report("probeArrayIterate100", 20_000) { probeArrayIterate() }
         println("BENCH ---- end ----")
     }
 
@@ -85,6 +99,93 @@ class CorePerfBench {
     private fun probeUuidParse(): Int {
         var acc = 0
         repeat(100) { acc += kotlin.uuid.Uuid.parse(SAMPLE_UUID).hashCode() }
+        return acc
+    }
+
+    // ---- boxing probes ----
+
+    // Held in fields, not constants, so the values cannot be folded away, and offset well past
+    // any small-value box cache so every store is a real allocation (as production ids, amounts
+    // and timestamps are).
+    private val boxSink = arrayOfNulls<Any?>(8)
+    private val longSink = LongArray(8)
+    private var seed = 100_000L
+
+    private fun probeBoxStore(): Int {
+        val base = seed
+        for (i in 0 until 500) boxSink[i and 7] = base + i   // boxes a Long per store
+        return 500
+    }
+
+    private fun probeLongStore(): Int {
+        val base = seed
+        for (i in 0 until 500) longSink[i and 7] = base + i  // no box
+        return 500
+    }
+
+    // Reads go through an interface so the call is virtual and cannot be inlined away —
+    // mirroring how core reaches a value through ResultSet / ColumnType.
+    private interface IntSource {
+        fun nullable(i: Int): Int?
+        fun primitive(i: Int): Int
+    }
+
+    private class OffsetIntSource(private val offset: Int) : IntSource {
+        override fun nullable(i: Int): Int? = i + offset
+        override fun primitive(i: Int): Int = i + offset
+    }
+
+    private val intSource: IntSource = OffsetIntSource(100_000)
+
+    private fun probeNullableRead(): Int {
+        var acc = 0
+        for (i in 0 until 500) acc += intSource.nullable(i) ?: 0
+        return acc
+    }
+
+    private fun probePrimitiveRead(): Int {
+        var acc = 0
+        for (i in 0 until 500) acc += intSource.primitive(i)
+        return acc
+    }
+
+    // The table's registry shape: a LinkedHashMap of fieldKey -> column, versus the same
+    // columns in a flat array.
+    private val iterMap: Map<String, Any> = BenchUsers.getFieldDisplayNames()
+    private val iterArray: Array<Any> = BenchUsers.getFieldDisplayNames().values.toTypedArray()
+
+    private fun probeMapIterate(): Int {
+        var acc = 0
+        repeat(100) {
+            for ((name, column) in iterMap) {
+                if (name.isNotEmpty()) acc++
+                if (column !== iterArray) acc++
+            }
+        }
+        return acc
+    }
+
+    private fun probeArrayIterate(): Int {
+        var acc = 0
+        repeat(100) {
+            for (column in iterArray) {
+                acc++
+                if (column !== iterArray) acc++
+            }
+        }
+        return acc
+    }
+
+    // Same reads, each wrapped the way readColumn() wraps every cell.
+    private fun probeTryCatchRead(): Int {
+        var acc = 0
+        for (i in 0 until 500) {
+            acc += try {
+                intSource.primitive(i)
+            } catch (e: Throwable) {
+                0
+            }
+        }
         return acc
     }
 
