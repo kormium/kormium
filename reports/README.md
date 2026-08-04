@@ -15,6 +15,7 @@ report**, not for quoting as absolute throughput.
 | 04 | [sql-rendering.md](04-sql-rendering.md) | Fix 4 — per-query SQL rendering | SELECT rendering −60.9% |
 | 05 | [column-iteration.md](05-column-iteration.md) | Fix 5 — per-row `LinkedHashMap` walk | hydration −62.1%; boxing measured and dismissed |
 | 06 | [end-to-end.md](06-end-to-end.md) | Through a real driver (native SQLite) | 100-row SELECT 1.96x; ~70% of what remains is driver-side |
+| 07 | [uuid-parsing.md](07-uuid-parsing.md) | Hand-rolled UUID parser — **rejected** | 27% slower than stdlib once correct; nothing shipped |
 
 ## Cumulative result (Kotlin/Native, `mingwX64`, fixes 1–5)
 

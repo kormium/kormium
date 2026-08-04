@@ -11,6 +11,7 @@ import io.github.kormium.and
 import io.github.kormium.eq
 import io.github.kormium.gtEq
 import io.github.kormium.resultset.ResultSet
+import io.github.kormium.sql.getUUID
 import kotlin.test.Test
 import kotlin.time.Instant
 import kotlin.time.TimeSource
@@ -60,6 +61,13 @@ class CorePerfBench {
         // price that walk against the array walk it could be.
         report("probeMapIterate100", 20_000) { probeMapIterate() }
         report("probeArrayIterate100", 20_000) { probeArrayIterate() }
+        // UUID reading. Every row of a table with a UUID key pays getString() + Uuid.parse().
+        // These price the stdlib parse, a hand-rolled one, the Uuid construction floor, and the
+        // UTF-8 decode that produces the String in the first place (what toKString() does in a
+        // native driver).
+        report("probeUuidGetUuid100", 5_000) { probeUuidGetUuid() }
+        report("probeUuidFromLongs100", 5_000) { probeUuidFromLongs() }
+        report("probeUtf8Decode100", 5_000) { probeUtf8Decode() }
         println("BENCH ---- end ----")
     }
 
@@ -99,6 +107,34 @@ class CorePerfBench {
     private fun probeUuidParse(): Int {
         var acc = 0
         repeat(100) { acc += kotlin.uuid.Uuid.parse(SAMPLE_UUID).hashCode() }
+        return acc
+    }
+
+    // ---- UUID probes ----
+
+    private val uuidBytes: ByteArray = SAMPLE_UUID.encodeToByteArray()
+
+
+    // The production read path: ResultSet.getUUID, fast path plus its validation.
+    private val uuidRs = BenchResultSet(1)
+
+    private fun probeUuidGetUuid(): Int {
+        var acc = 0
+        repeat(100) { acc += uuidRs.getUUID(0).hashCode() }
+        return acc
+    }
+
+
+    private fun probeUuidFromLongs(): Int {
+        var acc = 0
+        repeat(100) { acc += kotlin.uuid.Uuid.fromLongs(seed, seed).hashCode() }
+        return acc
+    }
+
+    // What toKString() does on a native driver before any parsing can start.
+    private fun probeUtf8Decode(): Int {
+        var acc = 0
+        repeat(100) { acc += uuidBytes.decodeToString().length }
         return acc
     }
 
@@ -318,3 +354,4 @@ private class BenchExecutor(private val rows: Int) : SqlExecutor {
     override fun execute(sql: String, paramSource: SqlParameterSource): Long = 0L
     override fun executeUpdate(sql: String, namedParameters: Map<String, Any?>): Long = 0L
 }
+
