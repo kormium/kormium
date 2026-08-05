@@ -16,6 +16,7 @@ report**, not for quoting as absolute throughput.
 | 05 | [column-iteration.md](05-column-iteration.md) | Fix 5 — per-row `LinkedHashMap` walk | hydration −62.1%; boxing measured and dismissed |
 | 06 | [end-to-end.md](06-end-to-end.md) | Through a real driver (native SQLite) | 100-row SELECT 1.96x; ~70% of what remains is driver-side |
 | 07 | [uuid-parsing.md](07-uuid-parsing.md) | Hand-rolled UUID parser — **rejected** | 27% slower than stdlib once correct; nothing shipped |
+| 08 | [jvm-vs-native.md](08-jvm-vs-native.md) | JVM vs Native, both backends | Native wins on SQLite reads; JVM wins on PostgreSQL |
 
 ## Cumulative result (Kotlin/Native, `mingwX64`, fixes 1–5)
 

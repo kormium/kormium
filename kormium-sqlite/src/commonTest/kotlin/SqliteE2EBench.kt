@@ -78,15 +78,28 @@ class SqliteE2EBench {
 
     private fun report(name: String, iterations: Int, block: () -> Int) {
         var sink = 0
-        repeat(iterations / 4 + 1) { sink += block() }
+        // Warm up generously: on the JVM this has to be enough for the JIT to compile and
+        // settle, or the comparison against Native measures the interpreter instead.
+        repeat(maxOf(iterations, WARMUP_MIN)) { sink += block() }
 
-        val mark = TimeSource.Monotonic.markNow()
-        repeat(iterations) { sink += block() }
-        val elapsed = mark.elapsedNow()
+        // Best of several measured rounds, in one process, so a stray GC pause or scheduling
+        // hiccup in a single round does not decide the result.
+        var best = Long.MAX_VALUE
+        repeat(MEASURED_ROUNDS) {
+            val mark = TimeSource.Monotonic.markNow()
+            repeat(iterations) { sink += block() }
+            val elapsed = mark.elapsedNow().inWholeNanoseconds
+            if (elapsed < best) best = elapsed
+        }
 
-        val perOp = elapsed.inWholeNanoseconds.toDouble() / iterations
+        val perOp = best.toDouble() / iterations
         val opsPerSec = if (perOp > 0) 1_000_000_000.0 / perOp else 0.0
         println("BENCH $name: ${perOp.toLong()} ns/op, ${opsPerSec.toLong()} ops/s (sink=$sink)")
+    }
+
+    private companion object {
+        const val WARMUP_MIN = 3_000
+        const val MEASURED_ROUNDS = 3
     }
 }
 
