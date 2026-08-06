@@ -12,6 +12,7 @@ import io.github.kormium.postgres.sql.buildValueArray
 import io.github.kormium.postgres.sql.parseSql
 import io.github.kormium.postgres.sql.substituteNamedParameters
 import io.github.kormium.postgres.resultset.PostgresResultSet
+import io.github.kormium.postgres.resultset.encodePgBytea
 import kotlinx.cinterop.*
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
@@ -355,7 +356,7 @@ private class PostgresDriverImpl(
             val values = Array(prepared.parameterNames.size) { i ->
                 val name = prepared.parameterNames[i]
                 try {
-                    paramSource.getValue(name)?.toString()
+                    pgTextValue(paramSource.getValue(name))
                 } catch (ex: IllegalArgumentException) {
                     throw InvalidDataAccessApiUsageException("No value supplied for the SQL parameter '$name'", ex)
                 }
@@ -365,7 +366,7 @@ private class PostgresDriverImpl(
         val parsedSql = parseSql(sql)
         val sqlToUse = substituteNamedParameters(parsedSql, paramSource)
         val params = buildValueArray(parsedSql, paramSource)
-        return sqlToUse to Array(params.size) { params[it]?.toString() }
+        return sqlToUse to Array(params.size) { pgTextValue(params[it]) }
     }
 
     // Parse + substitution is identical across repeated calls of the same statement — cache it
@@ -386,6 +387,15 @@ private class PostgresDriverImpl(
         val prepared = PreparedSql(substituteNamedParameters(parsedSql, null), parsedSql.parameterNames.toList())
         cache.put(sql, prepared)
         return prepared
+    }
+
+    // Renders a bound value in libpq's text format. Everything reaches the wire as text here, so
+    // a ByteArray must be encoded as bytea's hex form: its toString() is an object identity,
+    // which would silently store that identity instead of the bytes.
+    private fun pgTextValue(value: Any?): String? = when (value) {
+        null -> null
+        is ByteArray -> encodePgBytea(value)
+        else -> value.toString()
     }
 
     private fun isExpandable(paramSource: SqlParameterSource, name: String): Boolean {

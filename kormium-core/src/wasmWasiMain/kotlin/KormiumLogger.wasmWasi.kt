@@ -4,5 +4,6 @@ package io.github.kormium
 // to log to. Core's trace diagnostics are non-essential, so the facade is a no-op here.
 // Swap to a real delegate once kotlin-logging ships wasmWasi (or wire stdout if needed).
 internal actual fun kormiumLogger(): KormiumLogger = object : KormiumLogger {
-    override fun trace(msg: () -> String) {}
+    override val isTraceEnabled: Boolean get() = false
+    override fun traceMessage(msg: String) {}
 }

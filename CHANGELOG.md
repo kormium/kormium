@@ -6,6 +6,33 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **`Column.Bytes` round-trips correctly on the native PostgreSQL driver.** Both directions were
+  broken, silently. Writing sent the `ByteArray` through `toString()`, so the stored value was an
+  object identity (`kotlin.ByteArray@7e0f165e…`) rather than the bytes; reading did
+  `getString()?.encodeToByteArray()`, which re-encodes PostgreSQL's *text encoding* of the value
+  (`\x48656c6c6f`) instead of decoding it. A five-byte array came back as fifty-two bytes of
+  unrelated text, with no error. Values now go out as `bytea`'s hex text format and are decoded
+  straight from libpq's C string; reading accepts both the `hex` and the legacy `escape` output
+  formats. JVM/JDBC was unaffected. The gap survived because `Column.Bytes` was the one column
+  type with no test anywhere — it is now covered by a codec unit test, a native round-trip
+  integration test, and an `aBytes` column added to the JVM all-types round-trip.
+
+### Changed
+- **Kotlin/Native CPU path: row hydration 4.0x faster, entity field reads 4.1x, SELECT
+  rendering 2.7x.** No API change — every improvement is internal to `kormium-core`, and all
+  targets benefit (the gap was widest on Native, which has no JIT escape analysis).
+  Four changes: the internal logging facade takes a formatted message behind an `inline`
+  guard, so `trace { }` no longer allocates a closure on every field read and write, and the
+  column accessors stop tracing entirely; `NotNullColumn.getValue` does one storage lookup
+  instead of two; entity field values move from a `String`-keyed `HashMap` to an array indexed
+  by column position, keeping a fallback map so one entity type may still back columns of
+  several tables; the rendered select list is cached per dialect, with `trimIndent()` dropped
+  from the statement builders and `Column.resultKey` precomputed; and the per-row paths walk a
+  flat array of columns instead of the name-keyed `LinkedHashMap`, which on Kotlin/Native costs
+  ~47 ns per entry against ~0.5 ns for an array element and was being walked twice per row.
+  Measurements and method are in [`reports/`](reports/README.md).
+
 ## [0.11.0] — SQLite on the Kotlin/JS target (`kormium-sqlite-js`)
 
 ### Added

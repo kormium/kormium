@@ -81,7 +81,10 @@ internal class PostgresResultSet(val internal: CPointer<PGresult>) : ResultSet {
 
     override fun getDouble(columnIndex: Int): Double? = getString(columnIndex)?.toDouble()
 
-    override fun getBytes(columnIndex: Int): ByteArray? = getString(columnIndex)?.encodeToByteArray()
+    // bytea arrives text-encoded (\x48656c6c6f or the legacy escape form), so it must be
+    // DECODED. getString()?.encodeToByteArray() used to re-encode that text as UTF-8 instead,
+    // returning the bytes of the encoding rather than the value it stands for.
+    override fun getBytes(columnIndex: Int): ByteArray? = getPointer(columnIndex)?.let { decodePgBytea(it) }
 
     override fun getDate(columnIndex: Int): LocalDate? = getString(columnIndex)?.let { LocalDate.parse(it) }
 

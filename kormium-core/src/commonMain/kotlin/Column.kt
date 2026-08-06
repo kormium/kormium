@@ -23,13 +23,13 @@ private val logger = kormiumLogger()
  * }
  * ```
  *
- * [fieldKey] (the Kotlin property name) keys the value in [Entity.fields]; [name] is the
- * rendered SQL identifier. They differ only when a custom `name = ...` is given, so custom
- * SQL names never leak into entity internals or absent/null tracking.
+ * [fieldKey] (the Kotlin property name) identifies the value in the entity's field storage;
+ * [name] is the rendered SQL identifier. They differ only when a custom `name = ...` is
+ * given, so custom SQL names never leak into entity internals or absent/null tracking.
  */
 public sealed class Column<Z, T: Table<*, N>, N: Entity>(
     private val table: T,
-    /** Key under which the value is stored in [Entity.fields]; follows the Kotlin property name. */
+    /** Name identifying this column's value on the entity; follows the Kotlin property name. */
     public val fieldKey: String,
     /** Rendered SQL column identifier. Equals [fieldKey] unless a custom name was supplied. */
     public val name: String,
@@ -52,12 +52,21 @@ public sealed class Column<Z, T: Table<*, N>, N: Entity>(
 
     internal val tableRef: Table<*, *> get() = table
 
+    /**
+     * This column's position in its table's declaration order, and the index of its value in
+     * [Entity.values]. Assigned by [Table.addColumn]; unique within one table only.
+     */
+    internal var ordinal: kotlin.Int = 0
+
     /** Whether this column is part of the table's primary key. */
     internal var isPrimaryKey: kotlin.Boolean = false
 
     // The property delegate yields a fresh Column per access, so identity can't key a result row;
-    // table+SQL-name is the stable, dialect-independent key (aggregates embed this for their target).
-    override fun resultKey(): Any = "${table.tableName}.$name"
+    // table+SQL-name is the stable, dialect-independent key (aggregates embed this for their
+    // target). Both parts are fixed at construction, so the key is built once, not per lookup.
+    private val resultKey: String = "${table.tableName}.$name"
+
+    override fun resultKey(): Any = resultKey
 
     // Converts a domain value to its bound form (e.g. enum -> name, @Serializable -> JsonElement)
     // before it reaches the ParamBuilder. Null passes through; built-in types are identity.
@@ -68,19 +77,27 @@ public sealed class Column<Z, T: Table<*, N>, N: Entity>(
     /**
      * A non-null column. Its entity property is `Z`: assigning `null` is a compile error, and
      * reading a field that was never assigned (or that the database returned as `NULL`) throws.
+     *
+     * The accessors deliberately do not trace: they sit on the per-field hot path, where even a
+     * disabled trace costs a closure allocation (the facade's `trace` is inline now, but the
+     * enabled-check itself is not free at this frequency) — and a log line per property read is
+     * noise, not diagnostics. Same reasoning as the per-cell path in the native Postgres
+     * result set.
      */
     public class NotNullColumn<Z, T: Table<*, N>, N: Entity>(table: T, fieldKey: String, name: String, columnType: ColumnType<Z>)
         : Column<Z, T, N>(table, fieldKey, name, nullable = false, columnType) {
         public operator fun getValue(n: N, property: KProperty<*>): Z {
-            logger.trace { "Get value $fieldKey" }
-            if (!n.fields.containsKey(fieldKey)) error("Field '$fieldKey' is not present on ${tableRef.tableName}")
+            // One read: ABSENT and null are distinct values, so both failure modes are told
+            // apart without a second lookup.
+            val value = n.slotGet(this)
+            if (value === ABSENT) error("Field '$fieldKey' is not present on ${tableRef.tableName}")
+            if (value == null) error("Field '$fieldKey' is null but column '$name' is non-null")
             @Suppress("UNCHECKED_CAST")
-            return (n.fields[fieldKey] ?: error("Field '$fieldKey' is null but column '$name' is non-null")) as Z
+            return value as Z
         }
 
         public operator fun setValue(n: N, property: KProperty<*>, z: Z) {
-            logger.trace { "Set value $fieldKey" }
-            n.fields[fieldKey] = z
+            n.slotSet(this, z)
         }
     }
 
@@ -89,13 +106,13 @@ public sealed class Column<Z, T: Table<*, N>, N: Entity>(
         : Column<Z, T, N>(table, fieldKey, name, nullable = true, columnType) {
         @Suppress("UNCHECKED_CAST")
         public operator fun getValue(n: N, property: KProperty<*>): Z? {
-            logger.trace { "Get value $fieldKey" }
-            return n.fields[fieldKey] as Z?
+            // Absent and explicit null both read back as null; isSet() tells them apart.
+            val value = n.slotGet(this)
+            return if (value === ABSENT) null else value as Z?
         }
 
         public operator fun setValue(n: N, property: KProperty<*>, z: Z?) {
-            logger.trace { "Set value $fieldKey" }
-            n.fields[fieldKey] = z
+            n.slotSet(this, z)
         }
     }
 

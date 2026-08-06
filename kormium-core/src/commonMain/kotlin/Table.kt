@@ -1,6 +1,7 @@
 package io.github.kormium
 
 import io.github.kormium.resultset.ResultSet
+import kotlin.concurrent.Volatile
 
 private val logger = kormiumLogger()
 
@@ -18,21 +19,23 @@ private val logger = kormiumLogger()
  */
 public abstract class Table<G: Catalog, T: Entity>(public val tableName: String, public val factory: () -> T) {
     /**
-     * Builds an entity from a loaded field map (the database read path). Fails fast at the
-     * database boundary when a column the entity declares non-null came back as SQL NULL — that
-     * is a schema mismatch or a bad row, and would otherwise surface as a confusing null only when
-     * the property is later read. Nullable columns hydrate NULL normally.
+     * Builds an entity from loaded [values], indexed by [Column.ordinal] (the database read path).
+     * Fails fast at the database boundary when a column the entity declares non-null came back as
+     * SQL NULL — that is a schema mismatch or a bad row, and would otherwise surface as a confusing
+     * null only when the property is later read. Nullable columns hydrate NULL normally.
      *
-     * [absentFields] are entity fields that were not present in the result at all (e.g. a column a
-     * projection/join did not select), as opposed to a column that was selected and came back NULL;
-     * the two get different, actionable messages.
+     * A slot left as [ABSENT] means the column was not in the result at all (e.g. a projection or
+     * join did not select it), as opposed to one that was selected and came back NULL; the two get
+     * different, actionable messages.
      */
-    internal fun hydrate(fields: MutableMap<String, Any?>, absentFields: Set<String> = emptySet()): T {
-        for ((fieldName, column) in fieldDisplayName) {
-            if (!column.nullable && fields[fieldName] == null) {
+    internal fun hydrate(values: Array<Any?>): T {
+        for (column in columns) {
+            val value = values[column.ordinal]
+            if (!column.nullable && (value == null || value === ABSENT)) {
+                val fieldName = column.fieldKey
                 val expected = column.columnType.description
                 throw ResultMappingException(
-                    if (fieldName in absentFields) {
+                    if (value === ABSENT) {
                         "Column '${column.name}' of table '$tableName' is non-null but was not selected " +
                             "(entity field '$fieldName', expected Korm type $expected). Add it to the " +
                             "projection/SELECT, or read the full row, before mapping into this entity."
@@ -44,7 +47,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
                 )
             }
         }
-        return factory().also { it.replaceFields(fields) }
+        return factory().also { it.adopt(values, this) }
     }
 
     // Columns carry their entity type T, so a conflict-target type like `Column<*, *, T>` can
@@ -59,16 +62,60 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
      * named "id" if none are marked.
      */
     public val primaryKey: List<Column<*, *, T>>
-        get() = fieldDisplayName.values.filter { it.isPrimaryKey }
-            .ifEmpty { fieldDisplayName.values.filter { it.fieldKey == "id" } }
+        get() = primaryKeyCache ?: columns.filter { it.isPrimaryKey }
+            .ifEmpty { columns.filter { it.fieldKey == "id" } }
+            .also { primaryKeyCache = it }
+
+    /** Number of declared columns; the size of an entity's value array for this table. */
+    internal val columnCount: Int get() = fieldDisplayName.size
+
+    /**
+     * The declared columns in declaration order, so `columns[i].ordinal == i`.
+     *
+     * Every per-row path walks this. Iterating a `LinkedHashMap` costs ~47 ns per entry on
+     * Kotlin/Native against ~0.5 ns for an array element, and hydration walks the registry
+     * twice per row — so the flat copy is what the hot paths use, while [fieldDisplayName]
+     * stays the lookup-by-name structure behind [getFieldDisplayNames].
+     */
+    internal val columns: Array<Column<*, *, T>>
+        get() = columnsCache ?: fieldDisplayName.values.toTypedArray().also { columnsCache = it }
+
+    // Derived views of the registry. Invalidated on registration rather than computed lazily,
+    // because Column.init() is public and open: a column could in principle be registered after
+    // the first read. @Volatile publishes the built value safely; a lost race only recomputes.
+    @Volatile
+    private var columnsCache: Array<Column<*, *, T>>? = null
+
+    @Volatile
+    private var primaryKeyCache: List<Column<*, *, T>>? = null
+
     internal fun addColumn(fieldName: String, column: Column<*, *, T>) {
         logger.trace { "add column/field ${column.name}/$fieldName" }
+        // Ordinals follow declaration order and index into Entity.values. A re-declared field
+        // keeps its original slot rather than opening a second one.
+        column.ordinal = fieldDisplayName[fieldName]?.ordinal ?: fieldDisplayName.size
         fieldDisplayName[fieldName] = column
+        columnsCache = null
+        primaryKeyCache = null
+        columnListCache = null
     }
 
-    private fun getColumnNames(dialect: Dialect): List<String> {
-        logger.trace { "get column names" }
-        return fieldDisplayName.map { dialect.quoteIdentifier(it.value.name) }
+    // The rendered select list ("a", "b", ...) for one dialect. Constant per (table, dialect),
+    // so it is built once instead of on every statement. Held as a single immutable object so a
+    // racing reader sees either the old entry or a complete new one, never a half-updated pair;
+    // a lost race only costs a recompute.
+    private class ColumnList(val dialect: Dialect, val rendered: String)
+
+    @Volatile
+    private var columnListCache: ColumnList? = null
+
+    private fun columnList(dialect: Dialect): String {
+        val cached = columnListCache
+        if (cached != null && cached.dialect === dialect) return cached.rendered
+        logger.trace { "render column list" }
+        val rendered = columns.joinToString(", ") { dialect.quoteIdentifier(it.name) }
+        columnListCache = ColumnList(dialect, rendered)
+        return rendered
     }
 
     private fun qualifiedTableName(dialect: Dialect): String = qualifiedName(dialect)
@@ -76,16 +123,18 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
     private fun paramBuilder(dialect: Dialect, typeMapper: TypeMapper) = ParamBuilder(dialect, typeMapper)
 
     // find/findById/all SELECT every column in fieldDisplayName order, so the result columns
-    // line up positionally — read them by index straight into the entity's field map, with no
+    // line up positionally — read them by index straight into the entity's value array, with no
     // per-row name→index map or intermediate allocations.
     private fun mapToDao(rs: ResultSet, typeMapper: TypeMapper): T {
-        val fields = HashMap<String, Any?>(fieldDisplayName.size * 2)
-        var index = 0
-        for ((fieldName, column) in fieldDisplayName) {
-            fields[fieldName] = readColumn(column, fieldName, rs, index)
-            index++
+        // A column's ordinal IS its position in the select list here, since both come from
+        // declaration order — so one array, filled straight through.
+        val cols = columns
+        val values = arrayOfNulls<Any?>(cols.size)
+        for (index in cols.indices) {
+            val column = cols[index]
+            values[index] = readColumn(column, column.fieldKey, rs, index)
         }
-        return hydrate(fields)
+        return hydrate(values)
     }
 
     // Reads one column's value, wrapping any backend/conversion failure in a ResultMappingException
@@ -104,12 +153,16 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
             )
         }
 
-    // Only the columns the entity actually assigned (present in its fields map),
-    // so update() can tell "leave untouched" (absent) from "set to NULL" (present and null).
+    // Only the columns the entity actually assigned (slot not ABSENT), so update() can tell
+    // "leave untouched" (absent) from "set to NULL" (assigned and null).
     private fun generatePresentFields(dao: T): List<Pair<String, Any?>> {
-        return this.fieldDisplayName.filter { dao.fields.containsKey(it.key) }.map {
-            it.value.name to it.value.bindParam(dao.fields[it.key])
+        val cols = columns
+        val present = ArrayList<Pair<String, Any?>>(cols.size)
+        for (column in cols) {
+            val value = dao.slotGet(column)
+            if (value !== ABSENT) present.add(column.name to column.bindParam(value))
         }
+        return present
     }
 
     // ---- pure SQL builders (no I/O) — shared by the blocking and suspend runners ----
@@ -124,25 +177,26 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
         }
         val builder = paramBuilder(dialect, typeMapper)
         val where = pk.joinToString(" AND ") { col ->
-            require(entity.fields.containsKey(col.fieldKey)) {
+            val value = entity.slotGet(col)
+            require(value !== ABSENT) {
                 "returning=true on $tableName needs the primary-key column \"${col.name}\" set on the " +
                     "entity (this backend re-selects the written row by primary key; it has no RETURNING)"
             }
-            "${dialect.quoteIdentifier(col.name)} = ${builder.bind(col.bindParam(entity.fields[col.fieldKey]))}"
+            "${dialect.quoteIdentifier(col.name)} = ${builder.bind(col.bindParam(value))}"
         }
-        val sql = "SELECT ${getColumnNames(dialect).joinToString(", ")} FROM ${qualifiedTableName(dialect)} WHERE $where"
-        return sql.trimIndent() to builder.params
+        val sql = "SELECT ${columnList(dialect)} FROM ${qualifiedTableName(dialect)} WHERE $where"
+        return sql to builder.params
     }
 
     internal fun selectSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
         val queryStr = query.toSql(builder)
-        val sql = "SELECT ${getColumnNames(dialect).joinToString(", ")} FROM ${qualifiedTableName(dialect)} $queryStr"
-        return sql.trimIndent() to builder.params
+        val sql = "SELECT ${columnList(dialect)} FROM ${qualifiedTableName(dialect)} $queryStr"
+        return sql to builder.params
     }
 
     internal fun selectAllSql(dialect: Dialect): String =
-        "SELECT ${getColumnNames(dialect).joinToString(", ")} FROM ${qualifiedTableName(dialect)}".trimIndent()
+        "SELECT ${columnList(dialect)} FROM ${qualifiedTableName(dialect)}"
 
     internal fun insertSql(entity: T, dialect: Dialect, typeMapper: TypeMapper, returning: Boolean): Pair<String, Map<String, Any?>> {
         val builder = paramBuilder(dialect, typeMapper)
@@ -156,13 +210,13 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
             val values = presentFields.joinToString(", ") { builder.bind(it.second) }
             "INSERT INTO ${qualifiedTableName(dialect)} ($columns) VALUES ($values)"
         }
-        val sql = if (returning) "$base RETURNING ${getColumnNames(dialect).joinToString(", ")}" else base
+        val sql = if (returning) "$base RETURNING ${columnList(dialect)}" else base
         return sql to builder.params
     }
 
     // The present columns of [entity] (its "shape"), in table-declaration order.
     private fun presentColumns(entity: T): List<Column<*, *, *>> =
-        fieldDisplayName.values.filter { entity.fields.containsKey(it.fieldKey) }
+        columns.filter { entity.slotGet(it) !== ABSENT }
 
     private class BatchGroup(val columns: List<Column<*, *, *>>, val entityIndices: List<Int>)
 
@@ -184,7 +238,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
                 byShape.values.map { idxs -> BatchGroup(shapes[idxs.first()], idxs) }
             }
             BatchInsertMode.UnionNulls -> {
-                val union = fieldDisplayName.values.filter { col -> entities.any { it.fields.containsKey(col.fieldKey) } }
+                val union = columns.filter { col -> entities.any { it.slotGet(col) !== ABSENT } }
                 listOf(BatchGroup(union, entities.indices.toList()))
             }
         }
@@ -201,7 +255,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
         typeMapper: TypeMapper,
         returning: Boolean,
     ): List<BatchStatement> {
-        val returningSuffix = if (returning) " RETURNING ${getColumnNames(dialect).joinToString(", ")}" else ""
+        val returningSuffix = if (returning) " RETURNING ${columnList(dialect)}" else ""
         val statements = mutableListOf<BatchStatement>()
         for (group in batchGroups(entities, mode)) {
             if (group.columns.isEmpty()) {
@@ -218,7 +272,12 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
                 val colSql = group.columns.joinToString(", ") { dialect.quoteIdentifier(it.name) }
                 val tuples = group.entityIndices.joinToString(", ") { idx ->
                     val entity = entities[idx]
-                    "(${group.columns.joinToString(", ") { col -> builder.bind(col.bindParam(entity.fields[col.fieldKey])) }})"
+                    "(${group.columns.joinToString(", ") { col ->
+                        // UnionNulls widens the shape, so a column may be absent on this row:
+                        // bind it as SQL NULL, exactly as an unset field bound before.
+                        val value = entity.slotGet(col)
+                        builder.bind(col.bindParam(if (value === ABSENT) null else value))
+                    }})"
                 }
                 statements += BatchStatement(
                     "INSERT INTO ${qualifiedTableName(dialect)} ($colSql) VALUES $tuples$returningSuffix",
@@ -264,7 +323,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
         val setClause = updateFields.joinToString(", ") { "${dialect.quoteIdentifier(it.first)} = ${builder.bind(it.second)}" }
         val base = "INSERT INTO ${qualifiedTableName(dialect)} ($columns) VALUES ($values) " +
             dialect.renderUpsertSuffix(conflictCols, setClause)
-        val sql = if (returning) "$base RETURNING ${getColumnNames(dialect).joinToString(", ")}" else base
+        val sql = if (returning) "$base RETURNING ${columnList(dialect)}" else base
         return sql to builder.params
     }
 
@@ -291,7 +350,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
         // to an aggregate (an OFFSET would skip the single COUNT row and read as 0).
         val queryStr = query.toWhereSql(builder)
         val sql = "SELECT COUNT(*) FROM ${qualifiedTableName(dialect)} $queryStr"
-        return sql.trimIndent() to builder.params
+        return sql to builder.params
     }
 
     internal fun updateSql(query: Query, entity: T, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
@@ -308,8 +367,8 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
             UPDATE ${qualifiedTableName(dialect)}
             SET $generatedUpdateFields
            $queryStr
-        """
-        return sql.trimIndent() to builder.params
+        """.trimIndent()
+        return sql to builder.params
     }
 
     internal fun updateSql(query: Query, assignments: Map<Column<*, *, *>, Expression>, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
@@ -325,8 +384,8 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
             UPDATE ${qualifiedTableName(dialect)}
             SET $setClause
            $queryStr
-        """
-        return sql.trimIndent() to builder.params
+        """.trimIndent()
+        return sql to builder.params
     }
 
     internal fun deleteSql(query: Query, dialect: Dialect, typeMapper: TypeMapper): Pair<String, Map<String, Any?>> {
@@ -334,7 +393,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
         // WHERE only: a plain DELETE doesn't take ORDER BY / LIMIT / OFFSET (invalid in Postgres).
         val queryStr = query.toWhereSql(builder)
         val sql = "DELETE FROM ${qualifiedTableName(dialect)} $queryStr"
-        return sql.trimIndent() to builder.params
+        return sql to builder.params
     }
 
     // ---- blocking runners (called by Scope) ----

@@ -337,6 +337,8 @@ class TableIntegrationTest {
         val date = kotlinx.datetime.LocalDate.parse("2024-01-02")
         val time = kotlinx.datetime.LocalTime.parse("03:04:05")
         val dateTime = kotlinx.datetime.LocalDateTime.parse("2024-01-02T03:04:05")
+        // Every byte value, so a codec that mangles 0x00, 0x5C or high bytes is caught.
+        val bytes = ByteArray(256) { (it - 128).toByte() }
         ItDatabase.transaction {
             AllTypes.execSql(allTypesDdl)
             AllTypes.insert(AllTypesEntity().apply {
@@ -354,6 +356,7 @@ class TableIntegrationTest {
                 this.aDate = date
                 this.aTime = time
                 this.aDateTime = dateTime
+                this.aBytes = bytes
             })
         }
         val row = ItDatabase.autocommit { AllTypes.findOne { where { AllTypes.id eq id } } }!!
@@ -370,6 +373,7 @@ class TableIntegrationTest {
         assertEquals(date, row.aDate)
         assertEquals(time, row.aTime)
         assertEquals(dateTime, row.aDateTime)
+        kotlin.test.assertContentEquals(bytes, row.aBytes)
         ItDatabase.transaction { AllTypes.deleteWhere(Query(AllTypes.id eq id)) }
     }
 
@@ -538,6 +542,7 @@ class AllTypesEntity : Entity() {
     var aDate by AllTypes.aDate
     var aTime by AllTypes.aTime
     var aDateTime by AllTypes.aDateTime
+    var aBytes by AllTypes.aBytes
 }
 
 object AllTypes : Table<ItCatalog, AllTypesEntity>("all_types", ::AllTypesEntity) {
@@ -555,10 +560,11 @@ object AllTypes : Table<ItCatalog, AllTypesEntity>("all_types", ::AllTypesEntity
     val aDate by Column.LocalDate()
     val aTime by Column.LocalTime()
     val aDateTime by Column.LocalDateTime()
+    val aBytes by Column.Bytes()
 
     init {
         id; anInt; aDouble; aBool; aText; aDecimal; anInstant; aJson
-        aLong; aFloat; aShort; aDate; aTime; aDateTime
+        aLong; aFloat; aShort; aDate; aTime; aDateTime; aBytes
     }
 }
 
@@ -630,6 +636,6 @@ object ItDatabase : Database<ItCatalog> {
 }
 
 // Raw schema DDL for tests (Kormium no longer owns createTable). Postgres types.
-private val allTypesDdl = """CREATE TABLE IF NOT EXISTS "all_types" ("id" uuid NOT NULL, "anInt" integer NOT NULL, "aDouble" double precision NOT NULL, "aBool" boolean NOT NULL, "aText" text NOT NULL, "aDecimal" numeric NOT NULL, "anInstant" timestamptz NOT NULL, "aJson" jsonb NOT NULL, "aLong" bigint NOT NULL, "aFloat" real NOT NULL, "aShort" smallint NOT NULL, "aDate" date NOT NULL, "aTime" time NOT NULL, "aDateTime" timestamp NOT NULL, PRIMARY KEY ("id"))"""
+private val allTypesDdl = """CREATE TABLE IF NOT EXISTS "all_types" ("id" uuid NOT NULL, "anInt" integer NOT NULL, "aDouble" double precision NOT NULL, "aBool" boolean NOT NULL, "aText" text NOT NULL, "aDecimal" numeric NOT NULL, "anInstant" timestamptz NOT NULL, "aJson" jsonb NOT NULL, "aLong" bigint NOT NULL, "aFloat" real NOT NULL, "aShort" smallint NOT NULL, "aDate" date NOT NULL, "aTime" time NOT NULL, "aDateTime" timestamp NOT NULL, "aBytes" bytea NOT NULL, PRIMARY KEY ("id"))"""
 private val authorsDdl = """CREATE TABLE IF NOT EXISTS "authors" ("id" uuid NOT NULL, "name" text NOT NULL, PRIMARY KEY ("id"))"""
 private val booksDdl = """CREATE TABLE IF NOT EXISTS "books" ("id" uuid NOT NULL, "authorId" uuid NOT NULL, "title" text NOT NULL, PRIMARY KEY ("id"))"""
