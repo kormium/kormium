@@ -44,11 +44,14 @@ previous entry or a complete new one, never a mismatched pair. A lost race costs
 recompute. Keying on the dialect (rather than caching a single value) keeps a table usable
 from two databases of different dialects, which the type system allows.
 
-**`trimIndent()` removed.** For the single-line builders this is provably a no-op on content:
-`trimIndent` on a string with no newline computes a common indent of 0 and returns it
-unchanged. The two `UPDATE` builders did use a multi-line raw string; they are now built as
-one line, which changes only whitespace. The SQL is semantically identical, and the assertion
-helper the tests use (`remoteNewLinesAndSpaces`) normalizes whitespace anyway.
+**`trimIndent()` removed from the single-line builders only.** It is provably a no-op on
+content there: `trimIndent` on a string with no newline computes a common indent of 0 and
+returns it unchanged. The two `UPDATE` builders still build a multi-line raw string, so they
+keep their `.trimIndent()` call — dropping it there would have shipped every `UPDATE` with raw
+newlines and indentation baked into the SQL text sent to the driver and to `internalSql`
+observers. (An earlier draft of this change mistakenly dropped it there too; the tests didn't
+catch it because the assertion helper, `remoteNewLinesAndSpaces`, normalizes whitespace on
+both sides of the comparison and so can't distinguish trimmed from untrimmed SQL.)
 
 **`primaryKey` is `by lazy`**, and **`Column.resultKey` is a `val`** computed in the
 constructor.

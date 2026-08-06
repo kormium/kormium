@@ -367,7 +367,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
             UPDATE ${qualifiedTableName(dialect)}
             SET $generatedUpdateFields
            $queryStr
-        """
+        """.trimIndent()
         return sql to builder.params
     }
 
@@ -384,7 +384,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
             UPDATE ${qualifiedTableName(dialect)}
             SET $setClause
            $queryStr
-        """
+        """.trimIndent()
         return sql to builder.params
     }
 
