@@ -6,6 +6,8 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.11.1] — Native bytea fix and Kotlin/Native hot-path speedups
+
 ### Fixed
 - **`Column.Bytes` round-trips correctly on the native PostgreSQL driver.** Both directions were
   broken, silently. Writing sent the `ByteArray` through `toString()`, so the stored value was an
@@ -28,9 +30,10 @@ All notable changes to Kormium are documented here. The format is based on
   instead of two; entity field values move from a `String`-keyed `HashMap` to an array indexed
   by column position, keeping a fallback map so one entity type may still back columns of
   several tables; the rendered select list is cached per dialect, with `trimIndent()` dropped
-  from the statement builders and `Column.resultKey` precomputed; and the per-row paths walk a
-  flat array of columns instead of the name-keyed `LinkedHashMap`, which on Kotlin/Native costs
-  ~47 ns per entry against ~0.5 ns for an array element and was being walked twice per row.
+  from the builders where it was already a no-op and `Column.resultKey` precomputed; and the
+  per-row paths walk a flat array of columns instead of the name-keyed `LinkedHashMap`, which
+  on Kotlin/Native costs ~47 ns per entry against ~0.5 ns for an array element and was being
+  walked twice per row.
   Measurements and method are in [`reports/`](reports/README.md).
 
 ## [0.11.0] — SQLite on the Kotlin/JS target (`kormium-sqlite-js`)
