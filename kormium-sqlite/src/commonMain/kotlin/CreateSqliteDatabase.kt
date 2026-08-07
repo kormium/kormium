@@ -7,8 +7,10 @@ import kotlin.time.Duration.Companion.seconds
  * Opens a SQLite database and returns a [SqliteDriver].
  *
  * @param path the database file path, or `":memory:"` (the default) for an in-memory
- *   database. On JVM/native an in-memory database is opened in shared-cache mode so a pool
- *   of connections all see the same database; it lives only while the driver is open. On
+ *   database. On JVM/native, with the default `poolSize = 1` an in-memory database is private
+ *   to that one connection, so separate `createSqliteDatabase()` calls never see each other's
+ *   data; with `poolSize > 1` it is opened in shared-cache mode instead, so the pool's
+ *   connections all see the same database — it lives only while the driver is open. On
  *   Android (androidx.sqlite) an in-memory database is private per connection, so there
  *   [poolSize] must be 1 — a larger pool is rejected; use a file path for a shared pool.
  *   A file-backed database is opened in WAL (write-ahead logging) mode for better

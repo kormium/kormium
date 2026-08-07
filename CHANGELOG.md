@@ -6,6 +6,14 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- **`createSqliteDatabase()` no longer shares `:memory:` across unrelated instances at the
+  default `poolSize = 1`.** JVM and Native always opened `":memory:"` with `cache=shared`, so
+  two independent `createSqliteDatabase()` calls in the same process — e.g. two test fixtures —
+  silently read and wrote the same physical database. The shared cache is now only used when
+  `poolSize > 1` (where a pool's connections genuinely need to see one database); a single
+  connection gets SQLite's own default, a private in-memory database.
+
 ## [0.11.1] — Native bytea fix and Kotlin/Native hot-path speedups
 
 ### Fixed

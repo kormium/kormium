@@ -22,8 +22,8 @@ import kotlin.uuid.Uuid
  * to re-query and emit the new state. This exercises the whole chain — Scope dirty-table
  * tracking → WriteListeners.fire on commit → the flow's re-fetch.
  *
- * The query is filtered to a unique id so it is robust against the shared-cache `:memory:`
- * database other tests also use.
+ * The query is filtered to a unique id, matching the convention used across the SQLite test
+ * suite (each test class opens its own private in-memory database).
  */
 class SqliteObserveTest {
 

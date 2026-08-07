@@ -66,14 +66,18 @@ private class SqliteNativeDriver(
 
     private val isMemory = path == ":memory:"
 
-    // Shared cache so a pool of connections all see the same in-memory database; a URI
-    // filename then requires SQLITE_OPEN_URI.
-    private val filename = if (isMemory) "file::memory:?cache=shared" else path
+    // A single connection (the common case, e.g. tests) gets SQLite's default: a private
+    // in-memory database, so unrelated createSqliteDatabase() calls don't see each other's
+    // data. A pool needs cache=shared so its connections all see the same database — but that
+    // URI is identical across instances, so it would also leak across instances if poolSize
+    // were 1. A shared-cache URI filename then requires SQLITE_OPEN_URI.
+    private val useSharedCache = isMemory && poolSize > 1
+    private val filename = if (useSharedCache) "file::memory:?cache=shared" else path
 
     // A SQLite connection is handed to exactly one caller at a time via a Channel that
     // doubles as a blocking "free connection" queue — mirroring the libpq driver.
     private val connections: List<CPointer<sqlite3>> = List(poolSize) {
-        openConnection(filename, uri = isMemory).also { initPragmas(it, file = !isMemory) }
+        openConnection(filename, uri = useSharedCache).also { initPragmas(it, file = !isMemory) }
     }
 
     private val pool = Channel<CPointer<sqlite3>>(poolSize).also { channel ->
