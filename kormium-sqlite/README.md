@@ -29,7 +29,7 @@ macOS, iOS and Android need nothing extra.
 ## Example
 
 ```kotlin
-// In-memory (shared-cache on JVM/Native, lives only while the driver is open).
+// In-memory: private to this driver (its pool shares it), lives only while the driver is open.
 val db: Database<App> = createSqliteDatabase()
 
 // File-backed, opened in WAL mode. SQLite has a single writer, so poolSize defaults to 1;

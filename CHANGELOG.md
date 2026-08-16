@@ -7,12 +7,19 @@ All notable changes to Kormium are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
-- **`createSqliteDatabase()` no longer shares `:memory:` across unrelated instances at the
-  default `poolSize = 1`.** JVM and Native always opened `":memory:"` with `cache=shared`, so
-  two independent `createSqliteDatabase()` calls in the same process — e.g. two test fixtures —
-  silently read and wrote the same physical database. The shared cache is now only used when
-  `poolSize > 1` (where a pool's connections genuinely need to see one database); a single
-  connection gets SQLite's own default, a private in-memory database.
+- **`createSqliteDatabase(":memory:")` is no longer shared process-wide.** JVM and Native opened
+  every `":memory:"` database as `file::memory:?cache=shared` — one URI for every caller — so two
+  independent `createSqliteDatabase()` calls in the same process, e.g. two test fixtures, silently
+  read and wrote the same physical database. Each call now gets a process-unique name
+  (`file:kormium-mem-N?mode=memory&cache=shared`), which keeps one driver's `poolSize` connections
+  on one database while isolating drivers from each other. ([#131](https://github.com/kormium/kormium/issues/131))
+
+### Changed
+- **SQLite: `file:` paths are passed through to SQLite as URIs** (`SQLITE_OPEN_URI` on Native, a
+  `file:` JDBC filename on JVM), with Kormium's pragmas appended rather than overwriting the
+  caller's parameters. This is the way to opt back into one in-memory database shared by several
+  drivers, which `":memory:"` used to do by accident:
+  `createSqliteDatabase("file:shared?mode=memory&cache=shared")`.
 
 ## [0.11.1] — Native bytea fix and Kotlin/Native hot-path speedups
 

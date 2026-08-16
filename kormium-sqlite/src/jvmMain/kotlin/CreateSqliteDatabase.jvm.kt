@@ -10,27 +10,32 @@ private val sqliteTranslator: SqlExceptionTranslator = { e: SQLException ->
     sqliteException(e.message ?: "SQL error", e.errorCode.takeIf { it != 0 }, e)
 }
 
-private fun sqliteJdbcUrl(path: String, poolSize: Int): String =
-    if (path == ":memory:") {
-        // A single connection (the common case, e.g. tests) gets SQLite's default: a private
-        // in-memory database, so unrelated createSqliteDatabase() calls don't see each other's
-        // data. A pool needs cache=shared so its connections all see the same database — but
-        // that URI is identical across instances, so it would also leak across instances if
-        // poolSize were 1. WAL is meaningless without a file, so it is omitted here.
-        if (poolSize > 1) {
-            "jdbc:sqlite:file::memory:?cache=shared&foreign_keys=on&busy_timeout=5000"
-        } else {
-            "jdbc:sqlite::memory:?foreign_keys=on&busy_timeout=5000"
-        }
-    } else {
-        // WAL gives concurrent readers alongside one writer; foreign_keys are OFF by
-        // default in SQLite, so enable them to surface ForeignKeyViolationException.
-        "jdbc:sqlite:$path?journal_mode=WAL&foreign_keys=on&busy_timeout=5000"
-    }
+// sqlite-jdbc splits everything after the first `?` into pragmas it applies itself
+// (foreign_keys, busy_timeout, journal_mode) and unknown parameters, which it leaves on the
+// filename — so `mode`/`cache` still reach SQLite as URI parameters, and a `file:` filename
+// makes it open with SQLITE_OPEN_URI.
+private fun sqliteJdbcUrl(path: String): String = when {
+    // Shared cache so this driver's pool all sees one database, under a process-unique name so
+    // unrelated createSqliteDatabase() calls do not (issue #131). WAL is meaningless without a
+    // file, so it is omitted here.
+    path == ":memory:" ->
+        "jdbc:sqlite:file:${newInMemoryDatabaseName()}?mode=memory&cache=shared&foreign_keys=on&busy_timeout=5000"
+
+    // A caller-supplied SQLite URI — the way to opt back into one in-memory database shared by
+    // several drivers ("file:shared?mode=memory&cache=shared"). It carries its own parameters,
+    // so ours are appended instead of replacing the `?`; the pragmas are the same as for a
+    // plain path (journal_mode=WAL is simply a no-op on an in-memory database).
+    path.startsWith("file:") ->
+        "jdbc:sqlite:$path${if ('?' in path) "&" else "?"}journal_mode=WAL&foreign_keys=on&busy_timeout=5000"
+
+    // WAL gives concurrent readers alongside one writer; foreign_keys are OFF by
+    // default in SQLite, so enable them to surface ForeignKeyViolationException.
+    else -> "jdbc:sqlite:$path?journal_mode=WAL&foreign_keys=on&busy_timeout=5000"
+}
 
 private class SqliteJdbcDriver(path: String, poolSize: Int, acquireTimeout: Duration, config: KormiumConfig) :
     JdbcDatabase(
-        jdbcUrl = sqliteJdbcUrl(path, poolSize),
+        jdbcUrl = sqliteJdbcUrl(path),
         poolSize = poolSize,
         acquireTimeout = acquireTimeout,
         dialect = SqliteDialect,
