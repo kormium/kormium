@@ -6,8 +6,10 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
-> The SQLite in-memory change below alters the behaviour of a released API, so the next release
-> is **0.12.0**, not a patch. See *Migration* at the end of this section.
+## [0.12.0] — In-memory SQLite databases are private per driver
+
+> Behaviour change to a released API: two `createSqliteDatabase()` calls no longer land on the
+> same in-memory database. See *Migration* at the end of this section.
 
 ### Fixed
 - **`createSqliteDatabase(":memory:")` is no longer shared process-wide.** JVM and Native opened
