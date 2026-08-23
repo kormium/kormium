@@ -64,16 +64,23 @@ private class SqliteNativeDriver(
     private val typeMapper: TypeMapper = StandardTypeMapper
     override val writeListeners: WriteListeners = WriteListeners()
 
-    private val isMemory = path == ":memory:"
+    // Shared cache so this driver's pool all sees one database, under a process-unique name so
+    // unrelated createSqliteDatabase() calls do not (issue #131). A caller may also pass their
+    // own "file:…" URI — the way to opt back into one in-memory database shared by several
+    // drivers. Either way a URI filename requires SQLITE_OPEN_URI.
+    private val isUri = path == ":memory:" || path.startsWith("file:")
+    private val filename =
+        if (path == ":memory:") "file:${newInMemoryDatabaseName()}?mode=memory&cache=shared" else path
 
-    // Shared cache so a pool of connections all see the same in-memory database; a URI
-    // filename then requires SQLITE_OPEN_URI.
-    private val filename = if (isMemory) "file::memory:?cache=shared" else path
+    // Covers a caller's own in-memory URI too ("file:shared?mode=memory"), which has no more use
+    // for WAL than ":memory:" does. Pragmas the caller wrote into the path win over our defaults.
+    private val isMemory = isInMemorySqlitePath(filename)
+    private val pathParams = sqlitePathParams(filename)
 
     // A SQLite connection is handed to exactly one caller at a time via a Channel that
     // doubles as a blocking "free connection" queue — mirroring the libpq driver.
     private val connections: List<CPointer<sqlite3>> = List(poolSize) {
-        openConnection(filename, uri = isMemory).also { initPragmas(it, file = !isMemory) }
+        openConnection(filename, uri = isUri).also { initPragmas(it, file = !isMemory, params = pathParams) }
     }
 
     private val pool = Channel<CPointer<sqlite3>>(poolSize).also { channel ->
@@ -325,8 +332,12 @@ private fun openConnection(filename: String, uri: Boolean): CPointer<sqlite3> = 
 // foreign_keys are OFF by default in SQLite; WAL only applies to a real file. busy_timeout
 // lets a blocked writer wait instead of failing immediately with SQLITE_BUSY.
 @OptIn(ExperimentalForeignApi::class)
-private fun initPragmas(conn: CPointer<sqlite3>, file: Boolean) {
-    if (file) sqlite3_exec(conn, "PRAGMA journal_mode=WAL", null, null, null)
-    sqlite3_exec(conn, "PRAGMA foreign_keys=ON", null, null, null)
-    sqlite3_exec(conn, "PRAGMA busy_timeout=5000", null, null, null)
+private fun initPragmas(conn: CPointer<sqlite3>, file: Boolean, params: Map<String, String>) {
+    // SQLite itself ignores unknown URI parameters, so journal_mode/foreign_keys/busy_timeout in
+    // a caller's "file:…" path only take effect because we read them back out here — which is
+    // also what sqlite-jdbc does with them on the JVM, keeping the two backends in step.
+    val journalMode = params["journal_mode"] ?: "WAL".takeIf { file }
+    if (journalMode != null) sqlite3_exec(conn, "PRAGMA journal_mode=$journalMode", null, null, null)
+    sqlite3_exec(conn, "PRAGMA foreign_keys=${params["foreign_keys"] ?: "ON"}", null, null, null)
+    sqlite3_exec(conn, "PRAGMA busy_timeout=${params["busy_timeout"] ?: "5000"}", null, null, null)
 }

@@ -16,7 +16,8 @@ import kotlin.uuid.Uuid
  * End-to-end test of the suspend path on a real backend (SQLite, JVM + Native). It
  * exercises [suspendTransaction] / [suspendAutocommit] → SuspendDatabase.useConnection
  * → the offload runner (SuspendExecutorAdapter on the IO dispatcher). Reuses the
- * top-level SqCatalog/Products/Product from SqliteIntegrationTest (shared-cache :memory:).
+ * top-level SqCatalog/Products/Product from SqliteIntegrationTest, but against its own
+ * private in-memory database.
  */
 class SqliteSuspendTest {
 

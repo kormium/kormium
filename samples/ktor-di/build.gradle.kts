@@ -2,7 +2,7 @@
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "2.4.0"
+    kotlin("plugin.serialization") version "2.4.10"
 }
 
 group = "io.github.kormium.samples.ktordi"
@@ -15,7 +15,7 @@ repositories {
     }
 }
 
-val ktorVersion = "3.5.0"
+val ktorVersion = "3.5.2"
 
 kotlin {
     val hostOs = System.getProperty("os.name")
@@ -53,7 +53,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
                 implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
                 implementation(project(":kormium-postgres"))
                 // Reified call.transaction(Catalog){} resolving Database<G> from Ktor's built-in DI.
@@ -66,14 +66,14 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")
-                implementation("org.slf4j:slf4j-simple:2.0.16")
+                implementation("org.slf4j:slf4j-simple:2.0.18")
             }
         }
         val jvmTest by getting {
             dependencies {
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
-                implementation("org.testcontainers:postgresql:1.20.4")
-                implementation("org.postgresql:postgresql:42.7.4")
+                implementation("org.testcontainers:postgresql:1.21.4")
+                implementation("org.postgresql:postgresql:42.7.13")
             }
         }
         if (!hostOs.contains("windows", ignoreCase = true)) {

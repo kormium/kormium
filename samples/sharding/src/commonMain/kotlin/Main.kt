@@ -11,9 +11,6 @@ import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.Database
 import io.github.kormium.eq
 import io.github.kormium.transaction
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.files.SystemTemporaryDirectory
 
 // --- Two independent catalogs -------------------------------------------------
 // A Catalog is a marker type. A Table is tagged with its catalog, and so is the
@@ -64,11 +61,10 @@ class ShardedAccounts(private val shards: List<Database<AccountsCatalog>>) {
 private fun account(id: Int, owner: String) = Account().apply { this.id = id; this.owner = owner }
 
 fun main() {
-    // Two shards for AccountsCatalog, each its OWN database. They must be distinct files:
-    // Kormium opens ":memory:" in shared-cache mode, so two ":memory:" handles would be the same
-    // database — not two shards. AuditCatalog is a separate (in-memory) database.
-    val shardPaths = List(2) { Path(SystemTemporaryDirectory, "kormium-shard-$it.db") }
-    val shards: List<Database<AccountsCatalog>> = shardPaths.map { createSqliteDatabase(it.toString()) }
+    // Two shards for AccountsCatalog, each its OWN database: every createSqliteDatabase() call
+    // opens a fresh in-memory database, so the shards never share storage (use file paths to
+    // make them outlive the process). AuditCatalog is a third, independent database.
+    val shards: List<Database<AccountsCatalog>> = List(2) { createSqliteDatabase() }
     val auditDb: Database<AuditCatalog> = createSqliteDatabase()
 
     try {
@@ -90,12 +86,6 @@ fun main() {
     } finally {
         shards.forEach { it.close() }
         auditDb.close()
-        // Best-effort cleanup of the shard files (WAL also leaves -wal / -shm sidecars).
-        shardPaths.forEach { p ->
-            listOf(p.toString(), "${p}-wal", "${p}-shm").forEach { f ->
-                runCatching { SystemFileSystem.delete(Path(f), mustExist = false) }
-            }
-        }
     }
 }
 

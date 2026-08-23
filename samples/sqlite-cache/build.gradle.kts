@@ -53,8 +53,8 @@ kotlin {
         }
         val jvmTest by getting {
             dependencies {
-                implementation("org.testcontainers:postgresql:1.20.4")
-                implementation("org.postgresql:postgresql:42.7.4")
+                implementation("org.testcontainers:postgresql:1.21.4")
+                implementation("org.postgresql:postgresql:42.7.13")
             }
         }
         // The native Postgres driver now ships inside :kormium-postgres (nativeMain).

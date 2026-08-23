@@ -6,21 +6,15 @@ import io.github.kormium.autocommit
 import io.github.kormium.createSqliteDatabase
 import io.github.kormium.database.Database
 import io.github.kormium.transaction
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.files.SystemTemporaryDirectory
-import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** Runs on both JVM and native; shards are distinct SQLite files in the temp dir. */
+/** Runs on both JVM and native; each shard is its own in-memory SQLite database. */
 class ShardingTest {
 
     @Test
     fun shardingAndCatalogs() {
-        val tag = Random.nextInt(0, Int.MAX_VALUE)
-        val shardPaths = List(2) { Path(SystemTemporaryDirectory, "kormium-shard-test-$tag-$it.db") }
-        val shards: List<Database<AccountsCatalog>> = shardPaths.map { createSqliteDatabase(it.toString()) }
+        val shards: List<Database<AccountsCatalog>> = List(2) { createSqliteDatabase() }
         val auditDb: Database<AuditCatalog> = createSqliteDatabase()
 
         try {
@@ -40,11 +34,6 @@ class ShardingTest {
         } finally {
             shards.forEach { it.close() }
             auditDb.close()
-            shardPaths.forEach { p ->
-                listOf(p.toString(), "$p-wal", "$p-shm").forEach { f ->
-                    runCatching { SystemFileSystem.delete(Path(f), mustExist = false) }
-                }
-            }
         }
     }
 }

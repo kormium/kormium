@@ -35,7 +35,7 @@ kotlin {
                 // Only the Dialect SPI comes from core; core stays unaware of concrete dialects.
                 api(project(":kormium-core"))
                 // PostgresDialect casts a JsonElement bind to ::jsonb, so it needs the type.
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
             }
         }
         val commonTest by getting {

@@ -11,7 +11,7 @@ repositories {
     }
 }
 
-val koinVersion = "4.1.0"
+val koinVersion = "4.2.2"
 
 kotlin {
     explicitApi()

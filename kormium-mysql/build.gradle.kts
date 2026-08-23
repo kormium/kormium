@@ -53,7 +53,7 @@ kotlin {
                 api(project(":kormium-mysql-dialect"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 // MySqlJvmTypeMapper binds a JsonElement as its text form into a JSON column.
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
             }
         }
         val commonTest by getting {
@@ -75,23 +75,23 @@ kotlin {
             dependencies {
                 // End-to-end tests of the JVM driver against a real MySQL in Docker.
                 implementation(project(":kormium-migrate"))
-                implementation("org.testcontainers:mysql:1.20.4")
+                implementation("org.testcontainers:mysql:1.21.4")
                 implementation("com.mysql:mysql-connector-j:8.4.0")
                 // For the all-column-types round-trip test (Instant / Json columns).
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
             }
         }
         val nativeMain by getting {
             dependencies {
                 // The native libmysqlclient driver.
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
             }
         }
         val nativeTest by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
             }
         }
     }

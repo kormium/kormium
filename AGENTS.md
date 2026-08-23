@@ -55,6 +55,8 @@ val db: Database<App> = createDatabase(
 )
 // MySQL / MariaDB (kormium-mysql): same createDatabase(...), port = 3306.
 // SQLite (kormium-sqlite):   createSqliteDatabase(path = ":memory:")
+// Each ":memory:" call is its OWN database (private to that driver, gone on close()). To share
+// one between drivers: createSqliteDatabase("file:shared?mode=memory&cache=shared") — JVM/native.
 // Async PostgreSQL (kormium-r2dbc):  createR2dbcDatabase(...)
 // Async MySQL (kormium-r2dbc):       createMySqlR2dbcDatabase(...)
 ```

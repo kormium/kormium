@@ -93,8 +93,8 @@ kotlin {
                 // existing consumers exactly as before.
                 api(project(":kormium-postgres-dialect"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-                implementation("io.github.oshai:kotlin-logging:7.0.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+                implementation("io.github.oshai:kotlin-logging:8.0.4")
             }
         }
         val commonTest by getting {
@@ -108,7 +108,7 @@ kotlin {
                 // The JVM Postgres driver is the shared JDBC driver wired with the
                 // pgjdbc URL + PgResultSetWrapper (which uses kotlinx-datetime).
                 implementation(project(":kormium-jdbc"))
-                implementation("org.postgresql:postgresql:42.7.4")
+                implementation("org.postgresql:postgresql:42.7.13")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
@@ -116,19 +116,19 @@ kotlin {
             dependencies {
                 // End-to-end tests of the JVM driver against a real Postgres in Docker.
                 implementation(project(":kormium-migrate"))
-                implementation("org.testcontainers:postgresql:1.20.4")
-                implementation("org.postgresql:postgresql:42.7.4")
+                implementation("org.testcontainers:postgresql:1.21.4")
+                implementation("org.postgresql:postgresql:42.7.13")
                 // For the all-column-types round-trip test (Instant / Json columns).
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
             }
         }
         val nativeMain by getting {
             dependencies {
                 // The native libpq driver (formerly :pgkn).
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-                implementation("io.github.oshai:kotlin-logging:7.0.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+                implementation("io.github.oshai:kotlin-logging:8.0.4")
             }
         }
         // The async socket reactor's syscalls differ by OS: poll/pipe/fcntl on Unix

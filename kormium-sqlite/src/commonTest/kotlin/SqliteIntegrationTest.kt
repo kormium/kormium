@@ -57,7 +57,7 @@ import kotlin.uuid.Uuid
  */
 class SqliteIntegrationTest {
 
-    // One shared in-memory database (shared-cache) for the whole class. Tables are
+    // One in-memory database, private to this class, for all of its tests. Tables are
     // created with IF NOT EXISTS; every test uses fresh random ids.
     private val db: Database<SqCatalog> = createSqliteDatabase(":memory:")
 

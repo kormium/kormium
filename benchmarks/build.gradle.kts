@@ -17,16 +17,16 @@ kotlin {
 
 dependencies {
     jmhImplementation(project(":kormium-postgres"))
-    jmhImplementation("org.testcontainers:postgresql:1.21.3")
-    jmhImplementation("org.postgresql:postgresql:42.7.7")
+    jmhImplementation("org.testcontainers:postgresql:1.21.4")
+    jmhImplementation("org.postgresql:postgresql:42.7.13")
     jmhImplementation(project(":kormium-decimal"))
-    jmhImplementation("com.zaxxer:HikariCP:6.3.0")
+    jmhImplementation("com.zaxxer:HikariCP:7.1.0")
 
     // For the cross-ORM comparison benchmark.
-    jmhImplementation("org.hibernate.orm:hibernate-core:7.0.2.Final")
-    jmhImplementation("org.hibernate.orm:hibernate-hikaricp:7.0.2.Final")
-    jmhImplementation("org.jetbrains.exposed:exposed-core:1.0.0-beta-4")
-    jmhImplementation("org.jetbrains.exposed:exposed-jdbc:1.0.0-beta-4")
+    jmhImplementation("org.hibernate.orm:hibernate-core:7.4.6.Final")
+    jmhImplementation("org.hibernate.orm:hibernate-hikaricp:7.4.6.Final")
+    jmhImplementation("org.jetbrains.exposed:exposed-core:1.4.0")
+    jmhImplementation("org.jetbrains.exposed:exposed-jdbc:1.4.0")
 }
 
 val resultsJson = layout.buildDirectory.file("results/jmh/results.json")

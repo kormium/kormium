@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/kormium/kormium/actions/workflows/ci.yml/badge.svg)](https://github.com/kormium/kormium/actions/workflows/ci.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.kormium/kormium-core.svg)](https://central.sonatype.com/search?q=g%3Aio.github.kormium)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-blue.svg?logo=kotlin)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-blue.svg?logo=kotlin)](https://kotlinlang.org)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Type-safe ORM and SQL DSL for Kotlin Multiplatform.

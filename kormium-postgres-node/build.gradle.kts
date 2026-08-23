@@ -29,7 +29,7 @@ kotlin {
                 implementation(project(":kormium-postgres-dialect"))
                 // Shared Wasm driver layer: named-param parser, text ResultSet, binding helper.
                 implementation(project(":kormium-wasm-driver"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 // node-postgres: pure-JS Postgres client. https://node-postgres.com
                 implementation(npm("pg", "8.13.1"))
@@ -38,7 +38,7 @@ kotlin {
         val wasmJsTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
             }
         }
     }

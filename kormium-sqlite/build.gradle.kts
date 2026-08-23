@@ -40,7 +40,7 @@ kotlin {
     // version lazily (it may still be downloading at configuration time).
     val konanDataDir = System.getenv("KONAN_DATA_DIR")?.let(::File)
         ?: File(System.getProperty("user.home"), ".konan")
-    val konanVersion = "2.4.0"
+    val konanVersion = "2.4.10"
     // On Windows the distribution ships run_konan.bat, which has to go through cmd /c.
     fun runKonan(): List<String> {
         val dist = (konanDataDir.listFiles { f ->
@@ -149,8 +149,8 @@ kotlin {
                 implementation(project(":kormium-observe"))
                 implementation(project(":kormium-decimal"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
             }
         }
         val jvmMain by getting {
@@ -158,22 +158,22 @@ kotlin {
                 // The JVM SQLite driver is the shared JDBC driver wired with the
                 // sqlite-jdbc URL + SqliteResultSetWrapper.
                 implementation(project(":kormium-jdbc"))
-                implementation("org.xerial:sqlite-jdbc:3.47.1.0")
+                implementation("org.xerial:sqlite-jdbc:3.53.2.1")
             }
         }
         val androidMain by getting {
             dependencies {
                 // androidx.sqlite's bundled SQLite ships its own native library for Android,
                 // so the driver works on-device without relying on the framework's sqlite.
-                implementation("androidx.sqlite:sqlite:2.6.2")
-                implementation("androidx.sqlite:sqlite-bundled:2.6.2")
+                implementation("androidx.sqlite:sqlite:2.7.0")
+                implementation("androidx.sqlite:sqlite-bundled:2.7.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
         val jvmTest by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
             }
         }
     }

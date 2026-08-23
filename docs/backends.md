@@ -147,6 +147,19 @@ SQLite notes:
 - `poolSize` defaults to `1` because SQLite allows one writer.
 - File databases are opened in WAL mode.
 - Foreign keys are enabled with `PRAGMA foreign_keys=ON`.
+- Every `createSqliteDatabase(":memory:")` call opens its **own** in-memory database, private to
+  that driver and shared only across its own pooled connections. It lives as long as the driver:
+  `close()` frees it.
+- To put several drivers on one in-memory database, name it with a SQLite URI (JVM and native —
+  Android rejects `file:` paths, androidx.sqlite opens without `SQLITE_OPEN_URI`):
+
+  ```kotlin
+  val a = createSqliteDatabase("file:shared?mode=memory&cache=shared")
+  val b = createSqliteDatabase("file:shared?mode=memory&cache=shared") // same database as `a`
+  ```
+
+- `journal_mode`, `foreign_keys` and `busy_timeout` spelled out in a path are honoured; Kormium
+  appends only the defaults you left out.
 - `UUID`, `Decimal`, `Json` and temporal values are stored as text and parsed back.
 
 ### Browser SQLite (`kormium-sqlite-wasm`)

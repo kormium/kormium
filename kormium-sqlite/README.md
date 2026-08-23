@@ -29,7 +29,7 @@ macOS, iOS and Android need nothing extra.
 ## Example
 
 ```kotlin
-// In-memory (shared-cache on JVM/Native, lives only while the driver is open).
+// In-memory: private to this driver (its pool shares it), lives only while the driver is open.
 val db: Database<App> = createSqliteDatabase()
 
 // File-backed, opened in WAL mode. SQLite has a single writer, so poolSize defaults to 1;
@@ -48,8 +48,20 @@ val db = createSqliteDatabase("app.db") {
 }
 ```
 
+Two `createSqliteDatabase()` calls never share an in-memory database. To put several drivers on
+one, name it with a SQLite URI (JVM and native only):
+
+```kotlin
+val a = createSqliteDatabase("file:shared?mode=memory&cache=shared")
+val b = createSqliteDatabase("file:shared?mode=memory&cache=shared") // same database as `a`
+```
+
+`journal_mode`, `foreign_keys` and `busy_timeout` written into such a path are honoured as-is;
+Kormium only fills in the ones you left out.
+
 > On Android an in-memory database is private per connection, so `poolSize` must be `1`; use a
-> file path for a shared pool.
+> file path for a shared pool. Android also rejects `file:` URIs — androidx.sqlite opens without
+> `SQLITE_OPEN_URI`, so the URI would become a file of that name.
 
 ## Platforms
 

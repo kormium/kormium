@@ -6,6 +6,67 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+> The SQLite in-memory change below alters the behaviour of a released API, so the next release
+> is **0.12.0**, not a patch. See *Migration* at the end of this section.
+
+### Fixed
+- **`createSqliteDatabase(":memory:")` is no longer shared process-wide.** JVM and Native opened
+  every `":memory:"` database as `file::memory:?cache=shared` — one URI for every caller — so two
+  independent `createSqliteDatabase()` calls in the same process, e.g. two test fixtures, silently
+  read and wrote the same physical database. Each call now gets a process-unique name
+  (`file:kormium-mem-N?mode=memory&cache=shared`), which keeps one driver's `poolSize` connections
+  on one database while isolating drivers from each other. ([#131](https://github.com/kormium/kormium/issues/131))
+- **JVM: an in-memory SQLite database no longer disappears out from under a long-running
+  process.** SQLite frees an in-memory database as soon as its last connection closes, and
+  HikariCP recycles pooled connections on its own schedule (`maxLifetime`, 30 minutes by default;
+  also after a fatal error). At the default `poolSize = 1` that left an instant with no connection
+  at all, so roughly half an hour in, every table silently came back empty. The JVM driver now
+  holds one unpooled connection open for as long as the driver is open. Native was never affected
+  (its connections live as long as the driver), and file-backed databases never were.
+- **Android rejects `file:` paths instead of creating a strangely named file.** androidx.sqlite
+  opens without `SQLITE_OPEN_URI`, so `createSqliteDatabase("file:shared?mode=memory&cache=shared")`
+  quietly created a *file* by that name. It now fails with an explanatory message.
+
+### Changed
+- **SQLite: `file:` paths are passed through to SQLite as URIs** (`SQLITE_OPEN_URI` on Native, a
+  `file:` JDBC filename on JVM). This is the way to opt back into one in-memory database shared by
+  several drivers, which `":memory:"` used to do by accident:
+  `createSqliteDatabase("file:shared?mode=memory&cache=shared")`. Not supported on Android (see
+  above).
+- **SQLite: `journal_mode`, `foreign_keys` and `busy_timeout` written into the path win over
+  Kormium's defaults**, on both JVM and Native — `createSqliteDatabase("file:app.db?busy_timeout=60000")`
+  now really waits 60 s. Kormium appends only the pragmas the caller left out.
+- **Toolchain and dependency updates.** Kotlin 2.4.0 → 2.4.10 (Kotlin/Native, the Compose
+  compiler plugin and the serialization plugin move with it), Android Gradle plugin 9.2.1 → 9.3.1,
+  kotlinx-coroutines 1.10.2 → 1.11.0, kotlinx-serialization 1.9.0 → 1.11.0, kotlinx-io 0.9.0 →
+  0.9.1, kotlinx-browser 0.3 → 0.5.0, Ktor 3.5.0 → 3.5.2, Koin 4.1.0 → 4.2.2, androidx.sqlite
+  2.6.2 → 2.7.0, sqlite-jdbc 3.47.1.0 → 3.53.2.1, HikariCP 6.x → 7.1.0, pgjdbc 42.7.x → 42.7.13,
+  r2dbc-postgresql 1.0.7 → 1.1.2, r2dbc-mysql 1.3.0 → 1.4.3, SLF4J 2.0.16 → 2.0.18, kotlin-logging
+  7.0.3 → 8.0.4, Testcontainers → 1.21.4, and the publishing / foojay Gradle plugins. Benchmarks
+  only: Exposed 1.0.0-beta-4 → 1.4.0, Hibernate 7.0.2 → 7.4.6.
+
+  Two adaptations came with them, neither visible to callers: r2dbc-postgresql 1.1 declares its
+  API with JSpecify, so `NumericAsTextCodec.decode` now takes (and returns) a nullable value the
+  way the driver always meant it, and the comparison benchmark follows Exposed's move to
+  `kotlin.uuid.Uuid` and top-level expression builders.
+
+### Migration
+- A driver that created the schema and a second driver that reads it are now two different
+  in-memory databases. Test fixtures and sharding setups that relied on the old process-wide
+  sharing keep it by naming the database explicitly:
+
+  ```kotlin
+  // before: both calls happened to land on one database
+  val writer = createSqliteDatabase()
+  val reader = createSqliteDatabase()
+
+  // after: same database, on purpose (JVM/native)
+  val writer = createSqliteDatabase("file:app?mode=memory&cache=shared")
+  val reader = createSqliteDatabase("file:app?mode=memory&cache=shared")
+  ```
+
+  Nothing changes for a single driver, for file-backed databases, or on Android.
+
 ## [0.11.1] — Native bytea fix and Kotlin/Native hot-path speedups
 
 ### Fixed
