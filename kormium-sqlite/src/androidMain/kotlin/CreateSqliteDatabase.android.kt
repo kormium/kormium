@@ -47,6 +47,15 @@ private class SqliteAndroidDriver(
                 "(a larger pool would give each caller a separate empty database). " +
                 "Use a file path for a shared pooled database."
         }
+        // JVM and native hand a "file:…" path to SQLite as a URI (SQLITE_OPEN_URI), which is how
+        // several drivers share one in-memory database. androidx.sqlite opens without that flag,
+        // so the URI would be taken literally and quietly create a file named
+        // "file:shared?mode=memory&cache=shared" — say so instead.
+        require(!path.startsWith("file:")) {
+            "Android does not support SQLite URI filenames (androidx.sqlite opens without " +
+                "SQLITE_OPEN_URI, so \"$path\" would become a file of that name); use a plain " +
+                "file path or \":memory:\"."
+        }
     }
 
     // A bounded borrow: a saturated pool fails with a clear, catchable error instead of

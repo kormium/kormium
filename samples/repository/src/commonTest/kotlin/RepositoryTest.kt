@@ -17,14 +17,11 @@ import kotlin.test.assertEquals
 /** Runs on JVM and native (SQLite is self-contained). */
 class RepositoryTest {
 
-    // The default :memory: database is shared across this module's test run, so each test
-    // sets up the schema and clears the tables to stay independent.
+    // Every createSqliteDatabase() call opens its own private in-memory database, so a test only
+    // has to create the schema — there is nothing left over from the previous one to clear.
     private suspend fun freshDb(): SuspendDatabase<Shop> {
         val db: SuspendDatabase<Shop> = createSqliteDatabase()
-        db.suspendTransaction {
-            Users.execSql(usersDdl); Orders.execSql(ordersDdl)
-            Users.deleteWhere { }; Orders.deleteWhere { }
-        }
+        db.suspendTransaction { Users.execSql(usersDdl); Orders.execSql(ordersDdl) }
         return db
     }
 
@@ -43,6 +40,7 @@ class RepositoryTest {
         ShopService(db, users, orders).register(user(4, "Dave", 22), order(100, userId = 4, total = 50))
         assertEquals(listOf(100), orders.all().map { it.id })           // cross-repo tx committed
         assertEquals(setOf("Alice", "Dave"), users.adults().map { it.name }.toSet())
+        db.close()
     }
 
     @Test

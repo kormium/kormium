@@ -15,8 +15,12 @@ import kotlin.time.Duration.Companion.seconds
  *   (androidx.sqlite) an in-memory database is private per connection, so there [poolSize]
  *   must be 1 — a larger pool is rejected; use a file path for a shared pool. A file-backed
  *   database is opened in WAL (write-ahead logging) mode for better read/write concurrency.
- *   To share one in-memory database between drivers on JVM/native, pass an explicit SQLite
- *   URI instead: `createSqliteDatabase("file:shared?mode=memory&cache=shared")`.
+ *
+ *   A `"file:…"` path is handed to SQLite as a URI (JVM and native only — Android rejects it,
+ *   androidx.sqlite opens without `SQLITE_OPEN_URI`). That is how to share one in-memory
+ *   database between drivers: `createSqliteDatabase("file:shared?mode=memory&cache=shared")`.
+ *   Kormium adds `journal_mode`, `foreign_keys` and `busy_timeout` to a URI only when the
+ *   caller has not spelled them out, so its defaults never override an explicit choice.
  * @param poolSize how many connections to keep. SQLite allows a single writer, so the
  *   default is 1 (everything serialised, no `database is locked`); raise it for
  *   concurrent reads (WAL permits many readers alongside one writer).
@@ -60,3 +64,34 @@ internal fun newInMemoryDatabaseName(): String = "kormium-mem-${inMemoryDatabase
 
 @OptIn(ExperimentalAtomicApi::class)
 private val inMemoryDatabaseCounter = AtomicLong(0)
+
+/**
+ * Whether [path] names an in-memory database rather than a file — `":memory:"`, the
+ * `file:<name>?mode=memory` URI built above, or a caller's own `file::memory:` spelling.
+ *
+ * Two decisions hang on it: WAL is meaningless without a file, and an in-memory database exists
+ * only while some connection to it is open, so the JVM driver has to hold one open itself.
+ */
+internal fun isInMemorySqlitePath(path: String): Boolean =
+    ":memory:" in path || sqlitePathParams(path)["mode"] == "memory"
+
+/**
+ * The query parameters of a SQLite path — `file:app.db?busy_timeout=60000` yields
+ * `{busy_timeout=60000}`; a path without a `?` yields an empty map.
+ *
+ * Kormium applies three pragmas of its own (`journal_mode`, `foreign_keys`, `busy_timeout`).
+ * A caller who writes one of them into the path means it, so both drivers consult this map
+ * first and fall back to the default only for what is missing — on the JVM by not appending
+ * the parameter (sqlite-jdbc applies the caller's), on native by issuing the caller's value as
+ * the `PRAGMA`. Values are restricted to word characters: they are interpolated into a `PRAGMA`
+ * statement on native, and nothing legitimate here is more than a keyword or a number.
+ */
+internal fun sqlitePathParams(path: String): Map<String, String> {
+    val query = path.substringAfter('?', "")
+    if (query.isEmpty()) return emptyMap()
+    return query.split('&').mapNotNull { part ->
+        val key = part.substringBefore('=', "")
+        val value = part.substringAfter('=', "")
+        if (key.isEmpty() || value.isEmpty() || !value.all { it == '_' || it.isLetterOrDigit() }) null else key to value
+    }.toMap()
+}
