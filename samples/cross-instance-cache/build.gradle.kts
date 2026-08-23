@@ -47,7 +47,7 @@ kotlin {
                 implementation(project(":kormium-postgres"))
                 // rethis: a Kotlin Multiplatform Redis client (JVM + Native), so the Redis
                 // NotificationTransport runs on the same targets as kormium itself.
-                implementation("eu.vendeli:rethis:0.4.3")
+                implementation("eu.vendeli:rethis:0.4.4")
             }
         }
         val commonTest by getting {
@@ -55,9 +55,9 @@ kotlin {
         }
         val jvmTest by getting {
             dependencies {
-                implementation("org.testcontainers:postgresql:1.20.4")
-                implementation("org.testcontainers:testcontainers:1.20.4")
-                implementation("org.postgresql:postgresql:42.7.4")
+                implementation("org.testcontainers:postgresql:1.21.4")
+                implementation("org.testcontainers:testcontainers:1.21.4")
+                implementation("org.postgresql:postgresql:42.7.13")
             }
         }
     }

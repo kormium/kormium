@@ -48,10 +48,13 @@ internal object NumericAsTextCodec : Codec<String> {
     override fun canDecode(dataType: Int, format: Format, type: Class<*>): Boolean =
         dataType == NUMERIC_OID && type == String::class.java
 
-    override fun decode(buffer: ByteBuf, dataType: Int, format: Format, type: Class<out String>): String =
-        when (format) {
-            Format.FORMAT_TEXT -> buffer.toString(StandardCharsets.US_ASCII)
-            Format.FORMAT_BINARY -> decodeBinaryNumeric(buffer)
+    // The driver passes a null buffer for a SQL NULL (r2dbc-postgresql 1.1 spells that out with
+    // JSpecify annotations, so the parameter and the result are nullable here).
+    override fun decode(buffer: ByteBuf?, dataType: Int, format: Format, type: Class<out String>): String? =
+        when {
+            buffer == null -> null
+            format == Format.FORMAT_TEXT -> buffer.toString(StandardCharsets.US_ASCII)
+            else -> decodeBinaryNumeric(buffer)
         }
 
     override fun canEncode(value: Any): Boolean = false

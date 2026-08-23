@@ -24,7 +24,7 @@ kotlin {
                 // SqlParameterSource, so :kormium-core is part of the public API.
                 api(project(":kormium-core"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("com.zaxxer:HikariCP:6.2.1")
+                implementation("com.zaxxer:HikariCP:7.1.0")
             }
         }
         val jvmTest by getting {

@@ -36,6 +36,19 @@ All notable changes to Kormium are documented here. The format is based on
 - **SQLite: `journal_mode`, `foreign_keys` and `busy_timeout` written into the path win over
   Kormium's defaults**, on both JVM and Native — `createSqliteDatabase("file:app.db?busy_timeout=60000")`
   now really waits 60 s. Kormium appends only the pragmas the caller left out.
+- **Toolchain and dependency updates.** Kotlin 2.4.0 → 2.4.10 (Kotlin/Native, the Compose
+  compiler plugin and the serialization plugin move with it), Android Gradle plugin 9.2.1 → 9.3.1,
+  kotlinx-coroutines 1.10.2 → 1.11.0, kotlinx-serialization 1.9.0 → 1.11.0, kotlinx-io 0.9.0 →
+  0.9.1, kotlinx-browser 0.3 → 0.5.0, Ktor 3.5.0 → 3.5.2, Koin 4.1.0 → 4.2.2, androidx.sqlite
+  2.6.2 → 2.7.0, sqlite-jdbc 3.47.1.0 → 3.53.2.1, HikariCP 6.x → 7.1.0, pgjdbc 42.7.x → 42.7.13,
+  r2dbc-postgresql 1.0.7 → 1.1.2, r2dbc-mysql 1.3.0 → 1.4.3, SLF4J 2.0.16 → 2.0.18, kotlin-logging
+  7.0.3 → 8.0.4, Testcontainers → 1.21.4, and the publishing / foojay Gradle plugins. Benchmarks
+  only: Exposed 1.0.0-beta-4 → 1.4.0, Hibernate 7.0.2 → 7.4.6.
+
+  Two adaptations came with them, neither visible to callers: r2dbc-postgresql 1.1 declares its
+  API with JSpecify, so `NumericAsTextCodec.decode` now takes (and returns) a nullable value the
+  way the driver always meant it, and the comparison benchmark follows Exposed's move to
+  `kotlin.uuid.Uuid` and top-level expression builders.
 
 ### Migration
 - A driver that created the schema and a second driver that reads it are now two different

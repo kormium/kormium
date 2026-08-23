@@ -11,7 +11,7 @@ internal object PgknMarker : Marker {
 internal class KLogger(private val actualKLogger: ActualKLogger) : ActualKLogger by actualKLogger {
     constructor(name: String) : this(KotlinLogging.logger(name))
 
-    override fun trace(message: () -> Any?) = trace(null as Throwable?, PgknMarker, message)
+    override fun trace(message: () -> Any?) = trace(PgknMarker, message)
 
 // Might want to override this to give the ability to turn on/off logs for PGKN
 // override fun isLoggingEnabledFor(level: Level, marker: Marker?) = level.isLoggingEnabled() && ?

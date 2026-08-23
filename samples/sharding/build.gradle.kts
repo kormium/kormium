@@ -45,7 +45,7 @@ kotlin {
             dependencies {
                 implementation(project(":kormium-sqlite"))
                 // For a temp dir + file cleanup that works on both JVM and native.
-                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.9.1")
             }
         }
         val commonTest by getting {

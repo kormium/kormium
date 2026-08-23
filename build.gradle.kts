@@ -2,7 +2,7 @@ import com.vanniktech.maven.publish.MavenPublishBaseExtension
 
 plugins {
     // Applied to the publishable subprojects below (not to the root itself).
-    id("com.vanniktech.maven.publish") version "0.36.0" apply false
+    id("com.vanniktech.maven.publish") version "0.37.0" apply false
     // Applied at the root: validates the public ABI of every published module (JVM + klib).
     // API changes require `./gradlew apiDump` and a review of the .api diffs.
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.18.1"
@@ -35,15 +35,15 @@ buildscript {
     }
     dependencies {
         // Kotlin Gradle plugin for all modules (they apply kotlin("multiplatform") without a version).
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.10")
         // Android Gradle plugin for the modules that declare an androidTarget() (Compose
         // Multiplatform support). They apply id("com.android.library") without a version.
-        classpath("com.android.tools.build:gradle:9.2.1")
+        classpath("com.android.tools.build:gradle:9.3.1")
         // Compose Multiplatform for the wasmJs todo sample. The Compose gradle plugin (libs/DSL)
         // plus the Kotlin Compose compiler plugin (decoupled from the gradle plugin since Kotlin
         // 2.0, versioned with Kotlin). The sample applies both without a version.
         classpath("org.jetbrains.compose:compose-gradle-plugin:1.11.1")
-        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.4.0")
+        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.4.10")
     }
 }
 

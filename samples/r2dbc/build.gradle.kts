@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "2.4.0"
+    kotlin("plugin.serialization") version "2.4.10"
 }
 
 group = "io.github.kormium.samples.r2dbc"
@@ -13,7 +13,7 @@ repositories {
     }
 }
 
-val ktorVersion = "3.5.0"
+val ktorVersion = "3.5.2"
 
 // JVM-only: r2dbc (and kormium-r2dbc) are JVM-only, so this sample has no native target.
 kotlin {
@@ -35,8 +35,8 @@ kotlin {
                 implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
                 implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-                implementation("org.slf4j:slf4j-simple:2.0.16")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+                implementation("org.slf4j:slf4j-simple:2.0.18")
 
                 // The async (non-blocking) Postgres backend...
                 implementation(project(":kormium-r2dbc"))
@@ -49,7 +49,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
-                implementation("org.testcontainers:postgresql:1.20.4")
+                implementation("org.testcontainers:postgresql:1.21.4")
             }
         }
     }

@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "2.4.0"
+    kotlin("plugin.serialization") version "2.4.10"
     id("com.android.kotlin.multiplatform.library")
 }
 
@@ -60,8 +60,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 // Public suspend API (suspendTransaction/suspendAutocommit) is coroutine-based.
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
                 // LocalDate/LocalTime/LocalDateTime appear in the public API (ColumnType,
                 // ResultSet), so consumers need the types on their compile classpath.
                 api("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
@@ -70,7 +70,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
             }
         }
         // Logging is reached through the internal KormiumLogger facade. Every target EXCEPT
@@ -80,7 +80,7 @@ kotlin {
         val loggingMain by creating {
             dependsOn(commonMain)
             dependencies {
-                implementation("io.github.oshai:kotlin-logging:7.0.3")
+                implementation("io.github.oshai:kotlin-logging:8.0.4")
             }
         }
         val jvmMain by getting {
@@ -88,14 +88,14 @@ kotlin {
             dependencies {
                 // kotlin-logging delegates to SLF4J on the JVM; core needs the API on the
                 // runtime classpath (previously pulled in transitively via the drivers).
-                implementation("org.slf4j:slf4j-api:2.0.16")
+                implementation("org.slf4j:slf4j-api:2.0.18")
             }
         }
         val androidMain by getting {
             dependsOn(loggingMain)
             dependencies {
                 // Android is JVM-flavoured: kotlin-logging delegates to SLF4J here too.
-                implementation("org.slf4j:slf4j-api:2.0.16")
+                implementation("org.slf4j:slf4j-api:2.0.18")
             }
         }
         // Native + JS + Wasm/JS all have kotlin-logging artifacts -> share loggingMain.

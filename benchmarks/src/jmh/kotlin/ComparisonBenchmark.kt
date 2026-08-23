@@ -19,6 +19,10 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table as JpaTable
 import org.hibernate.SessionFactory
 import org.hibernate.cfg.Configuration
+// Exposed 1.x turned its expression builders into top-level functions (SqlExpressionBuilder is
+// no longer the `where { }` receiver), so `eq` is imported explicitly — under an alias, because
+// this file also uses Kormium's own infix `eq`.
+import org.jetbrains.exposed.v1.core.eq as exposedEq
 import org.jetbrains.exposed.v1.jdbc.batchInsert
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -70,6 +74,8 @@ object CmpTable : Table<Cmp, CmpRow>("cmp_bench", ::CmpRow) {
 }
 
 // --- Exposed mapping ---
+// Exposed 1.x maps `uuid` to kotlin.uuid.Uuid — the same type Kormium uses, so the seeded
+// ids are shared with the Kormium benchmarks instead of being converted per call.
 object ExposedBench : ExposedSqlTable("cmp_bench") {
     val id = uuid("id")
     val name = text("name")
@@ -230,23 +236,23 @@ open class ComparisonBenchmark {
     // --- Exposed ---
     @Benchmark
     fun exposedFindById(): Any? = transaction(exposedDb) {
-        ExposedBench.selectAll().where { ExposedBench.id eq seededJavaId }.firstOrNull()
+        ExposedBench.selectAll().where { ExposedBench.id exposedEq seededKormiumId }.firstOrNull()
     }
 
     @Benchmark
     fun exposedSelectWhere(): Any? = transaction(exposedDb) {
-        ExposedBench.selectAll().where { ExposedBench.name eq "seed" }.toList()
+        ExposedBench.selectAll().where { ExposedBench.name exposedEq "seed" }.toList()
     }
 
     @Benchmark
     fun exposedSelectMany(): Any? = transaction(exposedDb) {
-        ExposedBench.selectAll().where { ExposedBench.name eq "bulk" }.toList()
+        ExposedBench.selectAll().where { ExposedBench.name exposedEq "bulk" }.toList()
     }
 
     @Benchmark
     fun exposedInsert(): Any? = transaction(exposedDb) {
         ExposedBench.insert {
-            it[id] = java.util.UUID.randomUUID()
+            it[id] = KormiumUuid.random()
             it[name] = "x"
             it[amount] = java.math.BigDecimal.ONE
         }
@@ -254,7 +260,7 @@ open class ComparisonBenchmark {
 
     @Benchmark
     fun exposedBatchInsert(): Any? = transaction(exposedDb) {
-        ExposedBench.batchInsert(List(BATCH_SIZE) { java.util.UUID.randomUUID() }, shouldReturnGeneratedValues = false) { rowId ->
+        ExposedBench.batchInsert(List(BATCH_SIZE) { KormiumUuid.random() }, shouldReturnGeneratedValues = false) { rowId ->
             this[ExposedBench.id] = rowId
             this[ExposedBench.name] = "x"
             this[ExposedBench.amount] = java.math.BigDecimal.ONE
@@ -263,8 +269,8 @@ open class ComparisonBenchmark {
 
     @Benchmark
     fun exposedUpdateById(): Any? = transaction(exposedDb) {
-        val rowId = updateJavaIds[randomUpdateIndex()]
-        ExposedBench.update({ ExposedBench.id eq rowId }) { it[amount] = java.math.BigDecimal.TWO }
+        val rowId = updateKormiumIds[randomUpdateIndex()]
+        ExposedBench.update({ ExposedBench.id exposedEq rowId }) { it[amount] = java.math.BigDecimal.TWO }
     }
 
     // --- Hibernate ---

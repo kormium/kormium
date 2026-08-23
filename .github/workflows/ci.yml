@@ -178,7 +178,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.konan
-          key: konan-windows-kotlin-2.4.0
+          key: konan-windows-kotlin-2.4.10
 
       - name: Install mingw libpq (MSYS2)
         run: C:\msys64\usr\bin\pacman.exe -Sy --noconfirm mingw-w64-x86_64-postgresql
@@ -241,7 +241,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.konan
-          key: konan-macos-kotlin-2.4.0
+          key: konan-macos-kotlin-2.4.10
 
       # The klib cinterops (libpq/libmariadb) resolve their headers from brew, like the
       # publish workflow; macOS cross-compiles every declared target's klib from them.

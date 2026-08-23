@@ -27,10 +27,14 @@ kotlin {
                 api(project(":kormium-postgres"))
                 // MySqlDialect + MySqlJvmTypeMapper for the MySQL r2dbc factory.
                 api(project(":kormium-mysql"))
-                implementation("org.postgresql:r2dbc-postgresql:1.0.7.RELEASE")
-                implementation("io.asyncer:r2dbc-mysql:1.3.0")
+                implementation("org.postgresql:r2dbc-postgresql:1.1.2.RELEASE")
+                // r2dbc-postgresql 1.1 annotates its API with JSpecify and ships the annotations
+                // as `provided`, so Kotlin needs them on the compile classpath to read the
+                // nullability off signatures like PostgresqlConnection.notifications.
+                compileOnly("org.jspecify:jspecify:1.0.0")
+                implementation("io.asyncer:r2dbc-mysql:1.4.3")
                 implementation("io.r2dbc:r2dbc-pool:1.0.2.RELEASE")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.10.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.11.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
@@ -40,9 +44,9 @@ kotlin {
                 // Decimal + Instant round-trips over r2dbc (the two types the JDBC/native
                 // suites cover but this backend otherwise would not).
                 implementation(project(":kormium-decimal"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-                implementation("org.testcontainers:postgresql:1.20.4")
-                implementation("org.testcontainers:mysql:1.20.4")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+                implementation("org.testcontainers:postgresql:1.21.4")
+                implementation("org.testcontainers:mysql:1.21.4")
             }
         }
     }

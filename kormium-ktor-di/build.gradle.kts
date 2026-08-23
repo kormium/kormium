@@ -11,7 +11,7 @@ repositories {
     }
 }
 
-val ktorVersion = "3.5.0"
+val ktorVersion = "3.5.2"
 
 kotlin {
     explicitApi()
