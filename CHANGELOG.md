@@ -54,6 +54,20 @@ All notable changes to Kormium are documented here. The format is based on
   to `C:\Program Files\PostgreSQL\14..18` so it matches the range
   `kormium-postgres/build.gradle.kts` scans for the link-time artifact.
 
+- **The JVM, native and Node SQLite drivers converge on SQLite 3.53.4.** The vendored amalgamation
+  the Kotlin/Native cinterop compiles (`kormium-sqlite/src/nativeInterop/cinterop/sqlite3.[ch]`)
+  moves 3.51.0 → 3.53.4, sqlite-jdbc 3.53.2.1 → 3.53.4.0 and better-sqlite3 12.11.1 → 13.0.3 — the
+  three engines whose SQLite this project actually picks now agree on one release, where the native
+  one had been two minor versions behind the JVM one. The other three take theirs from the platform
+  runtime and are unchanged: androidx.sqlite's bundled build (SQLite 3.50.1 in 2.7.0), wa-sqlite
+  (3.44.0 — 1.0.0 is still npm's latest, from January 2024) and `@sqlite.org/sqlite-wasm` behind
+  sqlite-wasm-kt (3.53.0). The amalgamation's build flags (`SQLITE_THREADSAFE`, FTS5, R-Tree,
+  `DBSTAT`, column metadata) and `sqlite3.def` are unchanged, and no driver code needed to follow.
+  The bump also exposed a build bug, now fixed: the vendored header and static library reach the
+  `sqlite3` cinterop through `compilerOpts`/`extraOpts`, which Gradle cannot see, so the klib and
+  everything downstream stayed up to date across an amalgamation swap and an incremental build kept
+  linking the *old* SQLite. Both are declared as task inputs now.
+
 ## [0.12.0] — In-memory SQLite databases are private per driver
 
 > Behaviour change to a released API: two `createSqliteDatabase()` calls no longer land on the

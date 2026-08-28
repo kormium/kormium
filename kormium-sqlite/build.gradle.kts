@@ -118,7 +118,15 @@ kotlin {
                 extraOpts("-staticLibrary", "libsqlite3.a", "-libraryPath", outDir.get().asFile.absolutePath)
             }
         }
-        tasks.named("cinteropSqlite3$capName").configure { dependsOn(archiveSqlite) }
+        tasks.named("cinteropSqlite3$capName").configure {
+            dependsOn(archiveSqlite)
+            // The header and the static library reach cinterop through compilerOpts/extraOpts, which
+            // Gradle cannot see, and `dependsOn` alone does not make them inputs. Without these the
+            // klib stays up to date across a vendored-SQLite bump: the amalgamation recompiles, the
+            // cinterop and everything downstream do not, and the old SQLite silently stays linked in.
+            inputs.file(cinteropDir.resolve("sqlite3.h"))
+            inputs.file(staticLib)
+        }
     }
     // Optimized test binary (linkBenchReleaseTest<Target>) for SqliteE2EBench: the default debug
     // test kexe is unoptimized K/N code and misrepresents CPU-bound throughput by ~10x. Linked
@@ -158,7 +166,7 @@ kotlin {
                 // The JVM SQLite driver is the shared JDBC driver wired with the
                 // sqlite-jdbc URL + SqliteResultSetWrapper.
                 implementation(project(":kormium-jdbc"))
-                implementation("org.xerial:sqlite-jdbc:3.53.2.1")
+                implementation("org.xerial:sqlite-jdbc:3.53.4.0")
             }
         }
         val androidMain by getting {
