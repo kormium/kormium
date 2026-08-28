@@ -32,7 +32,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 // better-sqlite3: the de-facto synchronous SQLite for Node. https://github.com/WiseLibs/better-sqlite3
-                implementation(npm("better-sqlite3", "12.11.1"))
+                implementation(npm("better-sqlite3", "13.0.3"))
             }
         }
         val wasmJsTest by getting {

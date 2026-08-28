@@ -67,6 +67,16 @@ All notable changes to Kormium are documented here. The format is based on
   `sqlite3` cinterop through `compilerOpts`/`extraOpts`, which Gradle cannot see, so the klib and
   everything downstream stayed up to date across an amalgamation swap and an incremental build kept
   linking the *old* SQLite. Both are declared as task inputs now.
+- **The Wasm/Node yarn install goes back to Kotlin's default `--ignore-scripts`.** The root build
+  turned npm install scripts back on for exactly one dependency: better-sqlite3 12 fetched or
+  compiled its native binary from a postinstall step. Version 13 is an N-API addon that publishes
+  its prebuilt binaries inside the package itself, so that step no longer exists — and with it goes
+  the postinstall supply-chain surface the old comment had to warn about. Leaving scripts enabled
+  would now be worse than useless: yarn 1 disregards the package's `gypfile: false` and, seeing its
+  `binding.gyp`, compiles the whole SQLite amalgamation from source on every install (and fails
+  outright on a machine with no C toolchain). The resolved Wasm tree drops 37 packages
+  (`prebuild-install`, `tar-fs`, `rc`, `semver`, …) and gains one, `node-addon-api`:
+  `kotlin-js-store/wasm/yarn.lock` goes from 66 resolutions to 30.
 
 ## [0.12.0] — In-memory SQLite databases are private per driver
 
