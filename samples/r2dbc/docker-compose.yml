@@ -4,7 +4,7 @@
 # (localhost:5432, user/db "postgres", password "password").
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: kormium-r2dbc-postgres
     environment:
       POSTGRES_PASSWORD: password

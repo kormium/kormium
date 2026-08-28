@@ -71,7 +71,7 @@ sudo apt-get install libpq-dev
 Windows Native (mingwX64) is experimental: CI runs the JVM and native test suites on a
 Windows runner. Install a Windows libpq via MSYS2
 (`pacman -S mingw-w64-x86_64-postgresql`) or an EDB PostgreSQL distribution; the cinterop
-searches `C:/msys64/mingw64` and `C:\Program Files\PostgreSQL\15..17`. For other
+searches `C:/msys64/mingw64` and `C:\Program Files\PostgreSQL\14..18`. For other
 layouts pass `-Plibpq.include=<dir>` and `-Plibpq.lib=<dir>` to Gradle.
 
 ### SQLite Native

@@ -20,7 +20,7 @@ class SqliteCacheTest {
     fun readThroughHitMissPopulate() {
         if (!DockerClientFactory.instance().isDockerAvailable) return // skip without Docker
 
-        val pg = PostgreSQLContainer("postgres:16-alpine").apply { start() }
+        val pg = PostgreSQLContainer("postgres:18-alpine").apply { start() }
         try {
             val pgDb: Database<PgCatalog> = createDatabase(
                 host = pg.host,

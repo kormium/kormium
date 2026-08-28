@@ -24,7 +24,8 @@ kotlin {
     // The libpq artifact Windows test binaries link against, preferring the dynamic
     // library: import lib, then the DLL itself (lld links DLLs directly), then the MSVC
     // import lib. -Plibpq.lib=<dir> (set by benchmarks/run.bat) takes precedence over
-    // the known MSYS2 / EDB install locations.
+    // the known MSYS2 / EDB install locations. The 18..14 range mirrors the include paths
+    // in src/nativeInterop/cinterop/libpq.def — keep the two in sync.
     val windowsLibpqArtifact: String? by lazy {
         val roots = listOfNotNull((findProperty("libpq.lib") as String?)?.let { file(it).parentFile }) +
             listOf(file("C:/msys64/mingw64")) +

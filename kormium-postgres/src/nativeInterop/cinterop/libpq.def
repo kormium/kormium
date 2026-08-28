@@ -4,14 +4,16 @@ package = libpq
 #staticLibraries = libpq.a
 #libraryPaths = /opt/homebrew/opt/libpq/lib
 
-compilerOpts.osx = -I/opt/homebrew/opt/libpq/include -I/usr/local/opt/libpq/include -lpq
+compilerOpts.osx = -I/opt/homebrew/opt/libpq/include -I/usr/local/opt/libpq/include
 linkerOpts.osx = -L/opt/homebrew/opt/libpq/lib -L/usr/local/opt/libpq/lib -lpq
 
-compilerOpts.linux = -I/usr/include/postgresql/ -I/home/linuxbrew/.linuxbrew/opt/libpq/include -I/opt/homebrew/opt/libpq/include -I/usr/local/opt/libpq/include -lpq
-linkerOpts.linux = -L/usr/lib/x86_64-linux-gnu -L/usr/lib/postgresql/13/lib -L/home/linuxbrew/.linuxbrew/opt/libpq/libpkg-config -L/opt/homebrew/opt/libpq/lib -L/usr/local/opt/libpq/lib -lpq
+compilerOpts.linux = -I/usr/include/postgresql/ -I/home/linuxbrew/.linuxbrew/opt/libpq/include -I/opt/homebrew/opt/libpq/include -I/usr/local/opt/libpq/include
+linkerOpts.linux = -L/usr/lib/x86_64-linux-gnu -L/home/linuxbrew/.linuxbrew/opt/libpq/lib -L/opt/homebrew/opt/libpq/lib -L/usr/local/opt/libpq/lib -lpq
 
 # Windows: MSYS2 mingw64 libpq (pacman -S mingw-w64-x86_64-postgresql) or an EDB
-# PostgreSQL install. The unix paths at the end let the klib cross-compile from
+# PostgreSQL install. The version range here mirrors the one kormium-postgres/build.gradle.kts
+# scans for the link-time artifact (18 down to 14 — PostgreSQL 13 went EOL in November 2025);
+# keep the two in sync. The unix paths at the end let the klib cross-compile from
 # macOS/Linux CI hosts — libpq-fe.h is platform-neutral, and only the final link of a
 # Windows executable needs the real Windows libpq.
 #
@@ -20,5 +22,5 @@ linkerOpts.linux = -L/usr/lib/x86_64-linux-gnu -L/usr/lib/postgresql/13/lib -L/h
 # time (duplicate pthread_* symbols). kormium-postgres/build.gradle.kts picks the
 # dynamic artifact (libpq.dll.a / libpq.dll / libpq.lib) explicitly on Windows hosts.
 compilerOpts.mingw = -IC:/msys64/mingw64/include \
-    -I"C:\Program Files\PostgreSQL\18\include" -I"C:\Program Files\PostgreSQL\17\include" -I"C:\Program Files\PostgreSQL\16\include" -I"C:\Program Files\PostgreSQL\15\include" \
+    -I"C:\Program Files\PostgreSQL\18\include" -I"C:\Program Files\PostgreSQL\17\include" -I"C:\Program Files\PostgreSQL\16\include" -I"C:\Program Files\PostgreSQL\15\include" -I"C:\Program Files\PostgreSQL\14\include" \
     -I/opt/homebrew/opt/libpq/include -I/usr/local/opt/libpq/include -I/usr/include/postgresql/

@@ -155,7 +155,7 @@ CREATE TABLE docs (id uuid PRIMARY KEY, embedding vector(1536) NOT NULL);
 ```
 
 > **pgvector is a third-party extension, not part of core PostgreSQL** — it ships with no standard
-> distribution. Install the binary first (an OS package like `postgresql-16-pgvector`, the
+> distribution. Install the binary first (an OS package like `postgresql-18-pgvector`, the
 > `pgvector/pgvector` Docker image, or enabling it on a managed service such as RDS/Cloud SQL/Supabase),
 > then run `CREATE EXTENSION vector`. Without the installed binary that statement fails with
 > "could not open extension control file".

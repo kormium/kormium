@@ -4,7 +4,7 @@
 # (localhost:5432, user/db "postgres", password "password"). The SQLite cache is in-memory.
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: kormium-sqlite-cache-postgres
     environment:
       POSTGRES_PASSWORD: password

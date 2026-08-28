@@ -36,7 +36,7 @@ if not exist "%RESULTS_DIR%" mkdir "%RESULTS_DIR%"
 
 echo ==^> Starting PostgreSQL (tmpfs, durability off) on port %PORT%
 docker rm -f %CONTAINER% >nul 2>&1
-docker run -d --name %CONTAINER% -e POSTGRES_PASSWORD=password -p %PORT%:5432 --tmpfs /var/lib/postgresql/data postgres:16-alpine postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off >nul
+docker run -d --name %CONTAINER% -e POSTGRES_PASSWORD=password -e PGDATA=/var/lib/postgresql/data -p %PORT%:5432 --tmpfs /var/lib/postgresql/data postgres:18-alpine postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off >nul
 if errorlevel 1 (
   echo ERROR: failed to start the PostgreSQL container - is Docker Desktop running? 1>&2
   exit /b 1

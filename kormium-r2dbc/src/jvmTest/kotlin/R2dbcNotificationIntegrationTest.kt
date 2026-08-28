@@ -38,7 +38,7 @@ class R2dbcNotificationIntegrationTest {
     @Test
     fun commitOnOneInstanceNotifiesAnother() {
         assumeTrue(DockerClientFactory.instance().isDockerAvailable, "Docker is not available")
-        val container = PostgreSQLContainer("postgres:16-alpine").apply { start() }
+        val container = PostgreSQLContainer("postgres:18-alpine").apply { start() }
         try {
             fun connect() = createR2dbcDatabase(
                 host = container.host,

@@ -57,7 +57,7 @@ class StabilityTest {
     @Test
     fun poolRecoversAfterDatabaseRestart() {
         assumeDocker()
-        val container = PostgreSQLContainer("postgres:16-alpine").apply { start() }
+        val container = PostgreSQLContainer("postgres:18-alpine").apply { start() }
         try {
             createDatabase(
                 host = container.host,

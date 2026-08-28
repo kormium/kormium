@@ -140,7 +140,11 @@ open class ComparisonBenchmark {
             // tmpfs data dir + durability off: these benchmarks measure ORM/driver overhead,
             // not disk fsync latency, and disk is by far the noisiest component (especially
             // Docker on macOS). All three ORMs get the same treatment.
-            container = PostgreSQLContainer("postgres:16-alpine").apply {
+            container = PostgreSQLContainer("postgres:18-alpine").apply {
+                // PostgreSQL 18's image moved the default PGDATA out of
+                // /var/lib/postgresql/data; pin it back so the tmpfs mount below actually
+                // holds the data directory.
+                withEnv("PGDATA", "/var/lib/postgresql/data")
                 withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))
                 withCommand("postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off")
                 start()

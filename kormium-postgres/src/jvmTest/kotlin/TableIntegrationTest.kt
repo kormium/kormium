@@ -586,7 +586,7 @@ object ItProducts : Table<ItCatalog, ItProduct>("it_products", ::ItProduct) {
  * backed by a Postgres container started once for the test run.
  */
 object ItDatabase : Database<ItCatalog> {
-    private val container = PostgreSQLContainer("postgres:16-alpine").apply { start() }
+    private val container = PostgreSQLContainer("postgres:18-alpine").apply { start() }
 
     private val driver = createDatabase(
         host = container.host,

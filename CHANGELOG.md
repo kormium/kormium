@@ -6,6 +6,21 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- **The tested PostgreSQL baseline moves from 16 to 18.** CI's service container, every
+  Testcontainers fixture, the benchmark harness and the sample `docker-compose.yml` files now run
+  `postgres:18` (`pgvector/pgvector:pg18` for the vector suite). The benchmark containers pin
+  `PGDATA=/var/lib/postgresql/data` explicitly, because the PostgreSQL 18 image moved its default
+  data directory and the tmpfs mount the benchmarks rely on would otherwise go unused. No driver
+  code changed: `libpq` itself is not vendored or version-pinned — the cinterop links whatever the
+  platform's package manager provides, and every libpq entry point the native driver calls has
+  been available since PostgreSQL 9.
+- **`libpq.def` path cleanup.** Dropped the dead `/usr/lib/postgresql/13/lib` search path
+  (PostgreSQL 13 went EOL in November 2025), fixed a malformed linuxbrew `-L` path, removed a
+  stray `-lpq` from `compilerOpts` (it is a linker flag), and extended the Windows include search
+  to `C:\Program Files\PostgreSQL\14..18` so it matches the range
+  `kormium-postgres/build.gradle.kts` scans for the link-time artifact.
+
 ## [0.12.0] — In-memory SQLite databases are private per driver
 
 > Behaviour change to a released API: two `createSqliteDatabase()` calls no longer land on the

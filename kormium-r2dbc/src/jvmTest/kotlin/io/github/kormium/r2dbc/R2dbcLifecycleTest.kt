@@ -22,7 +22,7 @@ class R2dbcLifecycleTest {
     private val dockerAvailable = DockerClientFactory.instance().isDockerAvailable
 
     private fun withDb(block: (db: io.github.kormium.database.SuspendDatabase<R2Catalog>) -> Unit) {
-        val pg = PostgreSQLContainer("postgres:16-alpine")
+        val pg = PostgreSQLContainer("postgres:18-alpine")
         pg.start()
         try {
             val db = createR2dbcDatabase(

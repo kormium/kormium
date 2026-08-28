@@ -15,7 +15,7 @@ avoid unnecessary churn and document breaking changes in [CHANGELOG.md](../CHANG
 | JDK | 21+ |
 | Kotlin | 2.4.x project line |
 | Gradle | Gradle wrapper in the repository |
-| PostgreSQL | Tested with PostgreSQL 16 in CI/sample infrastructure |
+| PostgreSQL | Tested with PostgreSQL 18 in CI/sample infrastructure |
 | MySQL / MariaDB | JDBC (`mysql-connector-j`), native (`libmariadb`) and r2dbc; driver versions pinned in Gradle files |
 | SQLite | Driver versions pinned in Gradle files |
 | Ktor | Version pinned in Ktor module Gradle files |
