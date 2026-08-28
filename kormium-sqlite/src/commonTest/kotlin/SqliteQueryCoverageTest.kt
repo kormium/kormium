@@ -21,6 +21,7 @@ import io.github.kormium.innerJoin
 import io.github.kormium.max
 import io.github.kormium.min
 import io.github.kormium.or
+import io.github.kormium.plus
 import io.github.kormium.query
 import io.github.kormium.sum
 import io.github.kormium.transaction
@@ -394,6 +395,59 @@ class SqliteQueryCoverageTest {
             QcEmps.deleteWhere(Query(QcEmps.deptId eq deptId))
             QcDepts.deleteWhere(Query(QcDepts.id eq deptId))
         }
+    }
+
+    /**
+     * The counter upsert: `ON CONFLICT ... DO UPDATE SET amount = amount + 1`, where the new value
+     * is derived from the row **already stored**. The entity form cannot express this — a patch
+     * entity carries literals — so it would take a read-then-write, losing atomicity.
+     *
+     * Asserted by upserting the same key repeatedly and checking the accumulated value, which only
+     * comes out right if the increment happened server-side against the stored row.
+     */
+    @Test
+    fun upsertExpressionFormIncrementsStoredValue() {
+        val key = "uc-${Uuid.random()}"
+        val id = Uuid.random()
+        db.transaction { QcSales.execSql(qcSalesDdl) }
+
+        repeat(3) {
+            db.transaction {
+                QcSales.upsert(
+                    entity = QcSale().apply { this.id = id; region = key; amount = 1 },
+                    onConflict = QcSales.id,
+                ) {
+                    QcSales.amount set (QcSales.amount + 10)
+                }
+            }
+        }
+
+        // First call inserted amount = 1; the next two each added 10 to the stored value.
+        val stored = db.autocommit { QcSales.findOne { where { QcSales.id eq id } } }
+        assertEquals(21, stored?.amount)
+        db.transaction { QcSales.deleteWhere(Query(QcSales.id eq id)) }
+    }
+
+    /** The expression form still honours `returning = true`, reading back the updated row. */
+    @Test
+    fun upsertExpressionFormReturnsTheStoredRow() {
+        val id = Uuid.random()
+        db.transaction { QcSales.execSql(qcSalesDdl) }
+        db.transaction {
+            QcSales.upsert(
+                entity = QcSale().apply { this.id = id; region = "ur-${Uuid.random()}"; amount = 5 },
+                onConflict = QcSales.id,
+            ) { QcSales.amount set (QcSales.amount + 1) }
+        }
+        val returned = db.transaction {
+            QcSales.upsert(
+                entity = QcSale().apply { this.id = id; region = "ur2"; amount = 100 },
+                onConflict = QcSales.id,
+                returning = true,
+            ) { QcSales.amount set (QcSales.amount + 1) }
+        }
+        assertEquals(6, returned.amount, "returning must reflect the incremented stored value, not the insert half")
+        db.transaction { QcSales.deleteWhere(Query(QcSales.id eq id)) }
     }
 
     // ---- 3. SQLSTATE / constraint-violation mapping ---------------------------------------

@@ -779,6 +779,58 @@ class TableTest {
     }
 
     @Test
+    fun testUpsertExpressionFormRendersSelfReferencingSet() {
+        val entity = TestEntity().apply { id = Uuid.NIL; position = 1 }
+        db.transaction {
+            TestTable.upsert(entity = entity, onConflict = TestTable.id) {
+                TestTable.position set (TestTable.position + 1)
+                TestTable.text set "seen"
+            }
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains("""ONCONFLICT("id")DOUPDATESET"""), sql)
+        // The self-reference is what a patch entity cannot express: unqualified "position" on the
+        // right-hand side means the row already stored.
+        assertTrue(sql.contains(""""position"="position"+:p2"""), sql)
+        assertTrue(sql.contains(""""text"=:p3"""), sql)
+        // INSERT half binds first, so placeholders are numbered in statement order: p0/p1 are the
+        // inserted values, p2/p3 the SET clause's. (Compared as strings: the type mapper decides
+        // the bound representation of a Uuid, which is not what this test is about.)
+        assertEquals(
+            listOf("${Uuid.NIL}", "1", "1", "seen"),
+            databaseMockObj.internalParams.values.map { it.toString() },
+        )
+    }
+
+    @Test
+    fun testUpsertEntityFormStillResolvesAndRendersLiterals() {
+        // The new trailing-lambda overload must not capture the existing entity-patch call.
+        val entity = TestEntity().apply { id = Uuid.NIL; position = 1 }
+        val patch = TestEntity().apply { position = 9 }
+        db.transaction { TestTable.upsert(entity, TestTable.id, patch) }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains(""""position"=:p2"""), sql)
+        assertFalse(sql.contains(""""position"="position""""), sql)
+    }
+
+    @Test
+    fun testUpsertExpressionFormRejectsEmptyAndForeignAssignments() {
+        val entity = TestEntity().apply { id = Uuid.NIL; position = 1 }
+        assertFailsWith<IllegalArgumentException> {
+            db.transaction { TestTable.upsert(entity = entity, onConflict = TestTable.id) { } }
+        }
+        // Runtime backstop: the DSL types SET targets as Column<Z, *, *> (as UpdateBuilder does),
+        // so a column of another table is only caught here.
+        assertFailsWith<IllegalArgumentException> {
+            db.transaction {
+                TestTable.upsert(entity = entity, onConflict = TestTable.id) {
+                    TestOrders.orderId set Uuid.NIL
+                }
+            }
+        }
+    }
+
+    @Test
     fun testGroupedQueryOrdersByAggregateAndLimits() {
         // The top-N-by-aggregate shape: unexpressible before ORDER BY / LIMIT existed on Join.
         val total = TestTable.price.sum()

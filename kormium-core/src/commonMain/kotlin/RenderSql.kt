@@ -48,6 +48,22 @@ public class RenderScope<G : Catalog> internal constructor(public val dialect: D
     public fun <T : Entity> Table<G, T>.upsert(entity: T, onConflict: List<Column<*, *, T>>, update: T, returning: Boolean = false): RenderedSql =
         RenderedSql(upsertSql(entity, onConflict, update, dialect, typeMapper, returning))
 
+    public fun <T : Entity> Table<G, T>.upsert(
+        entity: T,
+        onConflict: Column<*, *, T>,
+        returning: Boolean = false,
+        update: UpsertBuilder.() -> Unit,
+    ): RenderedSql = upsert(entity, listOf(onConflict), returning, update)
+
+    public fun <T : Entity> Table<G, T>.upsert(
+        entity: T,
+        onConflict: List<Column<*, *, T>>,
+        returning: Boolean = false,
+        update: UpsertBuilder.() -> Unit,
+    ): RenderedSql = RenderedSql(
+        upsertSql(entity, onConflict, UpsertBuilder().apply(update).buildAssignments(), dialect, typeMapper, returning),
+    )
+
     public fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: Column<*, *, T>): RenderedSql =
         insertOrIgnore(entity, listOf(onConflict))
 

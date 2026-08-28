@@ -7,6 +7,20 @@ All notable changes to Kormium are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Expression-form `upsert`: the `DO UPDATE` half from assignments instead of a patch entity.**
+  `Counters.upsert(entity = row, onConflict = Counters.key) { Counters.hits set (Counters.hits + 1) }`
+  renders `ON CONFLICT (...) DO UPDATE SET "hits" = "hits" + 1`, so the conflicting row updates from
+  its **own stored value**. A patch entity can only carry literals, so this shape — the atomic
+  counter — previously required a read followed by a write, losing the atomicity the upsert exists
+  for. Available on `Scope`, `SuspendScope` and `renderSql`, for both single-column and composite
+  conflict targets. The `INSERT` half still comes from the entity, so `returning = true` is
+  unchanged on every backend (including the re-select by primary key MySQL needs). The existing
+  entity-patch overloads are untouched.
+
+  Not included, both for portability: a reference to the proposed row (`excluded.col` on
+  PostgreSQL/SQLite — MySQL's `VALUES(col)` is deprecated since 8.0.20 and MariaDB has no `new.col`
+  alias), and a conditional `DO UPDATE ... WHERE` (MySQL has no such construct) — the same line
+  ADR 0008 drew for `RETURNING` on `UPDATE`/`DELETE`.
 - **`ORDER BY` / `LIMIT` / `OFFSET` on joins and grouped queries.** `Join`, `JoinPair` and
   `LeftJoinPair` gain `orderBy { }`, `limit(n)` and `offset(n)`. The `orderBy` block uses the same
   `ASC(...)` / `DESC(...)` vocabulary as `find { }`, and its operand is any `Selectable` — a column,

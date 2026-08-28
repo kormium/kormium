@@ -126,6 +126,28 @@ Users.upsert(
 )
 ```
 
+The `update` half can also be built from **expressions** instead of a patch entity, which is what
+an atomic counter needs — the new value is derived from the row already stored:
+
+```kotlin
+Counters.upsert(entity = row, onConflict = Counters.key) {
+    Counters.hits set (Counters.hits + 1)   // ON CONFLICT ... DO UPDATE SET "hits" = "hits" + 1
+    Counters.seenAt set now                 // literals still work, bound as parameters
+}
+```
+
+A patch entity can only carry literals, so the same result would otherwise take a read followed by
+a write — losing the atomicity the upsert exists for. The `INSERT` half still comes from `entity`,
+so `returning = true` behaves identically on every backend.
+
+Two constructs are deliberately absent, both for portability:
+
+- **the proposed row** (`excluded.col` in PostgreSQL/SQLite) — MySQL spells it `VALUES(col)`,
+  deprecated since 8.0.20, and MariaDB has no `new.col` alias at all, so no rendering is both
+  portable and current;
+- **conditional `DO UPDATE ... WHERE`** — MySQL has no such construct. Same line
+  [ADR 0008](adr/0008-no-returning-on-update-delete.md) drew for `RETURNING` on `UPDATE`/`DELETE`.
+
 Use `insertOrIgnore` for `DO NOTHING`:
 
 ```kotlin
