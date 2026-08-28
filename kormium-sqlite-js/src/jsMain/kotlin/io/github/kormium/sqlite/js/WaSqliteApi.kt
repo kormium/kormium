@@ -12,19 +12,20 @@ internal const val SQLITE_OPEN_CREATE = 0x00000004
 /**
  * The wa-sqlite API object returned by `Factory(module)`. Database and statement handles are JS
  * numbers (C pointers) passed around opaquely as [Int]. The async build returns a `Promise` from
- * the I/O calls (`open_v2`/`prepare_v2`/`step`/`finalize`/`close`), which we bridge to suspend.
+ * the I/O calls (`open_v2`/`step`/`finalize`/`close`), which we bridge to suspend.
  * Kotlin/JS counterpart of `kormium-sqlite-wasm`'s wasmJs `SQLiteAPI`.
  */
 internal external interface SQLiteAPI {
     fun open_v2(filename: String, flags: Int, vfs: String?): Promise<Int>
 
-    // prepare_v2 takes a POINTER to the SQL in wasm memory, not a JS string. wa-sqlite's str_*
-    // helpers move a JS string into wasm memory: str_new allocates and copies, str_value yields the
-    // pointer, str_finish frees it.
-    fun str_new(db: Int, s: String): Int
-    fun str_value(str: Int): Int
-    fun str_finish(str: Int)
-    fun prepare_v2(db: Int, sqlPointer: Int): Promise<PreparedStatement?>
+    /**
+     * Compiles [sql]. wa-sqlite 1.1 dropped the low-level `prepare_v2`/`str_*` trio, leaving this
+     * async generator as the only compile path: it copies the SQL into wasm memory, then yields one
+     * handle per statement in it and frees that memory once the generator ends. Pass
+     * `{ unscoped: true }` ([StatementSequence]) so it leaves the statement itself to us — its own
+     * cleanup fires `finalize` without awaiting it, and that has to be ordered before `close`.
+     */
+    fun statements(db: Int, sql: String, options: Any): StatementSequence
 
     fun bind_collection(stmt: Int, bindings: Array<Any?>): Int
     fun step(stmt: Int): Promise<Int>
@@ -36,7 +37,19 @@ internal external interface SQLiteAPI {
     fun vfs_register(vfs: Any, makeDefault: Boolean): Int
 }
 
-/** Result of `prepare_v2`: the compiled statement handle plus a pointer to any remaining SQL. */
-internal external interface PreparedStatement {
-    val stmt: Int
+/**
+ * The async generator [SQLiteAPI.statements] returns, driven by hand as an async iterator: `next`
+ * compiles and yields the next statement, `return` ends the generator early and runs its cleanup.
+ */
+internal external interface StatementSequence {
+    fun next(): Promise<StatementStep>
+
+    // Backticked so the JS name stays `return` — the async generator's own early-exit method.
+    fun `return`(): Promise<StatementStep>
+}
+
+/** One [StatementSequence] result: `done` once the SQL holds no further statement. */
+internal external interface StatementStep {
+    val done: Boolean
+    val value: Int?
 }

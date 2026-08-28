@@ -34,8 +34,13 @@ kotlin {
                 implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                // wa-sqlite: SQLite in WASM with async VFS (IndexedDB-capable). https://github.com/rhashimoto/wa-sqlite
-                implementation(npm("wa-sqlite", "1.0.0"))
+                // wa-sqlite: SQLite in WASM with async VFS (IndexedDB-capable). Taken from the
+                // GitHub tag, not npm: upstream stopped publishing there after 1.0.0 (January 2024)
+                // while development continued, so npm's "latest" carries SQLite 3.44.0 against
+                // v1.1.2's 3.53.0. The repository commits its dist/ build, so this needs no install
+                // script; yarn pins the exact commit in kotlin-js-store.
+                // https://github.com/rhashimoto/wa-sqlite
+                implementation(npm("wa-sqlite", "github:rhashimoto/wa-sqlite#v1.1.2"))
                 // The Worker-hosted engines (createWorkerSqliteWasmDatabase and the pooled
                 // createPooledSqliteWasmDatabase) are built on this instead — Kotlin/Wasm bindings
                 // for the official @sqlite.org/sqlite-wasm. https://github.com/kormium/sqlite-wasm-kt

@@ -86,8 +86,11 @@ public suspend fun createSqliteWasmDatabase(
         null -> api.open_v2(":memory:", flags, null).await<JsNumber>()
         else -> {
             // Persist to IndexedDB: register the VFS under [dataDir] and open a database in it.
-            // The VFS is async (Asyncify), which is why this engine uses the async wa-sqlite build.
-            api.vfs_register(IDBBatchAtomicVFS(dataDir), makeDefault = false)
+            // The VFS is async (Asyncify), which is why this engine uses the async wa-sqlite build,
+            // and its own IndexedDB setup has to finish before SQLite may reach it.
+            val vfs = IDBBatchAtomicVFS(dataDir, module)
+            vfs.isReady().await<JsAny?>()
+            api.vfs_register(vfs, makeDefault = false)
             api.open_v2(dataDir, flags, dataDir).await<JsNumber>()
         }
     }

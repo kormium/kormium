@@ -7,7 +7,9 @@
 
 // Library unique name: <io.github.kormium:kormium-sqlite-wasm>
 final class io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS : kotlin.js/JsAny { // io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS|null[0]
-    constructor <init>(kotlin/String) // io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS.<init>|<init>(kotlin.String){}[0]
+    constructor <init>(kotlin/String, kotlin.js/JsAny) // io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS.<init>|<init>(kotlin.String;kotlin.js.JsAny){}[0]
+
+    final fun isReady(): kotlin.js/Promise<kotlin.js/JsAny?> // io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS.isReady|isReady(){}[0]
 }
 
 final class io.github.kormium.sqlite.wasm/PooledSqliteWasmDatabase : io.github.kormium.database/SuspendDatabase<kotlin/Nothing> { // io.github.kormium.sqlite.wasm/PooledSqliteWasmDatabase|null[0]

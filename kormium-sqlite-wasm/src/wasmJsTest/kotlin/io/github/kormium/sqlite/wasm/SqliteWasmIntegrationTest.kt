@@ -73,6 +73,29 @@ class SqliteWasmIntegrationTest {
         }
     }
 
+    /**
+     * Guards the SQLite the engine actually carries. wa-sqlite is taken from a GitHub tag because
+     * its npm releases stopped years earlier (see the module's build file), and a slip back to that
+     * stale build — SQLite 3.44 — would otherwise pass every other test here unnoticed.
+     */
+    @Test
+    fun carriesAModernSqlite() = runTest {
+        val db: SuspendDatabase<WidgetCatalog> = createSqliteWasmDatabase(moduleConfig = nodeWasmConfig())
+        try {
+            val version = db.useConnection(transactional = false) { exec ->
+                exec.execute("SELECT sqlite_version()") { rs -> rs.getString(0) }
+            }.single()
+            val parts = version?.split('.').orEmpty().mapNotNull { it.toIntOrNull() }
+            assertTrue(parts.size >= 2, "unreadable SQLite version: $version")
+            assertTrue(
+                parts[0] > 3 || (parts[0] == 3 && parts[1] >= 53),
+                "SQLite $version is older than the 3.53 this engine is pinned to",
+            )
+        } finally {
+            db.close()
+        }
+    }
+
     @Test
     fun transactionRollsBackOnThrow() = runTest {
         val db: SuspendDatabase<WidgetCatalog> = createSqliteWasmDatabase(moduleConfig = nodeWasmConfig())
