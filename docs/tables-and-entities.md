@@ -6,6 +6,11 @@ Kormium models database shape with three pieces:
 - `Table<G, T>` describes a table belonging to catalog `G`.
 - `Entity` exposes typed delegated properties backed by Kormium's internal row state.
 
+`Table` and `Entity` are separate on purpose, and the entity block is a binding the compiler
+checks rather than duplicated text — see [ADR 0011](adr/0011-table-and-entity-stay-separate.md) for
+why they are not merged, and [ADR 0012](adr/0012-no-dto-first-path.md) for why reading straight into
+your own type is an escape hatch rather than a second path.
+
 ## Catalogs
 
 ```kotlin
