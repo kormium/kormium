@@ -110,7 +110,8 @@ compatibility.
 Minimum docs needed:
 
 - PostgreSQL versions tested in CI;
-- SQLite versions used by sqlite-jdbc, AndroidX SQLite and native system SQLite;
+- the SQLite version each engine carries — they differ per engine and are listed in
+  [Backends](backends.md#which-sqlite-each-engine-carries);
 - known backend differences in DDL and type mapping;
 - SQLSTATE/error mapping support by backend.
 

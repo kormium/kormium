@@ -139,7 +139,8 @@ val file: Database<App> = createSqliteDatabase("app.db")
 Implementations:
 
 - JVM: sqlite-jdbc.
-- Kotlin/Native: sqlite3 cinterop.
+- Kotlin/Native: sqlite3 cinterop, built from the amalgamation vendored in `kormium-sqlite`
+  (deliberately *not* the system libsqlite3 — see the note in `kormium-sqlite/build.gradle.kts`).
 - Android: AndroidX SQLite with bundled SQLite.
 
 SQLite notes:
@@ -161,6 +162,25 @@ SQLite notes:
 - `journal_mode`, `foreign_keys` and `busy_timeout` spelled out in a path are honoured; Kormium
   appends only the defaults you left out.
 - `UUID`, `Decimal`, `Json` and temporal values are stored as text and parsed back.
+
+### Which SQLite each engine carries
+
+No engine is a wrapper over one shared SQLite: each brings its own, so the version differs by
+target. Where Kormium picks the version itself it keeps them equal; the rest follow whatever their
+platform runtime ships. Versions move with the dependency bumps recorded in the
+[changelog](../CHANGELOG.md).
+
+| Engine | SQLite comes from | Version | Chosen by |
+| --- | --- | --- | --- |
+| `kormium-sqlite` (JVM) | sqlite-jdbc 3.53.4.0 | 3.53.4 | Kormium |
+| `kormium-sqlite` (Native / iOS) | vendored amalgamation | 3.53.4 | Kormium |
+| `kormium-sqlite-node` | better-sqlite3 13.0.3 | 3.53.4 | Kormium |
+| `kormium-sqlite-js`, `kormium-sqlite-wasm` (main thread) | wa-sqlite v1.1.2 | 3.53.0 | upstream build |
+| `kormium-sqlite-wasm` (Worker engines) | `@sqlite.org/sqlite-wasm` via sqlite-wasm-kt | 3.53.0 | upstream build |
+| `kormium-sqlite` (Android) | androidx.sqlite-bundled 2.7.0 | 3.50.1 | AndroidX |
+
+In practice this matters only for SQL that a recent SQLite added: the Android engine trails the
+others, so a feature newer than its version will work everywhere else and fail there.
 
 ### Browser SQLite (`kormium-sqlite-wasm`)
 
