@@ -100,7 +100,7 @@ private class Doc : Entity() {
 /** A JDBC driver against a pgvector container started once for this suite, with the schema created. */
 private object VecDb : io.github.kormium.database.Database<VecCatalog> {
     private val container =
-        PostgreSQLContainer(DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres"))
+        PostgreSQLContainer(DockerImageName.parse("pgvector/pgvector:pg18").asCompatibleSubstituteFor("postgres"))
             .apply { start() }
 
     private val driver = createDatabase(

@@ -29,8 +29,9 @@ docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$CONTAINER" \
   -e POSTGRES_PASSWORD=password \
   -p "$PORT:5432" \
+  -e PGDATA=/var/lib/postgresql/data \
   --tmpfs /var/lib/postgresql/data \
-  postgres:16-alpine \
+  postgres:18-alpine \
   postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off >/dev/null
 trap 'docker rm -f "$CONTAINER" >/dev/null 2>&1 || true' EXIT
 until docker exec "$CONTAINER" pg_isready -U postgres >/dev/null 2>&1; do sleep 0.5; done

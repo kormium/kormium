@@ -14,3 +14,5 @@ rewrite.
 - [0008 — No `RETURNING` on `UPDATE` / `DELETE`](0008-no-returning-on-update-delete.md)
 - [0009 — Raw SQL requires `@OptIn(DelicateKormiumApi::class)` (supersedes 0006 in part)](0009-delicate-raw-sql-optin.md)
 - [0010 — Browser SQLite ships as three engines; OPFS reader pool is experimental](0010-browser-sqlite-three-engines.md)
+- [0011 — `Table` and `Entity` stay separate types](0011-table-and-entity-stay-separate.md)
+- [0012 — No DTO-first path; projections stay an escape hatch](0012-no-dto-first-path.md)

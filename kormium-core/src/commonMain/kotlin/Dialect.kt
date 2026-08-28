@@ -20,10 +20,10 @@ public interface Dialect {
 
     /**
      * Renders the combined `LIMIT`/`OFFSET` tail. The default composes the two independent
-     * [renderLimit] + [renderOffset] clauses, which is correct for backends that accept a
-     * bare `OFFSET`. MySQL does not — `OFFSET` without `LIMIT` is a syntax error there — so its
-     * dialect overrides this to emit the two together (a sentinel `LIMIT` when only an offset
-     * is set). Standard/Postgres/SQLite keep the default and render identically to before.
+     * [renderLimit] + [renderOffset] clauses, which is correct for backends that accept a bare
+     * `OFFSET` — Standard and PostgreSQL. MySQL and SQLite do not: `OFFSET` without `LIMIT` is a
+     * syntax error on both, so their dialects override this to emit the two together, with a
+     * backend-specific "no limit" sentinel when only an offset is set.
      */
     public fun renderLimitOffset(limit: UInt, offset: UInt): String =
         renderLimit(limit) + renderOffset(offset)

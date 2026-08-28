@@ -72,6 +72,37 @@ public class Scope<G : Catalog> internal constructor(
         return upsert(entity, onConflict, update, exec, returning)
     }
 
+    /**
+     * Insert-or-update whose `DO UPDATE` half is built from [Expression] assignments instead of a
+     * patch entity, so the conflicting row can be updated from **its own stored value**:
+     *
+     * ```kotlin
+     * Counters.upsert(entity = row, onConflict = Counters.key) {
+     *     Counters.hits set (Counters.hits + 1)   // atomic; a patch entity can only carry literals
+     * }
+     * ```
+     *
+     * The INSERT half still comes from [entity]'s present fields, so `returning = true` works the
+     * same way on every backend (including the re-select by primary key MySQL needs).
+     */
+    public fun <T : Entity> Table<G, T>.upsert(
+        entity: T,
+        onConflict: Column<*, *, T>,
+        returning: Boolean = false,
+        update: UpsertBuilder.() -> Unit,
+    ): T = upsert(entity, listOf(onConflict), returning, update)
+
+    /** Expression-form upsert on a composite conflict target; see the single-column overload. */
+    public fun <T : Entity> Table<G, T>.upsert(
+        entity: T,
+        onConflict: List<Column<*, *, T>>,
+        returning: Boolean = false,
+        update: UpsertBuilder.() -> Unit,
+    ): T {
+        markWritten()
+        return upsert(entity, onConflict, UpsertBuilder().apply(update).buildAssignments(), exec, returning)
+    }
+
     /** Insert-or-do-nothing on a single-column conflict target; returns the affected row count (1 inserted, 0 ignored). */
     public fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: Column<*, *, T>): Long {
         markWritten()

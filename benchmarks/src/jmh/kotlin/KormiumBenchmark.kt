@@ -67,7 +67,10 @@ open class KormiumBenchmark {
         Class.forName("org.postgresql.Driver")
         // Same stability setup as ComparisonBenchmark: tmpfs data dir and durability off, so
         // we measure ORM/driver overhead rather than disk fsync latency.
-        container = PostgreSQLContainer("postgres:16-alpine").apply {
+        container = PostgreSQLContainer("postgres:18-alpine").apply {
+            // PostgreSQL 18's image moved the default PGDATA out of /var/lib/postgresql/data;
+            // pin it back so the tmpfs mount below actually holds the data directory.
+            withEnv("PGDATA", "/var/lib/postgresql/data")
             withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))
             withCommand("postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off")
             start()

@@ -100,7 +100,7 @@ come from a single timed run without an error estimate — treat them as coarser
 ## Methodology and stability
 
 - JMH 1.37; per benchmark: 2 forks, 5×2s warmup + 5×2s measurement, fixed 2 GiB heap.
-- PostgreSQL (`postgres:16-alpine`) keeps its data directory on tmpfs and runs with
+- PostgreSQL (`postgres:18-alpine`) keeps its data directory on tmpfs and runs with
   `fsync`, `synchronous_commit` and `full_page_writes` off. The benchmarks measure
   ORM/driver overhead, not disk latency — disk is by far the noisiest component,
   especially under Docker on macOS. All ORMs get the same database.

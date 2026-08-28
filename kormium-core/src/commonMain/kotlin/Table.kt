@@ -293,6 +293,18 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
     // to `Column<*, *, T>`, so a column from a *differently-typed* table is rejected at compile
     // time. This still guards what types can't express: a non-empty target, and a column from a
     // different table that happens to share this entity type (or direct internal calls).
+    // The SET targets of an expression-form upsert. The DSL types them as Column<Z, *, *> (as
+    // UpdateBuilder does), so unlike the conflict target they carry no compile-time table check —
+    // this is the runtime backstop, mirroring validateConflictTarget.
+    private fun validateAssignmentTargets(op: String, targets: Set<Column<*, *, *>>) {
+        for (column in targets) {
+            require(column.tableRef === this) {
+                "$op() assigns column '${column.name}' of table '${column.tableRef.tableName}', " +
+                    "not '$tableName' — set columns of the table being written"
+            }
+        }
+    }
+
     private fun validateConflictTarget(op: String, conflict: List<Column<*, *, *>>) {
         require(conflict.isNotEmpty()) { "$op() conflict target must contain at least one column on '$tableName'" }
         for (column in conflict) {
@@ -321,6 +333,38 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
         val updateFields = generatePresentFields(update)
         require(updateFields.isNotEmpty()) { "upsert() needs at least one field set on the update entity" }
         val setClause = updateFields.joinToString(", ") { "${dialect.quoteIdentifier(it.first)} = ${builder.bind(it.second)}" }
+        val base = "INSERT INTO ${qualifiedTableName(dialect)} ($columns) VALUES ($values) " +
+            dialect.renderUpsertSuffix(conflictCols, setClause)
+        val sql = if (returning) "$base RETURNING ${columnList(dialect)}" else base
+        return sql to builder.params
+    }
+
+    // The expression form of the DO UPDATE clause: each SET target takes an Expression instead of
+    // a literal off a patch entity, so the conflicting row can update from its own stored value
+    // (atomic `n = n + 1`). The INSERT half is unchanged — it still comes from [entity].
+    internal fun upsertSql(
+        entity: T,
+        conflict: List<Column<*, *, *>>,
+        assignments: Map<Column<*, *, *>, Expression>,
+        dialect: Dialect,
+        typeMapper: TypeMapper,
+        returning: Boolean,
+    ): Pair<String, Map<String, Any?>> {
+        val builder = paramBuilder(dialect, typeMapper)
+        validateConflictTarget("upsert", conflict)
+        validateAssignmentTargets("upsert", assignments.keys)
+        val insertFields = generatePresentFields(entity)
+        require(insertFields.isNotEmpty()) { "upsert() needs at least one field set on the insert entity" }
+        val columns = insertFields.joinToString(", ") { dialect.quoteIdentifier(it.first) }
+        // Order matters: the INSERT half renders first, so its placeholders are numbered
+        // left-to-right as they appear in the statement, ahead of the SET clause's.
+        val values = insertFields.joinToString(", ") { builder.bind(it.second) }
+        val conflictCols = conflict.map { dialect.quoteIdentifier(it.name) }
+        // Columns render unqualified here (the builder does not qualify), which is what all three
+        // backends read as "the row already stored" inside DO UPDATE / ON DUPLICATE KEY UPDATE.
+        val setClause = assignments.entries.joinToString(", ") { (column, expr) ->
+            "${dialect.quoteIdentifier(column.name)} = ${expr.toSql(builder)}"
+        }
         val base = "INSERT INTO ${qualifiedTableName(dialect)} ($columns) VALUES ($values) " +
             dialect.renderUpsertSuffix(conflictCols, setClause)
         val sql = if (returning) "$base RETURNING ${columnList(dialect)}" else base
@@ -451,9 +495,33 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
     }
 
     internal fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SqlExecutor, returning: Boolean): T {
-        val dialect = exec.dialect
-        val emitReturning = returning && dialect.supportsReturning
-        val (sql, params) = upsertSql(entity, conflict, update, dialect, exec.typeMapper, emitReturning)
+        val emitReturning = returning && exec.dialect.supportsReturning
+        val (sql, params) = upsertSql(entity, conflict, update, exec.dialect, exec.typeMapper, emitReturning)
+        return runUpsert(entity, sql, params, exec, returning, emitReturning)
+    }
+
+    internal fun upsert(
+        entity: T,
+        conflict: List<Column<*, *, *>>,
+        assignments: Map<Column<*, *, *>, Expression>,
+        exec: SqlExecutor,
+        returning: Boolean,
+    ): T {
+        val emitReturning = returning && exec.dialect.supportsReturning
+        val (sql, params) = upsertSql(entity, conflict, assignments, exec.dialect, exec.typeMapper, emitReturning)
+        return runUpsert(entity, sql, params, exec, returning, emitReturning)
+    }
+
+    // Execution is identical for both upsert forms once the statement is built; only the SET half
+    // of the SQL differs. [entity] is the INSERT half, still needed to re-select by primary key.
+    private fun runUpsert(
+        entity: T,
+        sql: String,
+        params: Map<String, Any?>,
+        exec: SqlExecutor,
+        returning: Boolean,
+        emitReturning: Boolean,
+    ): T {
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
                 ?: error("INSERT ... ON CONFLICT ... RETURNING returned no row in $tableName")
@@ -461,7 +529,7 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
         // No RETURNING (MySQL): re-select the upserted row by primary key.
-        val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
+        val (selSql, selParams) = selectByPkSql(entity, exec.dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
             ?: error("upserted row not found re-selecting by primary key in $tableName")
     }
@@ -544,16 +612,38 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
     }
 
     internal suspend fun upsert(entity: T, conflict: List<Column<*, *, *>>, update: T, exec: SuspendSqlExecutor, returning: Boolean): T {
-        val dialect = exec.dialect
-        val emitReturning = returning && dialect.supportsReturning
-        val (sql, params) = upsertSql(entity, conflict, update, dialect, exec.typeMapper, emitReturning)
+        val emitReturning = returning && exec.dialect.supportsReturning
+        val (sql, params) = upsertSql(entity, conflict, update, exec.dialect, exec.typeMapper, emitReturning)
+        return runUpsert(entity, sql, params, exec, returning, emitReturning)
+    }
+
+    internal suspend fun upsert(
+        entity: T,
+        conflict: List<Column<*, *, *>>,
+        assignments: Map<Column<*, *, *>, Expression>,
+        exec: SuspendSqlExecutor,
+        returning: Boolean,
+    ): T {
+        val emitReturning = returning && exec.dialect.supportsReturning
+        val (sql, params) = upsertSql(entity, conflict, assignments, exec.dialect, exec.typeMapper, emitReturning)
+        return runUpsert(entity, sql, params, exec, returning, emitReturning)
+    }
+
+    private suspend fun runUpsert(
+        entity: T,
+        sql: String,
+        params: Map<String, Any?>,
+        exec: SuspendSqlExecutor,
+        returning: Boolean,
+        emitReturning: Boolean,
+    ): T {
         if (returning && emitReturning) {
             return exec.execute(sql, params) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
                 ?: error("INSERT ... ON CONFLICT ... RETURNING returned no row in $tableName")
         }
         exec.executeUpdate(sql = sql, namedParameters = params)
         if (!returning) return entity
-        val (selSql, selParams) = selectByPkSql(entity, dialect, exec.typeMapper)
+        val (selSql, selParams) = selectByPkSql(entity, exec.dialect, exec.typeMapper)
         return exec.execute(selSql, selParams) { rs -> mapToDao(rs, exec.typeMapper) }.firstOrNull()
             ?: error("upserted row not found re-selecting by primary key in $tableName")
     }

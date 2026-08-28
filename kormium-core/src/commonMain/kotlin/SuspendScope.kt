@@ -58,6 +58,25 @@ public class SuspendScope<G : Catalog> internal constructor(
         return upsert(entity, onConflict, update, exec, returning)
     }
 
+    /** Expression-form upsert on a single-column conflict target; see [Scope.upsert]. */
+    public suspend fun <T : Entity> Table<G, T>.upsert(
+        entity: T,
+        onConflict: Column<*, *, T>,
+        returning: Boolean = false,
+        update: UpsertBuilder.() -> Unit,
+    ): T = upsert(entity, listOf(onConflict), returning, update)
+
+    /** Expression-form upsert on a composite conflict target; see [Scope.upsert]. */
+    public suspend fun <T : Entity> Table<G, T>.upsert(
+        entity: T,
+        onConflict: List<Column<*, *, T>>,
+        returning: Boolean = false,
+        update: UpsertBuilder.() -> Unit,
+    ): T {
+        markWritten()
+        return upsert(entity, onConflict, UpsertBuilder().apply(update).buildAssignments(), exec, returning)
+    }
+
     /** Insert-or-do-nothing on a single-column conflict target; see [Scope.insertOrIgnore]. */
     public suspend fun <T : Entity> Table<G, T>.insertOrIgnore(entity: T, onConflict: Column<*, *, T>): Long {
         markWritten()

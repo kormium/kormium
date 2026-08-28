@@ -37,7 +37,7 @@ class KtorKoinTest {
     fun createThenList() {
         if (!DockerClientFactory.instance().isDockerAvailable) return // skip without Docker
 
-        val pg = PostgreSQLContainer("postgres:16-alpine").apply { start() }
+        val pg = PostgreSQLContainer("postgres:18-alpine").apply { start() }
         try {
             val db: SuspendDatabase<AppCatalog> = createDatabase(
                 host = pg.host,

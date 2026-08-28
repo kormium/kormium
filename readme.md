@@ -111,9 +111,9 @@ against a genuine SQLite library (in-memory) on every target.
 **Kotlin/Native, against live servers.** Testcontainers is a JVM library, so the
 native path takes a different route: the `linuxX64` and `mingwX64` test
 executables link the real `libpq` / `libsqlite3` / `libmariadb` and connect to a
-**PostgreSQL 16** and **MariaDB 11** server provisioned by CI (service containers
-on Linux, the preinstalled PostgreSQL service on Windows). The native drivers are
-validated end-to-end, not just compiled.
+**PostgreSQL 18** and **MariaDB 11** server provisioned by CI as service containers
+on Linux; on Windows the runner image's own preinstalled PostgreSQL service backs the
+libpq tests. The native drivers are validated end-to-end, not just compiled.
 
 **Platform matrix (CI).**
 

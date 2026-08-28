@@ -45,7 +45,7 @@ class R2dbcEdgeCaseTest {
     @BeforeTest
     fun setUp() {
         if (!dockerAvailable) return
-        val pg = PostgreSQLContainer("postgres:16-alpine")
+        val pg = PostgreSQLContainer("postgres:18-alpine")
         pg.start()
         container = pg
         db = createR2dbcDatabase(

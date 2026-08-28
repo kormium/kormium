@@ -428,11 +428,15 @@ public final class io/github/kormium/IntColumnType : io/github/kormium/ColumnTyp
 }
 
 public final class io/github/kormium/Join {
+	public synthetic fun <init> (Lio/github/kormium/Table;Ljava/util/List;Lio/github/kormium/Expression;Ljava/util/List;Lio/github/kormium/Expression;ZLjava/util/Map;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun distinct ()Lio/github/kormium/Join;
 	public final fun groupBy ([Lio/github/kormium/Column;)Lio/github/kormium/Join;
 	public final fun having (Lio/github/kormium/Expression;)Lio/github/kormium/Join;
 	public final fun innerJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
 	public final fun leftJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
+	public final fun limit (I)Lio/github/kormium/Join;
+	public final fun offset (I)Lio/github/kormium/Join;
+	public final fun orderBy (Lkotlin/jvm/functions/Function1;)Lio/github/kormium/Join;
 	public final fun where (Lio/github/kormium/Expression;)Lio/github/kormium/Join;
 }
 
@@ -444,10 +448,14 @@ public final class io/github/kormium/JoinKt {
 }
 
 public final class io/github/kormium/JoinPair {
+	public synthetic fun <init> (Lio/github/kormium/Table;Lio/github/kormium/Table;Lio/github/kormium/JoinType;Lio/github/kormium/Expression;Lio/github/kormium/Expression;Ljava/util/Map;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun distinct ()Lio/github/kormium/Join;
 	public final fun groupBy ([Lio/github/kormium/Column;)Lio/github/kormium/Join;
 	public final fun innerJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
 	public final fun leftJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
+	public final fun limit (I)Lio/github/kormium/JoinPair;
+	public final fun offset (I)Lio/github/kormium/JoinPair;
+	public final fun orderBy (Lkotlin/jvm/functions/Function1;)Lio/github/kormium/JoinPair;
 	public final fun where (Lio/github/kormium/Expression;)Lio/github/kormium/JoinPair;
 }
 
@@ -504,10 +512,14 @@ public class io/github/kormium/KormiumException : java/lang/Exception {
 }
 
 public final class io/github/kormium/LeftJoinPair {
+	public synthetic fun <init> (Lio/github/kormium/Table;Lio/github/kormium/Table;Lio/github/kormium/Expression;Lio/github/kormium/Expression;Ljava/util/Map;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun distinct ()Lio/github/kormium/Join;
 	public final fun groupBy ([Lio/github/kormium/Column;)Lio/github/kormium/Join;
 	public final fun innerJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
 	public final fun leftJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
+	public final fun limit (I)Lio/github/kormium/LeftJoinPair;
+	public final fun offset (I)Lio/github/kormium/LeftJoinPair;
+	public final fun orderBy (Lkotlin/jvm/functions/Function1;)Lio/github/kormium/LeftJoinPair;
 	public final fun where (Lio/github/kormium/Expression;)Lio/github/kormium/LeftJoinPair;
 }
 
@@ -736,9 +748,13 @@ public final class io/github/kormium/RenderScope {
 	public final fun update (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lkotlin/jvm/functions/Function1;)Lio/github/kormium/RenderedSql;
 	public final fun update (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;)Lio/github/kormium/RenderedSql;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;Z)Lio/github/kormium/RenderedSql;
+	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;)Lio/github/kormium/RenderedSql;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;Z)Lio/github/kormium/RenderedSql;
+	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;)Lio/github/kormium/RenderedSql;
 	public static synthetic fun upsert$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/RenderedSql;
+	public static synthetic fun upsert$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/RenderedSql;
 	public static synthetic fun upsert$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/RenderedSql;
+	public static synthetic fun upsert$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/RenderedSql;
 }
 
 public final class io/github/kormium/RenderSqlKt {
@@ -797,9 +813,13 @@ public final class io/github/kormium/Scope {
 	public final fun update (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lkotlin/jvm/functions/Function1;)J
 	public final fun update (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;)J
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;Z)Lio/github/kormium/Entity;
+	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;)Lio/github/kormium/Entity;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;Z)Lio/github/kormium/Entity;
+	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;)Lio/github/kormium/Entity;
 	public static synthetic fun upsert$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/Entity;
+	public static synthetic fun upsert$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/Entity;
 	public static synthetic fun upsert$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/Entity;
+	public static synthetic fun upsert$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/Entity;
 }
 
 public final class io/github/kormium/ScopeKt {
@@ -924,9 +944,13 @@ public final class io/github/kormium/SuspendScope {
 	public final fun update (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun update (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/github/kormium/SuspendScopeKt {
@@ -996,6 +1020,12 @@ public final class io/github/kormium/UpdateBuilder {
 	public final fun set (Lio/github/kormium/Column;Lio/github/kormium/Expression;)V
 	public final fun set (Lio/github/kormium/Column;Ljava/lang/Object;)V
 	public final fun where (Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class io/github/kormium/UpsertBuilder {
+	public fun <init> ()V
+	public final fun set (Lio/github/kormium/Column;Lio/github/kormium/Expression;)V
+	public final fun set (Lio/github/kormium/Column;Ljava/lang/Object;)V
 }
 
 public final class io/github/kormium/UuidColumnType : io/github/kormium/ColumnType {

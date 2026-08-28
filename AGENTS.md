@@ -145,12 +145,22 @@ db.transaction {
 
     Users.upsert(user, onConflict = listOf(Users.id), update = patch)      // INSERT ... ON CONFLICT
     Users.insertOrIgnore(user, onConflict = listOf(Users.id))
+
+    // Atomic counter: the DO UPDATE half from expressions, derived from the STORED row.
+    Counters.upsert(entity = row, onConflict = Counters.key) {
+        Counters.hits set (Counters.hits + 1)   // DO UPDATE SET "hits" = "hits" + 1
+    }
 }
 ```
 
 `update` writes only the properties you assigned on the patch entity; untouched ones are left
 alone. Assigning `null` *does* write SQL `NULL`. (This is why concurrent partial updates do
 not clobber each other — Kormium never reloads-and-rewrites the whole row.)
+
+A patch entity carries only literals, so use the trailing-lambda `upsert` form whenever the new
+value depends on the current one — otherwise you need a read-then-write and lose atomicity. There
+is no `excluded` / `VALUES()` reference to the proposed row, and no conditional
+`DO UPDATE ... WHERE`: neither renders portably across PostgreSQL, SQLite and MySQL/MariaDB.
 
 ## Joins
 
@@ -212,6 +222,22 @@ db.autocommit {
     println("${row[Users.name]}: ${row[orders]} orders, ${row[total]}")
 }
 ```
+
+Order and paginate a join or grouped query with `orderBy { }` / `limit(n)` / `offset(n)` —
+the `orderBy` operand is any `Selectable`, including the aggregate itself (top-N):
+
+```kotlin
+db.autocommit {
+    (Users innerJoin Orders on (Users.id eq Orders.userId))
+        .groupBy(Users.id)
+        .orderBy { DESC(total) }           // ASC(...) / DESC(...), accumulating in order
+        .limit(10)
+        .select(Users.name, total)
+}
+```
+
+They live on the join itself, so the entity-pair `find()` paginates too. On a `leftJoin`,
+`LIMIT` counts rows, not left entities.
 
 Aggregates: `count()` → `Long`, `col.count()` → `Long`, `col.min()` / `col.max()` → the
 column's type, `col.sum()` (integer columns widen to `Long`), `col.avg()` → `Double`.
