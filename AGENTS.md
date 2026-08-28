@@ -213,6 +213,22 @@ db.autocommit {
 }
 ```
 
+Order and paginate a join or grouped query with `orderBy { }` / `limit(n)` / `offset(n)` —
+the `orderBy` operand is any `Selectable`, including the aggregate itself (top-N):
+
+```kotlin
+db.autocommit {
+    (Users innerJoin Orders on (Users.id eq Orders.userId))
+        .groupBy(Users.id)
+        .orderBy { DESC(total) }           // ASC(...) / DESC(...), accumulating in order
+        .limit(10)
+        .select(Users.name, total)
+}
+```
+
+They live on the join itself, so the entity-pair `find()` paginates too. On a `leftJoin`,
+`LIMIT` counts rows, not left entities.
+
 Aggregates: `count()` → `Long`, `col.count()` → `Long`, `col.min()` / `col.max()` → the
 column's type, `col.sum()` (integer columns widen to `Long`), `col.avg()` → `Double`.
 Exact decimal columns (`Column.decimal()`, values of type `Decimal`) come from the

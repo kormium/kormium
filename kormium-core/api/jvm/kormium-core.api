@@ -428,11 +428,15 @@ public final class io/github/kormium/IntColumnType : io/github/kormium/ColumnTyp
 }
 
 public final class io/github/kormium/Join {
+	public synthetic fun <init> (Lio/github/kormium/Table;Ljava/util/List;Lio/github/kormium/Expression;Ljava/util/List;Lio/github/kormium/Expression;ZLjava/util/Map;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun distinct ()Lio/github/kormium/Join;
 	public final fun groupBy ([Lio/github/kormium/Column;)Lio/github/kormium/Join;
 	public final fun having (Lio/github/kormium/Expression;)Lio/github/kormium/Join;
 	public final fun innerJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
 	public final fun leftJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
+	public final fun limit (I)Lio/github/kormium/Join;
+	public final fun offset (I)Lio/github/kormium/Join;
+	public final fun orderBy (Lkotlin/jvm/functions/Function1;)Lio/github/kormium/Join;
 	public final fun where (Lio/github/kormium/Expression;)Lio/github/kormium/Join;
 }
 
@@ -444,10 +448,14 @@ public final class io/github/kormium/JoinKt {
 }
 
 public final class io/github/kormium/JoinPair {
+	public synthetic fun <init> (Lio/github/kormium/Table;Lio/github/kormium/Table;Lio/github/kormium/JoinType;Lio/github/kormium/Expression;Lio/github/kormium/Expression;Ljava/util/Map;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun distinct ()Lio/github/kormium/Join;
 	public final fun groupBy ([Lio/github/kormium/Column;)Lio/github/kormium/Join;
 	public final fun innerJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
 	public final fun leftJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
+	public final fun limit (I)Lio/github/kormium/JoinPair;
+	public final fun offset (I)Lio/github/kormium/JoinPair;
+	public final fun orderBy (Lkotlin/jvm/functions/Function1;)Lio/github/kormium/JoinPair;
 	public final fun where (Lio/github/kormium/Expression;)Lio/github/kormium/JoinPair;
 }
 
@@ -504,10 +512,14 @@ public class io/github/kormium/KormiumException : java/lang/Exception {
 }
 
 public final class io/github/kormium/LeftJoinPair {
+	public synthetic fun <init> (Lio/github/kormium/Table;Lio/github/kormium/Table;Lio/github/kormium/Expression;Lio/github/kormium/Expression;Ljava/util/Map;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun distinct ()Lio/github/kormium/Join;
 	public final fun groupBy ([Lio/github/kormium/Column;)Lio/github/kormium/Join;
 	public final fun innerJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
 	public final fun leftJoin (Lio/github/kormium/Table;)Lio/github/kormium/JoinStep;
+	public final fun limit (I)Lio/github/kormium/LeftJoinPair;
+	public final fun offset (I)Lio/github/kormium/LeftJoinPair;
+	public final fun orderBy (Lkotlin/jvm/functions/Function1;)Lio/github/kormium/LeftJoinPair;
 	public final fun where (Lio/github/kormium/Expression;)Lio/github/kormium/LeftJoinPair;
 }
 

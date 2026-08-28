@@ -390,6 +390,46 @@ val byAge = db.autocommit {
 }
 ```
 
+### Ordering and pagination on joins and groups
+
+Joins and grouped queries take `orderBy { }`, `limit(n)` and `offset(n)`. The `orderBy` block
+uses the same `ASC` / `DESC` vocabulary as `find { }`, and its operand is any `Selectable` — a
+column, a computed expression, or **the aggregate itself**, which is what a "top N" query needs:
+
+```kotlin
+val total = Orders.total.sum()
+
+val topSpenders = db.autocommit {
+    (Users innerJoin Orders on (Users.id eq Orders.userId))
+        .groupBy(Users.id)
+        .orderBy { DESC(total) }
+        .limit(10)
+        .select(Users.name, total)
+}
+```
+
+Orderings accumulate in declaration order, across calls and within one block:
+
+```kotlin
+Users.query().orderBy { DESC(Users.age); ASC(Users.name) }   // ORDER BY age DESC, name ASC
+```
+
+They also stay on a two-table join, so the entity-pair `find()` paginates too:
+
+```kotlin
+val page: List<Pair<User, Order>> = db.autocommit {
+    (Users innerJoin Orders on (Users.id eq Orders.userId))
+        .orderBy { DESC(Orders.total) }
+        .limit(20)
+        .offset(40)
+        .find()
+}
+```
+
+On a `leftJoin`, `LIMIT` counts **rows**, not left-side entities — a left row matching several
+right rows occupies several of them. When you need "N left entities", paginate the left table
+and join per page.
+
 ## Raw Expressions
 
 `RawExpression` embeds SQL verbatim. It is useful for controlled SQL fragments, but unsafe

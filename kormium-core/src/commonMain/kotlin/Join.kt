@@ -29,7 +29,7 @@ internal class JoinClause<G : Catalog>(val type: JoinType, val table: Table<G, *
  * A query over one or more tables. Read it inside a scope with `select(...)` (returning
  * [ResultRow]s) or `select(...) { row -> ... }` (mapping each row). A two-table join built
  * from two tables ([JoinPair]) can also be read as entity pairs with `find()`. Supports
- * `where`, `groupBy`, `having` and `distinct`.
+ * `where`, `groupBy`, `having`, `distinct`, `orderBy`, `limit` and `offset`.
  */
 public class Join<G : Catalog> internal constructor(
     internal val base: Table<G, *>,
@@ -38,6 +38,9 @@ public class Join<G : Catalog> internal constructor(
     internal val groupByCols: List<Column<*, *, *>> = emptyList(),
     internal val havingExpr: Expression? = null,
     internal val distinct: Boolean = false,
+    internal val orderings: Map<Selectable<*>, AscDescOrder> = emptyMap(),
+    internal val limitValue: UInt = UInt.MAX_VALUE,
+    internal val offsetValue: UInt = 0u,
 ) {
     /** All tables in the join, base first. */
     internal val tables: List<Table<G, *>> get() = listOf(base) + clauses.map { it.table }
@@ -48,7 +51,10 @@ public class Join<G : Catalog> internal constructor(
         groupByCols: List<Column<*, *, *>> = this.groupByCols,
         havingExpr: Expression? = this.havingExpr,
         distinct: Boolean = this.distinct,
-    ) = Join(base, clauses, whereExpr, groupByCols, havingExpr, distinct)
+        orderings: Map<Selectable<*>, AscDescOrder> = this.orderings,
+        limitValue: UInt = this.limitValue,
+        offsetValue: UInt = this.offsetValue,
+    ) = Join(base, clauses, whereExpr, groupByCols, havingExpr, distinct, orderings, limitValue, offsetValue)
 
     /** Restricts the joined rows; combined with AND if called more than once. */
     public fun where(condition: Expression): Join<G> = copy(whereExpr = whereExpr?.let { it and condition } ?: condition)
@@ -61,6 +67,29 @@ public class Join<G : Catalog> internal constructor(
 
     /** Selects distinct rows. */
     public fun distinct(): Join<G> = copy(distinct = true)
+
+    /**
+     * Orders the result: `orderBy { DESC(Orders.total.sum()); ASC(Users.name) }`. The operand is
+     * any [Selectable] — a column, a computed expression or an aggregate — so a grouped query can
+     * be ordered by the aggregate it selects. Orderings accumulate in declaration order across
+     * calls; ordering the same field twice keeps its first position with the last direction.
+     */
+    public fun orderBy(block: OrderByDsl.() -> Unit): Join<G> =
+        copy(orderings = orderings.withOrdering(block))
+
+    /** Caps the number of rows returned. */
+    public fun limit(rows: Int): Join<G> {
+        // Reject a negative count: toUInt() would wrap (-1 -> 4294967295) and render a huge
+        // LIMIT instead of failing fast on what is almost always bad input. Same as QueryBuilder.
+        require(rows >= 0) { "limit must be >= 0, was $rows" }
+        return copy(limitValue = rows.toUInt())
+    }
+
+    /** Skips [rows] rows. Pair it with [limit] for stable pagination. */
+    public fun offset(rows: Int): Join<G> {
+        require(rows >= 0) { "offset must be >= 0, was $rows" }
+        return copy(offsetValue = rows.toUInt())
+    }
 
     public infix fun innerJoin(other: Table<G, *>): JoinStep<G> = JoinStep(this, JoinType.INNER, other)
     public infix fun leftJoin(other: Table<G, *>): JoinStep<G> = JoinStep(this, JoinType.LEFT, other)
@@ -76,7 +105,17 @@ public class JoinStep<G : Catalog> internal constructor(
     private val table: Table<G, *>,
 ) {
     public infix fun on(condition: Expression): Join<G> =
-        Join(join.base, join.clauses + JoinClause(type, table, condition), join.whereExpr, join.groupByCols, join.havingExpr, join.distinct)
+        Join(
+            join.base,
+            join.clauses + JoinClause(type, table, condition),
+            join.whereExpr,
+            join.groupByCols,
+            join.havingExpr,
+            join.distinct,
+            join.orderings,
+            join.limitValue,
+            join.offsetValue,
+        )
 }
 
 /**
@@ -90,11 +129,44 @@ public class JoinPair<G : Catalog, A : Entity, B : Entity> internal constructor(
     private val type: JoinType,
     private val on: Expression,
     internal val whereExpr: Expression?,
+    private val orderings: Map<Selectable<*>, AscDescOrder> = emptyMap(),
+    private val limitValue: UInt = UInt.MAX_VALUE,
+    private val offsetValue: UInt = 0u,
 ) {
-    public fun where(condition: Expression): JoinPair<G, A, B> =
-        JoinPair(left, right, type, on, whereExpr?.let { it and condition } ?: condition)
+    private fun copy(
+        whereExpr: Expression? = this.whereExpr,
+        orderings: Map<Selectable<*>, AscDescOrder> = this.orderings,
+        limitValue: UInt = this.limitValue,
+        offsetValue: UInt = this.offsetValue,
+    ) = JoinPair(left, right, type, on, whereExpr, orderings, limitValue, offsetValue)
 
-    internal fun asJoin(): Join<G> = Join(left, listOf(JoinClause(type, right, on)), whereExpr)
+    public fun where(condition: Expression): JoinPair<G, A, B> =
+        copy(whereExpr = whereExpr?.let { it and condition } ?: condition)
+
+    /** Orders the result; see [Join.orderBy]. Kept on the pair, so `find()` stays available. */
+    public fun orderBy(block: OrderByDsl.() -> Unit): JoinPair<G, A, B> =
+        copy(orderings = orderings.withOrdering(block))
+
+    /** Caps the number of rows returned; see [Join.limit]. */
+    public fun limit(rows: Int): JoinPair<G, A, B> {
+        require(rows >= 0) { "limit must be >= 0, was $rows" }
+        return copy(limitValue = rows.toUInt())
+    }
+
+    /** Skips [rows] rows; see [Join.offset]. */
+    public fun offset(rows: Int): JoinPair<G, A, B> {
+        require(rows >= 0) { "offset must be >= 0, was $rows" }
+        return copy(offsetValue = rows.toUInt())
+    }
+
+    internal fun asJoin(): Join<G> = Join(
+        left,
+        listOf(JoinClause(type, right, on)),
+        whereExpr,
+        orderings = orderings,
+        limitValue = limitValue,
+        offsetValue = offsetValue,
+    )
 
     public fun groupBy(vararg columns: Column<*, *, *>): Join<G> = asJoin().groupBy(*columns)
     public fun distinct(): Join<G> = asJoin().distinct()
@@ -114,11 +186,50 @@ public class LeftJoinPair<G : Catalog, A : Entity, B : Entity> internal construc
     internal val right: Table<G, B>,
     private val on: Expression,
     internal val whereExpr: Expression?,
+    private val orderings: Map<Selectable<*>, AscDescOrder> = emptyMap(),
+    private val limitValue: UInt = UInt.MAX_VALUE,
+    private val offsetValue: UInt = 0u,
 ) {
-    public fun where(condition: Expression): LeftJoinPair<G, A, B> =
-        LeftJoinPair(left, right, on, whereExpr?.let { it and condition } ?: condition)
+    private fun copy(
+        whereExpr: Expression? = this.whereExpr,
+        orderings: Map<Selectable<*>, AscDescOrder> = this.orderings,
+        limitValue: UInt = this.limitValue,
+        offsetValue: UInt = this.offsetValue,
+    ) = LeftJoinPair(left, right, on, whereExpr, orderings, limitValue, offsetValue)
 
-    internal fun asJoin(): Join<G> = Join(left, listOf(JoinClause(JoinType.LEFT, right, on)), whereExpr)
+    public fun where(condition: Expression): LeftJoinPair<G, A, B> =
+        copy(whereExpr = whereExpr?.let { it and condition } ?: condition)
+
+    /**
+     * Orders the result; see [Join.orderBy]. Kept on the pair, so `find()` stays available.
+     *
+     * `LIMIT` on a LEFT join counts *rows*, not left-side entities: a left row matching several
+     * right rows occupies several of them. Paginate over the left table and join per page when
+     * you need "N left entities".
+     */
+    public fun orderBy(block: OrderByDsl.() -> Unit): LeftJoinPair<G, A, B> =
+        copy(orderings = orderings.withOrdering(block))
+
+    /** Caps the number of rows returned; see [Join.limit] and the row-counting note on [orderBy]. */
+    public fun limit(rows: Int): LeftJoinPair<G, A, B> {
+        require(rows >= 0) { "limit must be >= 0, was $rows" }
+        return copy(limitValue = rows.toUInt())
+    }
+
+    /** Skips [rows] rows; see [Join.offset]. */
+    public fun offset(rows: Int): LeftJoinPair<G, A, B> {
+        require(rows >= 0) { "offset must be >= 0, was $rows" }
+        return copy(offsetValue = rows.toUInt())
+    }
+
+    internal fun asJoin(): Join<G> = Join(
+        left,
+        listOf(JoinClause(JoinType.LEFT, right, on)),
+        whereExpr,
+        orderings = orderings,
+        limitValue = limitValue,
+        offsetValue = offsetValue,
+    )
 
     public fun groupBy(vararg columns: Column<*, *, *>): Join<G> = asJoin().groupBy(*columns)
     public fun distinct(): Join<G> = asJoin().distinct()
@@ -189,6 +300,16 @@ public class ResultRow internal constructor(private val values: Map<Any, Any?>) 
  */
 public fun <T : Entity> ResultRow.entity(table: Table<*, T>): T = table.hydrateFrom(this)
 
+// Applies an OrderByDsl block onto a copy of the existing orderings, so successive orderBy { }
+// calls accumulate instead of replacing. A LinkedHashMap keeps ORDER BY in declaration order.
+internal fun Map<Selectable<*>, AscDescOrder>.withOrdering(
+    block: OrderByDsl.() -> Unit,
+): Map<Selectable<*>, AscDescOrder> {
+    val next = LinkedHashMap(this)
+    OrderByDsl(next).block()
+    return next
+}
+
 // Identifies a selected field by its structural key, so a row reads back regardless of which
 // instance is used — both a Column's property delegate and an aggregate factory yield a fresh
 // instance on each access, so instance identity can't be used.
@@ -221,7 +342,14 @@ internal fun buildSelect(
     val groupBy = if (join.groupByCols.isEmpty()) ""
         else " GROUP BY ${join.groupByCols.joinToString(", ") { it.toSql(builder) }}"
     val having = join.havingExpr?.let { " HAVING ${it.toSql(builder)}" }.orEmpty()
-    return "SELECT $distinct$selectList FROM $from$where$groupBy$having" to builder.params
+    val orderBy = if (join.orderings.isEmpty()) ""
+        else " ORDER BY ${join.orderings.entries.joinToString(", ") { (field, order) -> "${field.toSql(builder)} ${order.name}" }}"
+    // renderLimitOffset returns a trailing-space-terminated clause (or ""), matching Query.toSql's
+    // layout; here the clauses are leading-space separated, so flip the padding.
+    val limitOffset = builder.dialect.renderLimitOffset(join.limitValue, join.offsetValue)
+        .trimEnd()
+        .let { if (it.isEmpty()) "" else " $it" }
+    return "SELECT $distinct$selectList FROM $from$where$groupBy$having$orderBy$limitOffset" to builder.params
 }
 
 // Reads each field positionally into a ResultRow.

@@ -779,6 +779,113 @@ class TableTest {
     }
 
     @Test
+    fun testGroupedQueryOrdersByAggregateAndLimits() {
+        // The top-N-by-aggregate shape: unexpressible before ORDER BY / LIMIT existed on Join.
+        val total = TestTable.price.sum()
+        db.autocommit {
+            TestTable.query()
+                .groupBy(TestTable.position)
+                .orderBy { DESC(total) }
+                .limit(10)
+                .select(TestTable.position, total)
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains("""GROUPBY"products"."position""""), sql)
+        assertTrue(sql.contains("""ORDERBYSUM("products"."price")DESC"""), sql)
+        assertTrue(sql.contains("LIMIT10"), sql)
+        // ORDER BY must follow GROUP BY/HAVING and precede LIMIT, or the statement is invalid SQL.
+        assertTrue(sql.indexOf("GROUPBY") < sql.indexOf("ORDERBY"), sql)
+        assertTrue(sql.indexOf("ORDERBY") < sql.indexOf("LIMIT"), sql)
+    }
+
+    @Test
+    fun testJoinOrderingKeepsDeclarationOrderAndQualifiesColumns() {
+        db.autocommit {
+            (TestTable innerJoin TestOrders on (TestTable.id eq TestOrders.productId))
+                .orderBy { DESC(TestTable.position); ASC(TestOrders.orderId) }
+                .select(TestTable.text, TestOrders.orderId)
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(
+            sql.contains("""ORDERBY"products"."position"DESC,"orders"."orderId"ASC"""),
+            sql,
+        )
+    }
+
+    @Test
+    fun testJoinOrderingAccumulatesAcrossCalls() {
+        db.autocommit {
+            TestTable.query()
+                .orderBy { DESC(TestTable.position) }
+                .orderBy { ASC(TestTable.text) }
+                .select(TestTable.text)
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains("""ORDERBY"products"."position"DESC,"products"."text"ASC"""), sql)
+    }
+
+    @Test
+    fun testJoinPairFindPaginates() {
+        // Ordering/limit live on the pair, so the entity-pair read keeps them.
+        db.autocommit {
+            (TestTable innerJoin TestOrders on (TestTable.id eq TestOrders.productId))
+                .orderBy { ASC(TestTable.position) }
+                .limit(5)
+                .offset(10)
+                .find()
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains("""ORDERBY"products"."position"ASC"""), sql)
+        assertTrue(sql.contains("LIMIT5"), sql)
+        assertTrue(sql.contains("OFFSET10"), sql)
+    }
+
+    @Test
+    fun testLeftJoinPairFindPaginates() {
+        db.autocommit {
+            (TestTable leftJoin TestOrders on (TestTable.id eq TestOrders.productId))
+                .orderBy { DESC(TestTable.position) }
+                .limit(3)
+                .find()
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains("""LEFTJOIN"""), sql)
+        assertTrue(sql.contains("""ORDERBY"products"."position"DESC"""), sql)
+        assertTrue(sql.contains("LIMIT3"), sql)
+    }
+
+    @Test
+    fun testJoinOrderingSurvivesAdditionalJoin() {
+        // A further join rebuilds the Join; ordering set before it must not be dropped.
+        db.autocommit {
+            TestTable.query()
+                .orderBy { DESC(TestTable.position) }
+                .limit(7)
+                .innerJoin(TestOrders).on(TestTable.id eq TestOrders.productId)
+                .select(TestTable.text)
+        }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertTrue(sql.contains("""ORDERBY"products"."position"DESC"""), sql)
+        assertTrue(sql.contains("LIMIT7"), sql)
+    }
+
+    @Test
+    fun testUnorderedJoinRendersNoOrderByOrLimit() {
+        db.autocommit { TestTable.query().select(TestTable.text) }
+        val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)
+        assertFalse(sql.contains("ORDERBY"), sql)
+        assertFalse(sql.contains("LIMIT"), sql)
+        assertFalse(sql.contains("OFFSET"), sql)
+    }
+
+    @Test
+    fun testNegativeLimitAndOffsetAreRejected() {
+        // toUInt() would wrap -1 into a huge LIMIT; fail fast instead, as QueryBuilder does.
+        assertFailsWith<IllegalArgumentException> { TestTable.query().limit(-1) }
+        assertFailsWith<IllegalArgumentException> { TestTable.query().offset(-1) }
+    }
+
+    @Test
     fun testFindOneRendersPredicateAndLimitsToOne() {
         db.autocommit { Coded.findOne { where { Coded.code eq "abc" } } }
         val sql = remoteNewLinesAndSpaces(databaseMockObj.internalSql)

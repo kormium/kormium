@@ -263,6 +263,139 @@ class SqliteQueryCoverageTest {
         }
     }
 
+    /**
+     * Top-N by aggregate: `GROUP BY region ORDER BY SUM(amount) DESC LIMIT 2`. Ordering by the
+     * very aggregate the query selects is the shape that had no expression before `orderBy` /
+     * `limit` existed on a join — it needed raw SQL. Asserted on the returned *order*, not just
+     * the rendered text.
+     */
+    @Test
+    fun topNByAggregateOrdersAndLimits() {
+        val big = "tb-${Uuid.random()}"    // sum 100
+        val mid = "tm-${Uuid.random()}"    // sum 50
+        val small = "ts-${Uuid.random()}"  // sum 5 — must be cut by LIMIT 2
+        db.transaction {
+            QcSales.execSql(qcSalesDdl)
+            QcSales.insertAll(
+                listOf(
+                    QcSale().apply { id = Uuid.random(); region = big; amount = 60 },
+                    QcSale().apply { id = Uuid.random(); region = big; amount = 40 },
+                    QcSale().apply { id = Uuid.random(); region = mid; amount = 50 },
+                    QcSale().apply { id = Uuid.random(); region = small; amount = 5 },
+                )
+            )
+        }
+        val total = QcSales.amount.sum()
+        val top = db.autocommit {
+            QcSales.query()
+                .where((QcSales.region eq big) or (QcSales.region eq mid) or (QcSales.region eq small))
+                .groupBy(QcSales.region)
+                .orderBy { DESC(total) }
+                .limit(2)
+                .select(QcSales.region, total) { it[QcSales.region] to it[total] }
+        }
+        assertEquals(listOf(big to 100L, mid to 50L), top)
+        db.transaction {
+            QcSales.deleteWhere(Query(QcSales.region eq big))
+            QcSales.deleteWhere(Query(QcSales.region eq mid))
+            QcSales.deleteWhere(Query(QcSales.region eq small))
+        }
+    }
+
+    /** `OFFSET` skips within a stable ordering, so limit+offset paginate a projection. */
+    @Test
+    fun orderByWithOffsetPaginates() {
+        val tag = "pg-${Uuid.random()}"
+        db.transaction {
+            QcSales.execSql(qcSalesDdl)
+            QcSales.insertAll(
+                (1..5).map { n -> QcSale().apply { id = Uuid.random(); region = tag; amount = n } }
+            )
+        }
+        val page = db.autocommit {
+            QcSales.query()
+                .where(QcSales.region eq tag)
+                .orderBy { ASC(QcSales.amount) }
+                .limit(2)
+                .offset(2)
+                .select(QcSales.amount) { it[QcSales.amount] }
+        }
+        assertEquals(listOf(3, 4), page)
+        db.transaction { QcSales.deleteWhere(Query(QcSales.region eq tag)) }
+    }
+
+    /**
+     * An offset with no limit: MySQL rejects a bare `OFFSET`, so its dialect emits a sentinel
+     * `LIMIT` alongside. Pinned here because the join path renders limit/offset through the same
+     * `Dialect.renderLimitOffset` the entity path uses, and must stay valid on every backend.
+     */
+    @Test
+    fun offsetWithoutLimitIsValid() {
+        val tag = "po-${Uuid.random()}"
+        db.transaction {
+            QcSales.execSql(qcSalesDdl)
+            QcSales.insertAll(
+                (1..4).map { n -> QcSale().apply { id = Uuid.random(); region = tag; amount = n } }
+            )
+        }
+        val rest = db.autocommit {
+            QcSales.query()
+                .where(QcSales.region eq tag)
+                .orderBy { ASC(QcSales.amount) }
+                .offset(2)
+                .select(QcSales.amount) { it[QcSales.amount] }
+        }
+        assertEquals(listOf(3, 4), rest)
+        db.transaction { QcSales.deleteWhere(Query(QcSales.region eq tag)) }
+    }
+
+    /** The same bare-`OFFSET` shape on the entity path, which renders through the same dialect hook. */
+    @Test
+    fun entityPathOffsetWithoutLimitIsValid() {
+        val tag = "eo-${Uuid.random()}"
+        db.transaction {
+            QcSales.execSql(qcSalesDdl)
+            QcSales.insertAll(
+                (1..4).map { n -> QcSale().apply { id = Uuid.random(); region = tag; amount = n } }
+            )
+        }
+        val rest = db.autocommit {
+            QcSales.find {
+                where { QcSales.region eq tag }
+                orderBy ASC QcSales.amount
+                offset = 2
+            }
+        }.map { it.amount }
+        assertEquals(listOf(3, 4), rest)
+        db.transaction { QcSales.deleteWhere(Query(QcSales.region eq tag)) }
+    }
+
+    /** Ordering and pagination on a two-table join read as entity pairs (`find()`). */
+    @Test
+    fun joinPairFindOrdersAndPaginates() {
+        val deptId = Uuid.random()
+        db.transaction {
+            QcDepts.execSql(qcDeptsDdl)
+            QcEmps.execSql(qcEmpsDdl)
+            QcDepts.insert(QcDept().apply { id = deptId; name = "ops-${Uuid.random()}" })
+            QcEmps.insertAll(
+                (1..4).map { n -> QcEmp().apply { id = Uuid.random(); name = "e$n"; this.deptId = deptId } }
+            )
+        }
+        val names = db.autocommit {
+            (QcDepts innerJoin QcEmps on (QcDepts.id eq QcEmps.deptId))
+                .where(QcDepts.id eq deptId)
+                .orderBy { DESC(QcEmps.name) }
+                .limit(2)
+                .find()
+        }.map { (_, emp) -> emp.name }
+        assertEquals(listOf("e4", "e3"), names)
+        db.transaction {
+            QcEmps.deleteWhere(Query(QcEmps.deptId eq deptId))
+            QcDepts.deleteWhere(Query(QcDepts.id eq deptId))
+        }
+    }
+
     // ---- 3. SQLSTATE / constraint-violation mapping ---------------------------------------
 
     /** A UNIQUE (non-PK) constraint maps to UniqueViolationException. */

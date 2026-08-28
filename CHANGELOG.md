@@ -6,6 +6,25 @@ All notable changes to Kormium are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- **`ORDER BY` / `LIMIT` / `OFFSET` on joins and grouped queries.** `Join`, `JoinPair` and
+  `LeftJoinPair` gain `orderBy { }`, `limit(n)` and `offset(n)`. The `orderBy` block uses the same
+  `ASC(...)` / `DESC(...)` vocabulary as `find { }`, and its operand is any `Selectable` — a column,
+  a computed expression, or the aggregate itself. That closes a gap in SQL coverage: the top-N-by-
+  aggregate shape (`GROUP BY ... ORDER BY SUM(...) DESC LIMIT 10`) previously had no expression in
+  the DSL at all and needed raw SQL. Orderings accumulate in declaration order, and they live on the
+  join itself, so the entity-pair `find()` paginates as well. On a `leftJoin`, `LIMIT` counts rows,
+  not left-side entities.
+
+### Fixed
+- **SQLite: `offset` without `limit` no longer produces invalid SQL.** SQLite's grammar allows
+  `OFFSET` only as part of a `LIMIT` clause, so `find { offset = 2 }` with no limit failed with
+  `[SQLITE_ERROR] near "OFFSET": syntax error`. `SqliteDialect` now overrides `renderLimitOffset`
+  and carries a bare offset with SQLite's documented `LIMIT -1` "no limit" sentinel, mirroring what
+  `MySqlDialect` already did. This affected the entity read path on every SQLite target, not just
+  the new join pagination. The `Dialect.renderLimitOffset` doc, which claimed SQLite accepted a bare
+  `OFFSET`, is corrected.
+
 ### Changed
 - **The tested PostgreSQL baseline moves from 16 to 18.** CI's service container, every
   Testcontainers fixture, the benchmark harness and the sample `docker-compose.yml` files now run

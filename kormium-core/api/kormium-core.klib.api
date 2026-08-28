@@ -269,6 +269,9 @@ final class <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity, #C: io
     final fun groupBy(kotlin/Array<out io.github.kormium/Column<*, *, *>>...): io.github.kormium/Join<#A> // io.github.kormium/JoinPair.groupBy|groupBy(kotlin.Array<out|io.github.kormium.Column<*,*,*>>...){}[0]
     final fun innerJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/JoinPair.innerJoin|innerJoin(io.github.kormium.Table<1:0,*>){}[0]
     final fun leftJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/JoinPair.leftJoin|leftJoin(io.github.kormium.Table<1:0,*>){}[0]
+    final fun limit(kotlin/Int): io.github.kormium/JoinPair<#A, #B, #C> // io.github.kormium/JoinPair.limit|limit(kotlin.Int){}[0]
+    final fun offset(kotlin/Int): io.github.kormium/JoinPair<#A, #B, #C> // io.github.kormium/JoinPair.offset|offset(kotlin.Int){}[0]
+    final fun orderBy(kotlin/Function1<io.github.kormium/OrderByDsl, kotlin/Unit>): io.github.kormium/JoinPair<#A, #B, #C> // io.github.kormium/JoinPair.orderBy|orderBy(kotlin.Function1<io.github.kormium.OrderByDsl,kotlin.Unit>){}[0]
     final fun where(io.github.kormium/Expression): io.github.kormium/JoinPair<#A, #B, #C> // io.github.kormium/JoinPair.where|where(io.github.kormium.Expression){}[0]
 }
 
@@ -281,6 +284,9 @@ final class <#A: io.github.kormium/Catalog, #B: io.github.kormium/Entity, #C: io
     final fun groupBy(kotlin/Array<out io.github.kormium/Column<*, *, *>>...): io.github.kormium/Join<#A> // io.github.kormium/LeftJoinPair.groupBy|groupBy(kotlin.Array<out|io.github.kormium.Column<*,*,*>>...){}[0]
     final fun innerJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/LeftJoinPair.innerJoin|innerJoin(io.github.kormium.Table<1:0,*>){}[0]
     final fun leftJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/LeftJoinPair.leftJoin|leftJoin(io.github.kormium.Table<1:0,*>){}[0]
+    final fun limit(kotlin/Int): io.github.kormium/LeftJoinPair<#A, #B, #C> // io.github.kormium/LeftJoinPair.limit|limit(kotlin.Int){}[0]
+    final fun offset(kotlin/Int): io.github.kormium/LeftJoinPair<#A, #B, #C> // io.github.kormium/LeftJoinPair.offset|offset(kotlin.Int){}[0]
+    final fun orderBy(kotlin/Function1<io.github.kormium/OrderByDsl, kotlin/Unit>): io.github.kormium/LeftJoinPair<#A, #B, #C> // io.github.kormium/LeftJoinPair.orderBy|orderBy(kotlin.Function1<io.github.kormium.OrderByDsl,kotlin.Unit>){}[0]
     final fun where(io.github.kormium/Expression): io.github.kormium/LeftJoinPair<#A, #B, #C> // io.github.kormium/LeftJoinPair.where|where(io.github.kormium.Expression){}[0]
 }
 
@@ -294,6 +300,9 @@ final class <#A: io.github.kormium/Catalog> io.github.kormium/Join { // io.githu
     final fun having(io.github.kormium/Expression): io.github.kormium/Join<#A> // io.github.kormium/Join.having|having(io.github.kormium.Expression){}[0]
     final fun innerJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/Join.innerJoin|innerJoin(io.github.kormium.Table<1:0,*>){}[0]
     final fun leftJoin(io.github.kormium/Table<#A, *>): io.github.kormium/JoinStep<#A> // io.github.kormium/Join.leftJoin|leftJoin(io.github.kormium.Table<1:0,*>){}[0]
+    final fun limit(kotlin/Int): io.github.kormium/Join<#A> // io.github.kormium/Join.limit|limit(kotlin.Int){}[0]
+    final fun offset(kotlin/Int): io.github.kormium/Join<#A> // io.github.kormium/Join.offset|offset(kotlin.Int){}[0]
+    final fun orderBy(kotlin/Function1<io.github.kormium/OrderByDsl, kotlin/Unit>): io.github.kormium/Join<#A> // io.github.kormium/Join.orderBy|orderBy(kotlin.Function1<io.github.kormium.OrderByDsl,kotlin.Unit>){}[0]
     final fun where(io.github.kormium/Expression): io.github.kormium/Join<#A> // io.github.kormium/Join.where|where(io.github.kormium.Expression){}[0]
 }
 
