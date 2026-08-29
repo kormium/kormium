@@ -57,17 +57,13 @@ allprojects {
     }
 }
 
-// Kotlin's wasm/js yarn install runs with --ignore-scripts, which stops native npm packages
-// (e.g. better-sqlite3 in kormium-sqlite-node) from building/fetching their native binary. Allow
-// install scripts so those modules work under the Node test runner.
-//
-// SUPPLY-CHAIN NOTE: this re-enables arbitrary postinstall scripts for every js/wasm dependency, so
-// a compromised (transitive) package could run code at install time. The exposure is bounded: npm
-// versions are pinned and the resolved tree is committed in kotlin-js-store/*yarn.lock, so installs
-// are reproducible and auditable. Review lockfile changes when bumping a Wasm/Node engine's deps.
-plugins.withType(org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnPlugin::class.java) {
-    the<org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnRootEnvSpec>().ignoreScripts.set(false)
-}
+// NOTE ON NPM INSTALL SCRIPTS: the wasm/js yarn install keeps Kotlin's default --ignore-scripts.
+// The only native package here is better-sqlite3 (kormium-sqlite-node), and since 13.0.0 it is an
+// N-API addon that publishes its prebuilt binaries inside the package itself (no prebuild-install
+// download, no node-gyp build), so it loads with install scripts disabled. Do not re-enable them:
+// yarn 1 ignores better-sqlite3's `gypfile: false` and, seeing its binding.gyp, would compile the
+// SQLite amalgamation from source on every install — needlessly, and failing outright on a machine
+// without a C toolchain. Keeping scripts off also removes the postinstall supply-chain surface.
 
 // iOS simulator tests need an installed iOS simulator runtime (Xcode). On a machine without
 // one the task fails with "Xcode does not support simulator tests for ios_simulator_arm64",

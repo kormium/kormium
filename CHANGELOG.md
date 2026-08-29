@@ -53,6 +53,50 @@ All notable changes to Kormium are documented here. The format is based on
   stray `-lpq` from `compilerOpts` (it is a linker flag), and extended the Windows include search
   to `C:\Program Files\PostgreSQL\14..18` so it matches the range
   `kormium-postgres/build.gradle.kts` scans for the link-time artifact.
+- **The JVM, native and Node SQLite drivers converge on SQLite 3.53.4.** The vendored amalgamation
+  the Kotlin/Native cinterop compiles (`kormium-sqlite/src/nativeInterop/cinterop/sqlite3.[ch]`)
+  moves 3.51.0 → 3.53.4, sqlite-jdbc 3.53.2.1 → 3.53.4.0 and better-sqlite3 12.11.1 → 13.0.3 — the
+  three engines whose SQLite this project actually picks now agree on one release, where the native
+  one had been two minor versions behind the JVM one. Two engines take theirs from a platform
+  runtime and are unchanged here: androidx.sqlite's bundled build (SQLite 3.50.1 in 2.7.0) and
+  `@sqlite.org/sqlite-wasm` behind sqlite-wasm-kt (3.53.0); the browser wa-sqlite engines have their
+  own entry below. The amalgamation's build flags (`SQLITE_THREADSAFE`, FTS5, R-Tree,
+  `DBSTAT`, column metadata) and `sqlite3.def` are unchanged, and no driver code needed to follow.
+  The bump also exposed a build bug, now fixed: the vendored header and static library reach the
+  `sqlite3` cinterop through `compilerOpts`/`extraOpts`, which Gradle cannot see, so the klib and
+  everything downstream stayed up to date across an amalgamation swap and an incremental build kept
+  linking the *old* SQLite. Both are declared as task inputs now.
+- **The browser SQLite engines leave npm's stale wa-sqlite for upstream's tag: SQLite 3.44.0 →
+  3.53.0.** wa-sqlite's npm releases stopped at 1.0.0 in January 2024 while development carried on
+  in the repository, so the published package had drifted nearly two years behind — `kormium-sqlite-js`
+  and `kormium-sqlite-wasm`'s main-thread engine were running a SQLite far older than every other
+  backend. Both now take the `v1.1.2` tag (`npm("wa-sqlite", "github:rhashimoto/wa-sqlite#v1.1.2")`).
+  Upstream commits its built `dist/`, so nothing has to be compiled at install time — which matters,
+  because the Wasm install runs with scripts disabled (see the entry below) — and yarn pins the exact
+  commit in `kotlin-js-store`. Each engine gained a test asserting the SQLite version
+  it actually reports is 3.53 or newer, so a slide back to the npm build cannot pass unnoticed.
+
+  wa-sqlite 1.1 removed the low-level compile path these drivers used — `prepare_v2` and the `str_*`
+  helpers are gone, and statements compile only through the `statements()` async generator, which
+  owns the SQL buffer it allocates in wasm memory. Both executors drive that generator as an async
+  iterator and pass `{ unscoped: true }`, which keeps the statement's `finalize` on our side, where
+  it is awaited before the database can close; the generator's own cleanup fires it without awaiting.
+  Nothing changes for callers.
+
+  One public declaration follows upstream: `kormium-sqlite-wasm`'s `IDBBatchAtomicVFS` now takes the
+  Emscripten module alongside the IndexedDB name, and its asynchronous setup has to be awaited
+  through the new `isReady()` before the VFS is registered. `createSqliteWasmDatabase(dataDir = ...)`
+  does all of that itself; only code constructing the VFS by hand is affected.
+- **The Wasm/Node yarn install goes back to Kotlin's default `--ignore-scripts`.** The root build
+  turned npm install scripts back on for exactly one dependency: better-sqlite3 12 fetched or
+  compiled its native binary from a postinstall step. Version 13 is an N-API addon that publishes
+  its prebuilt binaries inside the package itself, so that step no longer exists — and with it goes
+  the postinstall supply-chain surface the old comment had to warn about. Leaving scripts enabled
+  would now be worse than useless: yarn 1 disregards the package's `gypfile: false` and, seeing its
+  `binding.gyp`, compiles the whole SQLite amalgamation from source on every install (and fails
+  outright on a machine with no C toolchain). The resolved Wasm tree drops 37 packages
+  (`prebuild-install`, `tar-fs`, `rc`, `semver`, …) and gains one, `node-addon-api`:
+  `kotlin-js-store/wasm/yarn.lock` goes from 66 resolutions to 30.
 
 ## [0.12.0] — In-memory SQLite databases are private per driver
 

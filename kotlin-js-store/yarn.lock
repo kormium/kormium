@@ -2007,10 +2007,9 @@ void-elements@^2.0.0:
   resolved "https://registry.yarnpkg.com/void-elements/-/void-elements-2.0.1.tgz#c066afb582bb1cb4128d60ea92392e94d5e9dbec"
   integrity sha512-qZKX4RnBzH2ugr8Lxa7x+0V6XD9Sb/ouARtiasEQCHB1EVU4NXtmHsDDrx1dO4ne5fc3J6EW05BP1Dl0z0iung==
 
-wa-sqlite@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/wa-sqlite/-/wa-sqlite-1.0.0.tgz#84eb5071becb9ac6ae67cd97633db7fb345e1621"
-  integrity sha512-Kyybo5/BaJp76z7gDWGk2J6Hthl4NIPsE+swgraEjy3IY6r5zIR02wAs1OJH4XtJp1y3puj3Onp5eMGS0z7nUA==
+"wa-sqlite@github:rhashimoto/wa-sqlite#v1.1.2":
+  version "1.1.1"
+  resolved "https://codeload.github.com/rhashimoto/wa-sqlite/tar.gz/2bf1c59d89eb6497535a4217bc62fec68a0bb994"
 
 watchpack@^2.4.1:
   version "2.5.2"
