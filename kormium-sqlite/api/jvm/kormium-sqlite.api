@@ -4,8 +4,8 @@ public final class io/github/kormium/CreateSqliteDatabaseKt {
 }
 
 public final class io/github/kormium/CreateSqliteDatabase_jvmKt {
-	public static final fun createSqliteDatabase-exY8QGI (Ljava/lang/String;IJLio/github/kormium/KormiumConfig;)Lio/github/kormium/SqliteDriver;
-	public static synthetic fun createSqliteDatabase-exY8QGI$default (Ljava/lang/String;IJLio/github/kormium/KormiumConfig;ILjava/lang/Object;)Lio/github/kormium/SqliteDriver;
+	public static final fun createSqliteDatabase-1Y68eR8 (Ljava/lang/String;IJLio/github/kormium/KormiumConfig;Lio/github/kormium/SqliteOptions;)Lio/github/kormium/SqliteDriver;
+	public static synthetic fun createSqliteDatabase-1Y68eR8$default (Ljava/lang/String;IJLio/github/kormium/KormiumConfig;Lio/github/kormium/SqliteOptions;ILjava/lang/Object;)Lio/github/kormium/SqliteDriver;
 }
 
 public abstract interface class io/github/kormium/SqliteDriver : io/github/kormium/database/Database, io/github/kormium/database/SuspendDatabase, java/lang/AutoCloseable {

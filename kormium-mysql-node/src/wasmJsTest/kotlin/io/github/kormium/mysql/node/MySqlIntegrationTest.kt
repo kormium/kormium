@@ -32,9 +32,9 @@ class MySqlIntegrationTest {
         val db: SuspendDatabase<WidgetCatalog> = createNodeMysqlDatabase(
             host = env("KORMIUM_MY_HOST", "localhost"),
             port = env("KORMIUM_MY_PORT", "3307").toInt(),
-            database = env("KORMIUM_MY_DB", "kormtest"),
+            database = env("KORMIUM_MY_DB", "kormium_test"),
             user = env("KORMIUM_MY_USER", "root"),
-            password = env("KORMIUM_MY_PASSWORD", "korm"),
+            password = env("KORMIUM_MY_PASSWORD", "kormium"),
         )
         // The pool connects lazily, so probe a connection here to skip cleanly if no server is up.
         return try {

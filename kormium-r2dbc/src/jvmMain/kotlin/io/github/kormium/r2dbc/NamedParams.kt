@@ -16,7 +16,7 @@ internal val PostgresParamMarker: ParamMarker = { i -> "\$${i + 1}" }
 internal val QuestionMarkParamMarker: ParamMarker = { "?" }
 
 /**
- * Rewrites korm's Spring-style `:name` placeholders to the driver's positional marker (via
+ * Rewrites Kormium's Spring-style `:name` placeholders to the driver's positional marker (via
  * [marker]) and records the names in occurrence order so values can be bound by index. `::` casts
  * (Postgres) and quoted string literals are left untouched. This is the same parse as the JDBC
  * NamedParamStatement, differing only in the emitted marker.

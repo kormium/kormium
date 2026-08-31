@@ -37,7 +37,13 @@ public actual fun createSqliteDatabase(
     poolSize: Int,
     acquireTimeout: Duration,
     config: KormiumConfig,
-): SqliteDriver = SqliteNativeDriver(path, poolSize, acquireTimeout, config)
+    options: SqliteOptions,
+): SqliteDriver {
+    // sqlite3_auto_extension registrations are process-global and only reach connections opened
+    // afterwards, so this has to run before the driver builds its pool.
+    options.beforeOpen(SqliteNativeRegistrationScope)
+    return SqliteNativeDriver(path, poolSize, acquireTimeout, config, options)
+}
 
 @OptIn(ExperimentalForeignApi::class)
 private class SqliteNativeDriver(
@@ -45,6 +51,7 @@ private class SqliteNativeDriver(
     private val poolSize: Int,
     private val acquireTimeout: Duration,
     override val config: KormiumConfig,
+    private val options: SqliteOptions,
 ) : SqliteDriver, SuspendDatabase<Nothing> {
 
     init {
@@ -80,7 +87,12 @@ private class SqliteNativeDriver(
     // A SQLite connection is handed to exactly one caller at a time via a Channel that
     // doubles as a blocking "free connection" queue — mirroring the libpq driver.
     private val connections: List<CPointer<sqlite3>> = List(poolSize) {
-        openConnection(filename, uri = isUri).also { initPragmas(it, file = !isMemory, params = pathParams) }
+        openConnection(filename, uri = isUri).also { conn ->
+            initPragmas(conn, file = !isMemory, params = pathParams, declared = options.declaredPragmas())
+            // Extensions and pragmas run after our defaults, on every connection in the pool —
+            // an extension is registered per connection, not per database.
+            options.applyTo(SqliteNativeConnectionScope(conn))
+        }
     }
 
     private val pool = Channel<CPointer<sqlite3>>(poolSize).also { channel ->
@@ -332,12 +344,25 @@ private fun openConnection(filename: String, uri: Boolean): CPointer<sqlite3> = 
 // foreign_keys are OFF by default in SQLite; WAL only applies to a real file. busy_timeout
 // lets a blocked writer wait instead of failing immediately with SQLITE_BUSY.
 @OptIn(ExperimentalForeignApi::class)
-private fun initPragmas(conn: CPointer<sqlite3>, file: Boolean, params: Map<String, String>) {
+private fun initPragmas(
+    conn: CPointer<sqlite3>,
+    file: Boolean,
+    params: Map<String, String>,
+    declared: Set<String> = emptySet(),
+) {
     // SQLite itself ignores unknown URI parameters, so journal_mode/foreign_keys/busy_timeout in
     // a caller's "file:…" path only take effect because we read them back out here — which is
-    // also what sqlite-jdbc does with them on the JVM, keeping the two backends in step.
+    // also what sqlite-jdbc does with them on the JVM, keeping the two backends in step. A pragma
+    // the caller set through `sqlite { pragma(...) }` is skipped here for the same reason: it is
+    // applied afterwards, from the options, and must win over our default.
     val journalMode = params["journal_mode"] ?: "WAL".takeIf { file }
-    if (journalMode != null) sqlite3_exec(conn, "PRAGMA journal_mode=$journalMode", null, null, null)
-    sqlite3_exec(conn, "PRAGMA foreign_keys=${params["foreign_keys"] ?: "ON"}", null, null, null)
-    sqlite3_exec(conn, "PRAGMA busy_timeout=${params["busy_timeout"] ?: "5000"}", null, null, null)
+    if (journalMode != null && "journal_mode" !in declared) {
+        sqlite3_exec(conn, "PRAGMA journal_mode=$journalMode", null, null, null)
+    }
+    if ("foreign_keys" !in declared) {
+        sqlite3_exec(conn, "PRAGMA foreign_keys=${params["foreign_keys"] ?: "ON"}", null, null, null)
+    }
+    if ("busy_timeout" !in declared) {
+        sqlite3_exec(conn, "PRAGMA busy_timeout=${params["busy_timeout"] ?: "5000"}", null, null, null)
+    }
 }

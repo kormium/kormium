@@ -3,6 +3,9 @@ package io.github.kormium.sqlite.js
 import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.KormiumConfig
 import io.github.kormium.SqliteDialect
+import io.github.kormium.SqliteEngine
+import io.github.kormium.perConnectionRegistration
+import io.github.kormium.SqliteOptions
 import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
@@ -38,6 +41,16 @@ public class SqliteJsDatabase internal constructor(
     override val isClosed: Boolean get() = lifecycle.isClosed
 
     private val executor = WaSqliteExecutor(api, db, SqliteDialect, StandardTypeMapper)
+
+    /** Applies the caller's [SqliteOptions] to this connection; see the factory below. */
+    internal suspend fun applyOptions(options: SqliteOptions) {
+        options.suspendApplyTo(
+            JsSqliteConnectionScope(
+                runStatement = { sql -> executor.execute(sql, emptyMap()) },
+                readScalar = { sql -> executor.execute(sql, emptyMap()) { it.getString(0) }.firstOrNull() },
+            ),
+        )
+    }
 
     override suspend fun <R> useConnection(
         transactional: Boolean,
@@ -79,8 +92,11 @@ public suspend fun createSqliteJsDatabase(
     dataDir: String? = null,
     config: KormiumConfig = KormiumConfig(),
     moduleConfig: Any? = null,
+    options: SqliteOptions = SqliteOptions(),
+    engine: SqliteJsEngine = SqliteJsEngine.Default,
 ): SqliteJsDatabase {
-    val module = (if (moduleConfig == null) SQLiteESMFactory() else SQLiteESMFactory(moduleConfig)).await()
+    options.beforeOpen(perConnectionRegistration(SqliteEngine.WaSqlite))
+    val module = engine.instantiate(moduleConfig).await()
     val api = Factory(module)
     val flags = SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE
     val db = when (dataDir) {
@@ -96,5 +112,12 @@ public suspend fun createSqliteJsDatabase(
         }
     }
     check(db != 0) { "wa-sqlite open_v2 returned a null database handle (dataDir=$dataDir)" }
-    return SqliteJsDatabase(api, db, config)
+    val database = SqliteJsDatabase(api, db, config)
+    try {
+        database.applyOptions(options)
+    } catch (e: Throwable) {
+        runCatching { database.close() }
+        throw e
+    }
+    return database
 }

@@ -1,4 +1,4 @@
-# korm-observe
+# kormium-observe
 
 Reactive `Flow` queries for [Kormium](../readme.md), in the spirit of Room: turn a query into a
 `Flow` that emits now and re-emits after every committed write that touches the tables it reads.
@@ -11,12 +11,12 @@ works with any backend whose driver enables write notification (all shipped driv
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.kormium:korm-bom:<version>"))
-    implementation("io.github.kormium:korm-observe")
+    implementation(platform("io.github.kormium:kormium-bom:<version>"))
+    implementation("io.github.kormium:kormium-observe")
 }
 ```
 
-`korm-core` is pulled in transitively. Supports the same targets as `korm-core` (JVM, Native,
+`kormium-core` is pulled in transitively. Supports the same targets as `kormium-core` (JVM, Native,
 Android, iOS).
 
 ## Example

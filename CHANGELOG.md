@@ -7,6 +7,54 @@ All notable changes to Kormium are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **SQLite extensions and per-connection pragmas: the `sqlite { }` block.**
+  `createSqliteDatabase("app.db") { sqlite { extension(SqliteVec); pragma("cache_size", "-64000") } }`
+  applies both to **every** connection a driver opens, including ones the pool recreates later —
+  which is what `beforeStart` (once, after the pool is up, on one borrowed connection) could never
+  do. Kormium ships no extensions and curates no list of them: an extension is an ordinary
+  dependency implementing `SqliteExtension` from the new **`kormium-sqlite-spi`** module, and
+  anyone can publish one. Extensions compose — each package carries only itself, never a SQLite of
+  its own. A pragma declared here wins over Kormium's default for it, exactly as one written into a
+  `file:` path does, and an extension that cannot be installed fails `createSqliteDatabase` rather
+  than the first query that needed it.
+
+  Working on JVM (sqlite-jdbc), Kotlin/Native and iOS, Node (better-sqlite3) and Android. Loading a
+  library *into one connection* is not possible on Android or in the browser — neither hands out a
+  `sqlite3` handle — so `loadLibrary` throws `SqliteExtensionUnsupportedException` there and those
+  engines register process-wide in `beforeOpen` instead. `samples/sqlite-vec` and
+  `samples/sqlite-uuid` are reference packages, and Kormium now publishes the SQLite headers it
+  links as a `sqlite-headers` artifact so an extension author compiles against exactly the SQLite
+  the driver uses. See
+  [ADR 0013](docs/adr/0013-sqlite-extensions.md).
+
+  `SqliteExtension` declares `supportedEngines`, checked before anything is installed, so a package
+  used on a platform it was never built for fails at `createSqliteDatabase` by name instead of
+  surfacing as `no such module` on the first query. Its install phase has a blocking half
+  (`install`) and a suspend half (`suspendInstall`) — the same split Kormium already draws between
+  `Database`/`SuspendDatabase` and `Scope`/`SuspendScope` — because the browser engines' SQLite sits
+  behind an async VFS or in a Worker and cannot answer a blocking call.
+
+  Every web engine (`createNodeSqliteDatabase`, `createSqliteWasmDatabase`,
+  `createWorkerSqliteWasmDatabase`, `createPooledSqliteWasmDatabase`, `createSqliteJsDatabase`) take
+  the options too, built with `sqliteOptions { }`. Pragmas work on every engine — including tuning
+  the analytical `cache_size`/`temp_store` the OPFS pool sets by default.
+
+  **Android** installs extensions through `sqlite3_auto_extension`, reached by a small JNI shim in
+  the new **`kormium-sqlite-android-ext`** module (~5.5 KB per ABI). androidx.sqlite never exposes
+  the `sqlite3` handle, so per-connection loading is impossible there; registration is process-wide
+  and happens in `beforeOpen`, which now receives a `SqliteRegistrationScope` for exactly this. The
+  shim is extension-agnostic — a package ships only its own `.so` per ABI and names its entry point.
+
+  **The browser WASM build is now injectable.** `createSqliteWasmDatabase` and
+  `createSqliteJsDatabase` take a `SqliteWasmEngine` / `SqliteJsEngine` instead of binding the
+  module at compile time, because in the browser an extension is a *different* build — nothing can
+  be linked into a WASM module after the fact. Anyone can publish an extension-capable engine and
+  point Kormium at it; the default stays upstream's wa-sqlite build, compiled with
+  `SQLITE_OMIT_LOAD_EXTENSION`. An extension-capable build is published from
+  [sqlite-wasm-engines](https://github.com/kormium/sqlite-wasm-engines), where `sqlite-vec` is
+  verified loading at runtime into both the synchronous and the Asyncify flavours — so persistence
+  through the IndexedDB VFS and runtime extensions work together.
+
 - **Expression-form `upsert`: the `DO UPDATE` half from assignments instead of a patch entity.**
   `Counters.upsert(entity = row, onConflict = Counters.key) { Counters.hits set (Counters.hits + 1) }`
   renders `ON CONFLICT (...) DO UPDATE SET "hits" = "hits" + 1`, so the conflicting row updates from
@@ -31,6 +79,11 @@ All notable changes to Kormium are documented here. The format is based on
   not left-side entities.
 
 ### Fixed
+- **JDBC connections recreated by the pool lost their startup state.** HikariCP retires and reopens
+  connections behind the driver (`maxLifetime`, or any fatal error), so anything applied to a
+  connection at startup silently vanished from its replacement. `JdbcDatabase` now accepts an
+  `onConnection` hook applied to every physical connection the pool opens. Shared by all JDBC
+  backends; SQLite uses it for extensions and pragmas.
 - **SQLite: `offset` without `limit` no longer produces invalid SQL.** SQLite's grammar allows
   `OFFSET` only as part of a `LIMIT` clause, so `find { offset = 2 }` with no limit failed with
   `[SQLITE_ERROR] near "OFFSET": syntax error`. `SqliteDialect` now overrides `renderLimitOffset`
@@ -40,6 +93,13 @@ All notable changes to Kormium are documented here. The format is based on
   `OFFSET`, is corrected.
 
 ### Changed
+- **Savepoint names are now `kormium_sp_<n>`, not `korm_sp_<n>`.** The last place the pre-rename name
+  still reached generated SQL (visible in logs and `EXPLAIN`); savepoints are per-transaction and
+  never persisted, so nothing carries over between versions.
+- **`createSqliteDatabase` gained an `options: SqliteOptions = SqliteOptions()` parameter**
+  (source-compatible, binary-breaking on the JVM), and the builder overload's receiver is now
+  `SqliteBuilder` rather than `KormiumBuilder` — it adds the `sqlite { }` block. `KormiumBuilder` is
+  now `open` so backends can extend it.
 - **The tested PostgreSQL baseline moves from 16 to 18.** CI's service container, every
   Testcontainers fixture, the benchmark harness and the sample `docker-compose.yml` files now run
   `postgres:18` (`pgvector/pgvector:pg18` for the vector suite). The benchmark containers pin

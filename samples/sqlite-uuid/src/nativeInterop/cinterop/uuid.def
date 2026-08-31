@@ -1,0 +1,9 @@
+package = cuuid
+---
+#include "sqlite3.h"
+
+int sqlite3_uuid_init(sqlite3*, char**, const void*);
+
+static int kormium_register_uuid(void) {
+    return sqlite3_auto_extension((void(*)(void)) sqlite3_uuid_init);
+}

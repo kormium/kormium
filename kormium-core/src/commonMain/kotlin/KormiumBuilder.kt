@@ -21,8 +21,12 @@ public class KormiumConfigBuilder internal constructor(private val base: Kormium
  * [beforeStart] hook that runs once, after the connection pool is up but before the database
  * is returned — the place to run migrations (the `kormium-migrate` module, or Flyway/Liquibase).
  * Migrations are intentionally NOT a built-in concern of this builder.
+ *
+ * Open so a backend can add its own knobs (`SqliteBuilder` adds the `sqlite { }` block for
+ * extensions and pragmas — both are per-connection concerns that [beforeStart], which runs once
+ * on one already-open connection, cannot carry).
  */
-public class KormiumBuilder {
+public open class KormiumBuilder {
     private var config: KormiumConfig = KormiumConfig()
     private var beforeStart: (Database<Nothing>.() -> Unit)? = null
 

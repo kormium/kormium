@@ -7,6 +7,8 @@
 
 // Library unique name: <io.github.kormium:kormium-sqlite-dialect>
 final object io.github.kormium/SqliteDialect : io.github.kormium/Dialect { // io.github.kormium/SqliteDialect|null[0]
+    final val maxBoundParameters // io.github.kormium/SqliteDialect.maxBoundParameters|{}maxBoundParameters[0]
+        final fun <get-maxBoundParameters>(): kotlin/Int // io.github.kormium/SqliteDialect.maxBoundParameters.<get-maxBoundParameters>|<get-maxBoundParameters>(){}[0]
     final val readOnlyToggle // io.github.kormium/SqliteDialect.readOnlyToggle|{}readOnlyToggle[0]
         final fun <get-readOnlyToggle>(): io.github.kormium/ReadOnlyToggle // io.github.kormium/SqliteDialect.readOnlyToggle.<get-readOnlyToggle>|<get-readOnlyToggle>(){}[0]
     final val supportsReturning // io.github.kormium/SqliteDialect.supportsReturning|{}supportsReturning[0]

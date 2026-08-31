@@ -1,0 +1,120 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxX64, macosArm64, macosX64, mingwX64, wasmJs, wasmWasi]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.kormium:kormium-sqlite-spi>
+final enum class io.github.kormium/SqliteEngine : kotlin/Enum<io.github.kormium/SqliteEngine> { // io.github.kormium/SqliteEngine|null[0]
+    enum entry AndroidX // io.github.kormium/SqliteEngine.AndroidX|null[0]
+    enum entry BetterSqlite3 // io.github.kormium/SqliteEngine.BetterSqlite3|null[0]
+    enum entry Native // io.github.kormium/SqliteEngine.Native|null[0]
+    enum entry SqliteWasm // io.github.kormium/SqliteEngine.SqliteWasm|null[0]
+    enum entry WaSqlite // io.github.kormium/SqliteEngine.WaSqlite|null[0]
+    enum entry Xerial // io.github.kormium/SqliteEngine.Xerial|null[0]
+
+    final val entries // io.github.kormium/SqliteEngine.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.kormium/SqliteEngine> // io.github.kormium/SqliteEngine.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.kormium/SqliteEngine // io.github.kormium/SqliteEngine.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.kormium/SqliteEngine> // io.github.kormium/SqliteEngine.values|values#static(){}[0]
+}
+
+abstract interface io.github.kormium/SqliteConnectionScope { // io.github.kormium/SqliteConnectionScope|null[0]
+    abstract val engine // io.github.kormium/SqliteConnectionScope.engine|{}engine[0]
+        abstract fun <get-engine>(): io.github.kormium/SqliteEngine // io.github.kormium/SqliteConnectionScope.engine.<get-engine>|<get-engine>(){}[0]
+
+    abstract fun exec(kotlin/String) // io.github.kormium/SqliteConnectionScope.exec|exec(kotlin.String){}[0]
+    abstract fun loadLibrary(kotlin/String, kotlin/String? = ...) // io.github.kormium/SqliteConnectionScope.loadLibrary|loadLibrary(kotlin.String;kotlin.String?){}[0]
+    abstract fun queryScalar(kotlin/String): kotlin/String? // io.github.kormium/SqliteConnectionScope.queryScalar|queryScalar(kotlin.String){}[0]
+}
+
+abstract interface io.github.kormium/SqliteExtension { // io.github.kormium/SqliteExtension|null[0]
+    abstract val name // io.github.kormium/SqliteExtension.name|{}name[0]
+        abstract fun <get-name>(): kotlin/String // io.github.kormium/SqliteExtension.name.<get-name>|<get-name>(){}[0]
+    abstract val supportedEngines // io.github.kormium/SqliteExtension.supportedEngines|{}supportedEngines[0]
+        abstract fun <get-supportedEngines>(): kotlin.collections/Set<io.github.kormium/SqliteEngine> // io.github.kormium/SqliteExtension.supportedEngines.<get-supportedEngines>|<get-supportedEngines>(){}[0]
+
+    open fun beforeOpen(io.github.kormium/SqliteRegistrationScope) // io.github.kormium/SqliteExtension.beforeOpen|beforeOpen(io.github.kormium.SqliteRegistrationScope){}[0]
+    open fun install(io.github.kormium/SqliteConnectionScope) // io.github.kormium/SqliteExtension.install|install(io.github.kormium.SqliteConnectionScope){}[0]
+    open suspend fun suspendInstall(io.github.kormium/SuspendSqliteConnectionScope) // io.github.kormium/SqliteExtension.suspendInstall|suspendInstall(io.github.kormium.SuspendSqliteConnectionScope){}[0]
+}
+
+abstract interface io.github.kormium/SqliteRegistrationScope { // io.github.kormium/SqliteRegistrationScope|null[0]
+    abstract val engine // io.github.kormium/SqliteRegistrationScope.engine|{}engine[0]
+        abstract fun <get-engine>(): io.github.kormium/SqliteEngine // io.github.kormium/SqliteRegistrationScope.engine.<get-engine>|<get-engine>(){}[0]
+
+    abstract fun registerLibrary(kotlin/String, kotlin/String) // io.github.kormium/SqliteRegistrationScope.registerLibrary|registerLibrary(kotlin.String;kotlin.String){}[0]
+}
+
+abstract interface io.github.kormium/SuspendSqliteConnectionScope { // io.github.kormium/SuspendSqliteConnectionScope|null[0]
+    abstract val engine // io.github.kormium/SuspendSqliteConnectionScope.engine|{}engine[0]
+        abstract fun <get-engine>(): io.github.kormium/SqliteEngine // io.github.kormium/SuspendSqliteConnectionScope.engine.<get-engine>|<get-engine>(){}[0]
+
+    abstract suspend fun exec(kotlin/String) // io.github.kormium/SuspendSqliteConnectionScope.exec|exec(kotlin.String){}[0]
+    abstract suspend fun loadLibrary(kotlin/String, kotlin/String? = ...) // io.github.kormium/SuspendSqliteConnectionScope.loadLibrary|loadLibrary(kotlin.String;kotlin.String?){}[0]
+    abstract suspend fun queryScalar(kotlin/String): kotlin/String? // io.github.kormium/SuspendSqliteConnectionScope.queryScalar|queryScalar(kotlin.String){}[0]
+}
+
+sealed interface io.github.kormium/SqliteStep { // io.github.kormium/SqliteStep|null[0]
+    final class Extension : io.github.kormium/SqliteStep { // io.github.kormium/SqliteStep.Extension|null[0]
+        constructor <init>(io.github.kormium/SqliteExtension) // io.github.kormium/SqliteStep.Extension.<init>|<init>(io.github.kormium.SqliteExtension){}[0]
+
+        final val extension // io.github.kormium/SqliteStep.Extension.extension|{}extension[0]
+            final fun <get-extension>(): io.github.kormium/SqliteExtension // io.github.kormium/SqliteStep.Extension.extension.<get-extension>|<get-extension>(){}[0]
+    }
+
+    final class OnConnection : io.github.kormium/SqliteStep { // io.github.kormium/SqliteStep.OnConnection|null[0]
+        constructor <init>(kotlin/Function1<io.github.kormium/SqliteConnectionScope, kotlin/Unit>) // io.github.kormium/SqliteStep.OnConnection.<init>|<init>(kotlin.Function1<io.github.kormium.SqliteConnectionScope,kotlin.Unit>){}[0]
+
+        final val block // io.github.kormium/SqliteStep.OnConnection.block|{}block[0]
+            final fun <get-block>(): kotlin/Function1<io.github.kormium/SqliteConnectionScope, kotlin/Unit> // io.github.kormium/SqliteStep.OnConnection.block.<get-block>|<get-block>(){}[0]
+    }
+
+    final class Pragma : io.github.kormium/SqliteStep { // io.github.kormium/SqliteStep.Pragma|null[0]
+        constructor <init>(kotlin/String, kotlin/String) // io.github.kormium/SqliteStep.Pragma.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+        final val name // io.github.kormium/SqliteStep.Pragma.name|{}name[0]
+            final fun <get-name>(): kotlin/String // io.github.kormium/SqliteStep.Pragma.name.<get-name>|<get-name>(){}[0]
+        final val value // io.github.kormium/SqliteStep.Pragma.value|{}value[0]
+            final fun <get-value>(): kotlin/String // io.github.kormium/SqliteStep.Pragma.value.<get-value>|<get-value>(){}[0]
+    }
+}
+
+final class io.github.kormium/SqliteBuilder : io.github.kormium/KormiumBuilder { // io.github.kormium/SqliteBuilder|null[0]
+    constructor <init>() // io.github.kormium/SqliteBuilder.<init>|<init>(){}[0]
+
+    final fun options(): io.github.kormium/SqliteOptions // io.github.kormium/SqliteBuilder.options|options(){}[0]
+    final fun sqlite(kotlin/Function1<io.github.kormium/SqliteOptionsBuilder, kotlin/Unit>) // io.github.kormium/SqliteBuilder.sqlite|sqlite(kotlin.Function1<io.github.kormium.SqliteOptionsBuilder,kotlin.Unit>){}[0]
+}
+
+final class io.github.kormium/SqliteExtensionUnsupportedException : io.github.kormium/KormiumException { // io.github.kormium/SqliteExtensionUnsupportedException|null[0]
+    constructor <init>(kotlin/String, io.github.kormium/SqliteEngine, kotlin/String) // io.github.kormium/SqliteExtensionUnsupportedException.<init>|<init>(kotlin.String;io.github.kormium.SqliteEngine;kotlin.String){}[0]
+
+    final val engine // io.github.kormium/SqliteExtensionUnsupportedException.engine|{}engine[0]
+        final fun <get-engine>(): io.github.kormium/SqliteEngine // io.github.kormium/SqliteExtensionUnsupportedException.engine.<get-engine>|<get-engine>(){}[0]
+    final val extension // io.github.kormium/SqliteExtensionUnsupportedException.extension|{}extension[0]
+        final fun <get-extension>(): kotlin/String // io.github.kormium/SqliteExtensionUnsupportedException.extension.<get-extension>|<get-extension>(){}[0]
+}
+
+final class io.github.kormium/SqliteOptions { // io.github.kormium/SqliteOptions|null[0]
+    constructor <init>(kotlin/Array<out io.github.kormium/SqliteExtension>...) // io.github.kormium/SqliteOptions.<init>|<init>(kotlin.Array<out|io.github.kormium.SqliteExtension>...){}[0]
+
+    final val isEmpty // io.github.kormium/SqliteOptions.isEmpty|{}isEmpty[0]
+        final fun <get-isEmpty>(): kotlin/Boolean // io.github.kormium/SqliteOptions.isEmpty.<get-isEmpty>|<get-isEmpty>(){}[0]
+
+    final fun applyTo(io.github.kormium/SqliteConnectionScope) // io.github.kormium/SqliteOptions.applyTo|applyTo(io.github.kormium.SqliteConnectionScope){}[0]
+    final fun beforeOpen(io.github.kormium/SqliteRegistrationScope) // io.github.kormium/SqliteOptions.beforeOpen|beforeOpen(io.github.kormium.SqliteRegistrationScope){}[0]
+    final fun declaredPragmas(): kotlin.collections/Set<kotlin/String> // io.github.kormium/SqliteOptions.declaredPragmas|declaredPragmas(){}[0]
+    final suspend fun suspendApplyTo(io.github.kormium/SuspendSqliteConnectionScope) // io.github.kormium/SqliteOptions.suspendApplyTo|suspendApplyTo(io.github.kormium.SuspendSqliteConnectionScope){}[0]
+}
+
+final class io.github.kormium/SqliteOptionsBuilder { // io.github.kormium/SqliteOptionsBuilder|null[0]
+    final fun extension(io.github.kormium/SqliteExtension) // io.github.kormium/SqliteOptionsBuilder.extension|extension(io.github.kormium.SqliteExtension){}[0]
+    final fun onConnection(kotlin/Function1<io.github.kormium/SqliteConnectionScope, kotlin/Unit>) // io.github.kormium/SqliteOptionsBuilder.onConnection|onConnection(kotlin.Function1<io.github.kormium.SqliteConnectionScope,kotlin.Unit>){}[0]
+    final fun pragma(kotlin/String, kotlin/String) // io.github.kormium/SqliteOptionsBuilder.pragma|pragma(kotlin.String;kotlin.String){}[0]
+}
+
+final fun io.github.kormium/perConnectionRegistration(io.github.kormium/SqliteEngine): io.github.kormium/SqliteRegistrationScope // io.github.kormium/perConnectionRegistration|perConnectionRegistration(io.github.kormium.SqliteEngine){}[0]
+final fun io.github.kormium/sqliteOptions(kotlin/Function1<io.github.kormium/SqliteOptionsBuilder, kotlin/Unit>): io.github.kormium/SqliteOptions // io.github.kormium/sqliteOptions|sqliteOptions(kotlin.Function1<io.github.kormium.SqliteOptionsBuilder,kotlin.Unit>){}[0]

@@ -1,4 +1,4 @@
-# korm-postgres
+# kormium-postgres
 
 The PostgreSQL backend for [Kormium](../readme.md). Provides `createDatabase(...)`, the
 `PostgresDialect` and the `PostgresDriver`, with two interchangeable transports:
@@ -12,12 +12,12 @@ For non-blocking PostgreSQL on the JVM, see [`kormium-r2dbc`](../kormium-r2dbc/R
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.kormium:korm-bom:<version>"))
-    implementation("io.github.kormium:korm-postgres")
+    implementation(platform("io.github.kormium:kormium-bom:<version>"))
+    implementation("io.github.kormium:kormium-postgres")
 }
 ```
 
-`korm-core` is pulled in transitively.
+`kormium-core` is pulled in transitively.
 
 ### Native system library
 
@@ -51,8 +51,8 @@ With a configuration block (run migrations before the first connection is handed
 
 ```kotlin
 val db = createDatabase(host = "localhost", database = "app", user = "postgres", password = "secret") {
-    config { /* KormConfig tuning */ }
-    beforeStart { migrate(appMigrations) } // needs korm-migrate
+    config { /* KormiumConfig tuning */ }
+    beforeStart { migrate(appMigrations) } // needs kormium-migrate
 }
 ```
 
@@ -65,7 +65,7 @@ val db = createDatabase(host = "localhost", database = "app", user = "postgres",
 | macOS Native | libpq |
 | Windows Native | Planned |
 
-Android and iOS do not ship a PostgreSQL backend — use `korm-sqlite` there.
+Android and iOS do not ship a PostgreSQL backend — use `kormium-sqlite` there.
 
 ## Documentation
 

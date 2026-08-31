@@ -354,6 +354,70 @@ class TableTest {
         assertTrue(sql.contains("),("), sql)
     }
 
+    // ---- #145: a batch splits on the backend's bound-parameter ceiling ----
+
+    // TestTable has 5 columns, so a 10-parameter ceiling fits exactly two fully-assigned rows per
+    // statement — small enough to assert the split arithmetic exactly instead of approximating it.
+    private object TinyCeilingDialect : Dialect by StandardDialect {
+        override val maxBoundParameters: Int get() = 10
+    }
+
+    private fun fullRow(position: Int) = TestEntity().apply {
+        id = Uuid.random(); price = 1.0; this.position = position; text = "t$position"; nullableTest = "n$position"
+    }
+
+    @Test
+    fun testBatchSplitsOnParameterCeiling() {
+        val statements = renderSql(TestCatalog, TinyCeilingDialect) { TestTable.insertAll(List(5) { fullRow(it) }) }
+
+        // 5 rows * 5 columns = 25 binds against a ceiling of 10, so the group splits 2 + 2 + 1.
+        assertEquals(3, statements.size)
+        assertEquals(listOf(10, 10, 5), statements.map { it.params.size })
+        // Each statement gets its own ParamBuilder, so placeholder numbering restarts at :p0
+        // rather than continuing across statements (which would leave every one but the first
+        // referencing names it does not carry).
+        for (statement in statements) {
+            assertEquals(List(statement.params.size) { "p$it" }.toSet(), statement.params.keys, statement.sql)
+        }
+    }
+
+    @Test
+    fun testBatchSplitAppliesPerShapeGroup() {
+        // Two shapes — 3 rows assigning all 5 columns, 3 assigning 4 — each split by its own
+        // column count (10/5 and 10/4 both give 2 rows per statement), with neither group's
+        // remainder spilling into the other's statement.
+        val wide = List(3) { fullRow(it) }
+        val narrow = List(3) { i -> TestEntity().apply { id = Uuid.random(); price = 1.0; position = i; text = "n$i" } }
+
+        val statements = renderSql(TestCatalog, TinyCeilingDialect) { TestTable.insertAll(wide + narrow) }
+
+        assertEquals(4, statements.size)
+        assertEquals(listOf(10, 5, 8, 4), statements.map { it.params.size })
+    }
+
+    @Test
+    fun testRowWiderThanCeilingStillEmitsOneRowPerStatement() {
+        // A ceiling below a single row's parameter count has nothing smaller to fall back to:
+        // emit one row per statement and leave the rejection to the backend, rather than looping
+        // forever or dropping rows.
+        val narrowCeiling = object : Dialect by StandardDialect {
+            override val maxBoundParameters: Int get() = 2
+        }
+
+        val statements = renderSql(TestCatalog, narrowCeiling) { TestTable.insertAll(List(3) { fullRow(it) }) }
+
+        assertEquals(3, statements.size)
+        assertEquals(listOf(5, 5, 5), statements.map { it.params.size })
+    }
+
+    @Test
+    fun testDefaultCeilingLeavesOrdinaryBatchesUnsplit() {
+        // The interface default is the lowest ceiling among the supported backends, so an unknown
+        // dialect is safe without an override — and an everyday batch must not pay for the split.
+        assertEquals(32766, StandardDialect.maxBoundParameters)
+        assertEquals(1, renderSql(TestCatalog) { TestTable.insertAll(List(1000) { fullRow(it) }) }.size)
+    }
+
     @Test
     fun testUpsertSql() {
         db.transaction {

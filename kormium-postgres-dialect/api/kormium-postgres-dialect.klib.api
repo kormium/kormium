@@ -51,6 +51,8 @@ final class io.github.kormium/VectorColumnType : io.github.kormium/ColumnType<io
 }
 
 final object io.github.kormium/PostgresDialect : io.github.kormium/Dialect { // io.github.kormium/PostgresDialect|null[0]
+    final val maxBoundParameters // io.github.kormium/PostgresDialect.maxBoundParameters|{}maxBoundParameters[0]
+        final fun <get-maxBoundParameters>(): kotlin/Int // io.github.kormium/PostgresDialect.maxBoundParameters.<get-maxBoundParameters>|<get-maxBoundParameters>(){}[0]
     final val readOnlyToggle // io.github.kormium/PostgresDialect.readOnlyToggle|{}readOnlyToggle[0]
         final fun <get-readOnlyToggle>(): io.github.kormium/ReadOnlyToggle? // io.github.kormium/PostgresDialect.readOnlyToggle.<get-readOnlyToggle>|<get-readOnlyToggle>(){}[0]
     final val supportsReturning // io.github.kormium/PostgresDialect.supportsReturning|{}supportsReturning[0]

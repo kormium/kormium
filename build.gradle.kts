@@ -18,8 +18,8 @@ apiValidation {
     // the "r2dbc" here is samples:r2dbc — the library module is named kormium-r2dbc.)
     ignoredProjects.addAll(
         listOf(
-            "benchmarks", "kormium-bom",
-            "ktor-di", "ktor-koin", "crud-sqlite", "repository", "sharding",
+            "benchmarks", "kormium-bom", "kormium-sqlite-android-ext",
+            "ktor-di", "ktor-koin", "crud-sqlite", "repository", "sharding", "sqlite-vec", "sqlite-uuid",
             "sqlite-cache", "cross-instance-cache", "r2dbc", "wasm-todo",
         ),
     )
@@ -105,6 +105,8 @@ val publishableModules = setOf(
     "kormium-jdbc",
     "kormium-sqlite",
     "kormium-sqlite-dialect",
+    "kormium-sqlite-spi",
+    "kormium-sqlite-android-ext",
     "kormium-wasm-driver",
     "kormium-sqlite-wasm",
     "kormium-sqlite-js",

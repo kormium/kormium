@@ -1,4 +1,4 @@
-# korm-ktor
+# kormium-ktor
 
 DI-agnostic [Ktor](https://ktor.io) integration for [Kormium](../readme.md). You pass the
 database explicitly, so it works with any way of obtaining it — a plain reference, Ktor's
@@ -14,15 +14,15 @@ It provides:
   stop.
 
 For automatic database resolution by catalog type, add
-[`korm-ktor-di`](../kormium-ktor-di/README.md) (Ktor's built-in DI) or
-[`korm-ktor-koin`](../kormium-ktor-koin/README.md) (Koin).
+[`kormium-ktor-di`](../kormium-ktor-di/README.md) (Ktor's built-in DI) or
+[`kormium-ktor-koin`](../kormium-ktor-koin/README.md) (Koin).
 
 ## Install
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.kormium:korm-bom:<version>"))
-    implementation("io.github.kormium:korm-ktor")
+    implementation(platform("io.github.kormium:kormium-bom:<version>"))
+    implementation("io.github.kormium:kormium-ktor")
 }
 ```
 

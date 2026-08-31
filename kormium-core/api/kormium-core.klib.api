@@ -159,6 +159,8 @@ abstract interface io.github.kormium/ConnectionPool { // io.github.kormium/Conne
 }
 
 abstract interface io.github.kormium/Dialect { // io.github.kormium/Dialect|null[0]
+    open val maxBoundParameters // io.github.kormium/Dialect.maxBoundParameters|{}maxBoundParameters[0]
+        open fun <get-maxBoundParameters>(): kotlin/Int // io.github.kormium/Dialect.maxBoundParameters.<get-maxBoundParameters>|<get-maxBoundParameters>(){}[0]
     open val readOnlyToggle // io.github.kormium/Dialect.readOnlyToggle|{}readOnlyToggle[0]
         open fun <get-readOnlyToggle>(): io.github.kormium/ReadOnlyToggle? // io.github.kormium/Dialect.readOnlyToggle.<get-readOnlyToggle>|<get-readOnlyToggle>(){}[0]
     open val supportsReturning // io.github.kormium/Dialect.supportsReturning|{}supportsReturning[0]
@@ -466,14 +468,6 @@ final class io.github.kormium/ForeignKeyViolationException : io.github.kormium/Q
     constructor <init>(kotlin/String, kotlin/String?, kotlin/Throwable? = ...) // io.github.kormium/ForeignKeyViolationException.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
 }
 
-final class io.github.kormium/KormiumBuilder { // io.github.kormium/KormiumBuilder|null[0]
-    constructor <init>() // io.github.kormium/KormiumBuilder.<init>|<init>(){}[0]
-
-    final fun <#A1: io.github.kormium.database/Database<kotlin/Nothing>> finish(kotlin/Function1<io.github.kormium/KormiumConfig, #A1>): #A1 // io.github.kormium/KormiumBuilder.finish|finish(kotlin.Function1<io.github.kormium.KormiumConfig,0:0>){0§<io.github.kormium.database.Database<kotlin.Nothing>>}[0]
-    final fun beforeStart(kotlin/Function1<io.github.kormium.database/Database<kotlin/Nothing>, kotlin/Unit>) // io.github.kormium/KormiumBuilder.beforeStart|beforeStart(kotlin.Function1<io.github.kormium.database.Database<kotlin.Nothing>,kotlin.Unit>){}[0]
-    final fun config(kotlin/Function1<io.github.kormium/KormiumConfigBuilder, kotlin/Unit>) // io.github.kormium/KormiumBuilder.config|config(kotlin.Function1<io.github.kormium.KormiumConfigBuilder,kotlin.Unit>){}[0]
-}
-
 final class io.github.kormium/KormiumConfig { // io.github.kormium/KormiumConfig|null[0]
     constructor <init>(io.github.kormium/BatchInsertMode = ..., io.github.kormium/QueryObserver? = ...) // io.github.kormium/KormiumConfig.<init>|<init>(io.github.kormium.BatchInsertMode;io.github.kormium.QueryObserver?){}[0]
 
@@ -654,6 +648,14 @@ final class io.github.kormium/Value : io.github.kormium/Expression { // io.githu
     constructor <init>(kotlin/Any?) // io.github.kormium/Value.<init>|<init>(kotlin.Any?){}[0]
 
     final fun toSql(io.github.kormium/ParamBuilder): kotlin/String // io.github.kormium/Value.toSql|toSql(io.github.kormium.ParamBuilder){}[0]
+}
+
+open class io.github.kormium/KormiumBuilder { // io.github.kormium/KormiumBuilder|null[0]
+    constructor <init>() // io.github.kormium/KormiumBuilder.<init>|<init>(){}[0]
+
+    final fun <#A1: io.github.kormium.database/Database<kotlin/Nothing>> finish(kotlin/Function1<io.github.kormium/KormiumConfig, #A1>): #A1 // io.github.kormium/KormiumBuilder.finish|finish(kotlin.Function1<io.github.kormium.KormiumConfig,0:0>){0§<io.github.kormium.database.Database<kotlin.Nothing>>}[0]
+    final fun beforeStart(kotlin/Function1<io.github.kormium.database/Database<kotlin/Nothing>, kotlin/Unit>) // io.github.kormium/KormiumBuilder.beforeStart|beforeStart(kotlin.Function1<io.github.kormium.database.Database<kotlin.Nothing>,kotlin.Unit>){}[0]
+    final fun config(kotlin/Function1<io.github.kormium/KormiumConfigBuilder, kotlin/Unit>) // io.github.kormium/KormiumBuilder.config|config(kotlin.Function1<io.github.kormium.KormiumConfigBuilder,kotlin.Unit>){}[0]
 }
 
 open class io.github.kormium/KormiumException : kotlin/Exception { // io.github.kormium/KormiumException|null[0]

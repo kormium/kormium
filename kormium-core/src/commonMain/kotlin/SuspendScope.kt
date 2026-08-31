@@ -36,7 +36,7 @@ public class SuspendScope<G : Catalog> internal constructor(
         return insert(entity, exec, returning)
     }
 
-    /** Inserts all [entities] in one statement; see [Scope.insertAll]. */
+    /** Inserts all [entities] as a batch; see [Scope.insertAll]. */
     public suspend fun <T : Entity> Table<G, T>.insertAll(
         entities: List<T>,
         returning: Boolean = false,
@@ -219,7 +219,7 @@ public class SuspendScope<G : Catalog> internal constructor(
     public suspend fun <R> savepoint(block: suspend SuspendScope<G>.() -> R): R {
         contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         check(transactional) { "savepoint { } requires a transaction; use suspendTransaction { }, not suspendAutocommit { }" }
-        val name = "korm_sp_${savepointCounter++}"
+        val name = "kormium_sp_${savepointCounter++}"
         exec.executeUpdate("SAVEPOINT $name")
         return try {
             block().also { exec.executeUpdate("RELEASE SAVEPOINT $name") }

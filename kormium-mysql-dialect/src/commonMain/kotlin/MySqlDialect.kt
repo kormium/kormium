@@ -35,6 +35,11 @@ public object MySqlDialect : Dialect by StandardDialect {
         }
     }
 
+    // The prepared-statement protocol counts placeholders in a 2-byte field, so 65535 is a hard
+    // ceiling. A statement can still exceed max_allowed_packet below that — the packet size
+    // depends on the values, not their count, so it is the caller's to tune.
+    override val maxBoundParameters: Int get() = 65535
+
     // MySQL has no RETURNING — the core re-selects the inserted row by primary key instead.
     override val supportsReturning: Boolean get() = false
 

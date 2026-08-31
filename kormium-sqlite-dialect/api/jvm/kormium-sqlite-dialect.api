@@ -1,6 +1,7 @@
 public final class io/github/kormium/SqliteDialect : io/github/kormium/Dialect {
 	public static final field INSTANCE Lio/github/kormium/SqliteDialect;
 	public fun advisoryLockSql (J)Ljava/lang/String;
+	public fun getMaxBoundParameters ()I
 	public fun getReadOnlyToggle ()Lio/github/kormium/ReadOnlyToggle;
 	public fun getSupportsReturning ()Z
 	public fun getSupportsTransactionIsolation ()Z

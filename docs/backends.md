@@ -182,6 +182,35 @@ platform runtime ships. Versions move with the dependency bumps recorded in the
 In practice this matters only for SQL that a recent SQLite added: the Android engine trails the
 others, so a feature newer than its version will work everywhere else and fail there.
 
+### SQLite extensions
+
+The `sqlite { }` block of `createSqliteDatabase` installs extensions (`sqlite-vec` and friends) and
+applies pragmas on every connection a driver opens. Kormium ships no extensions and curates no set
+of them: an extension package is an ordinary dependency implementing `SqliteExtension` from
+`kormium-sqlite-spi`, and anyone can publish one. See
+[ADR 0013](adr/0013-sqlite-extensions.md) and the reference package in `samples/sqlite-vec`.
+
+Every engine applies `pragma(...)`. Loading an extension differs:
+
+| Engine | Loads extensions | How |
+| --- | --- | --- |
+| JVM (sqlite-jdbc) | yes | `load_extension()` per connection, with loading armed only for that call |
+| Native / iOS | yes | the package links its own static library and registers it before the pool opens |
+| Node (better-sqlite3) | yes | `loadExtension()` when the connection is opened |
+| Android (androidx) | yes | registered process-wide via `sqlite3_auto_extension`, through Kormium's JNI shim (`kormium-sqlite-android-ext`); the package ships only its `.so` per ABI |
+| Browser (wa-sqlite, sqlite-wasm) | with the loadable build | an extension is a *different* WASM build; pass it via the `engine` parameter (`SqliteWasmEngine` / `SqliteJsEngine`). The default is upstream's, compiled with `SQLITE_OMIT_LOAD_EXTENSION`; [sqlite-wasm-engines](https://github.com/kormium/sqlite-wasm-engines) publishes an extension-capable one |
+
+An extension declares the engines it supports, and a driver rejects one it was not built for while
+opening the database — by name, rather than leaving it to surface as `no such module` later. The
+browser engines install through the **suspend** half of the SPI (`suspendInstall`), because their
+SQLite sits behind an async VFS or in a Worker; everything else uses the blocking `install`.
+
+Factories that take options directly (Node and the browser) build them with `sqliteOptions { }`;
+`createSqliteDatabase` has the `sqlite { }` block instead.
+
+Kormium publishes the SQLite headers it links as a `sqlite-headers` artifact next to
+`kormium-sqlite`, so an extension author compiles against exactly the SQLite the driver uses.
+
 ### Browser SQLite (`kormium-sqlite-wasm`)
 
 The browser has no one right SQLite engine, so `kormium-sqlite-wasm` ships **three**, each a

@@ -32,7 +32,7 @@ import kotlin.time.Duration.Companion.seconds
 public typealias ResultSetWrapper = (java.sql.ResultSet) -> ResultSet
 
 /**
- * Translates a JDBC [SQLException] into a korm exception. Backends differ in how
+ * Translates a JDBC [SQLException] into a Kormium exception. Backends differ in how
  * they report constraint violations (Postgres via SQLSTATE, SQLite via result
  * codes), so each supplies its own mapping. The default maps the standard SQLSTATE.
  */
@@ -50,6 +50,11 @@ public val StandardSqlExceptionTranslator: SqlExceptionTranslator =
  *
  * Open so a backend can subclass it purely to add its marker interface (e.g.
  * `class PostgresJdbcDriver(...) : JdbcDatabase(...), PostgresDriver`).
+ *
+ * @param onConnection run on every connection the pool opens, before it is handed out. Pass it
+ *   when a connection needs preparing in code rather than in one SQL statement — SQLite uses it to
+ *   install extensions and pragmas. Supplying it switches the pool onto a DataSource this module
+ *   owns; leave it null and Hikari gets the plain [jdbcUrl] exactly as before.
  */
 public open class JdbcDatabase(
     jdbcUrl: String,
@@ -62,6 +67,7 @@ public open class JdbcDatabase(
     private val wrap: ResultSetWrapper,
     private val translate: SqlExceptionTranslator = StandardSqlExceptionTranslator,
     connectionInitSql: String? = null,
+    onConnection: ((Connection) -> Unit)? = null,
     override val config: KormiumConfig = KormiumConfig(),
 ) : Database<Nothing>, SuspendDatabase<Nothing> {
 
@@ -72,9 +78,18 @@ public open class JdbcDatabase(
     private val acquireTimeout = acquireTimeout
 
     private val ds: HikariDataSource = HikariDataSource(HikariConfig().apply {
-        this.jdbcUrl = jdbcUrl
-        if (username != null) this.username = username
-        if (password != null) this.password = password
+        if (onConnection == null) {
+            this.jdbcUrl = jdbcUrl
+            if (username != null) this.username = username
+            if (password != null) this.password = password
+        } else {
+            // Hikari offers no per-connection callback, and connectionInitSql is a single SQL
+            // string — too little for work that needs real code (loading a SQLite extension) and
+            // that must run on every connection the pool opens, including ones it recreates on
+            // maxLifetime. Handing it a DataSource we own is the supported hook; the plain
+            // jdbcUrl path above is untouched for callers that don't need it.
+            this.dataSource = InitializingDataSource(jdbcUrl, username, password, onConnection)
+        }
         this.maximumPoolSize = poolSize
         // HikariCP enforces a 250 ms floor; anything below is silently reset to the 30 s default,
         // so clamp to the floor instead of surprising the caller with a much larger value.

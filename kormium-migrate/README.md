@@ -1,4 +1,4 @@
-# korm-migrate
+# kormium-migrate
 
 A small, raw-SQL schema migration runner for [Kormium](../readme.md). Kormium does not own
 schema, so a `Migration` is whatever SQL your backend needs — intentionally **not** portable
@@ -8,12 +8,12 @@ across databases.
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.kormium:korm-bom:<version>"))
-    implementation("io.github.kormium:korm-migrate")
+    implementation(platform("io.github.kormium:kormium-bom:<version>"))
+    implementation("io.github.kormium:kormium-migrate")
 }
 ```
 
-`korm-core` is pulled in transitively. Works on every target `korm-core` supports.
+`kormium-core` is pulled in transitively. Works on every target `kormium-core` supports.
 
 ## Example
 
@@ -34,7 +34,7 @@ val db = createSqliteDatabase("app.db") {
 
 ## How it works
 
-- **Idempotent.** Each `Migration.id` is recorded once in the `korm_migrations` journal;
+- **Idempotent.** Each `Migration.id` is recorded once in the `kormium_migrations` journal;
   re-running the same list is a safe no-op, so calling `migrate(...)` on every startup is fine.
 - **One transaction, all-or-nothing.** If any migration fails the whole batch rolls back and
   nothing is recorded. (So a statement that cannot run inside a transaction — e.g.

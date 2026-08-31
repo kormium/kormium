@@ -45,3 +45,6 @@ bin/
 ### Mac OS ###
 .DS_Store
 .kotlin/
+
+# CMake/Ninja output from the Android JNI shim (kormium-sqlite-android-ext).
+.cxx/
