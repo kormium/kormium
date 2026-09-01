@@ -14,12 +14,12 @@ import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.datetime.toKotlinLocalTime
 
 /**
- * Adapts one r2dbc [Row] to korm's [ResultSet]. r2dbc already hands the mapping
- * function a positioned row per result row, so [next] is never used by korm's per-row
+ * Adapts one r2dbc [Row] to Kormium's [ResultSet]. r2dbc already hands the mapping
+ * function a positioned row per result row, so [next] is never used by Kormium's per-row
  * handler — the cursor model collapses to a single row. Column indexes are 0-based, as
- * in r2dbc and in korm's positional read path.
+ * in r2dbc and in Kormium's positional read path.
  *
- * The text types (UUID/BigDecimal/Json) are read through [getString] (korm parses them
+ * The text types (UUID/BigDecimal/Json) are read through [getString] (Kormium parses them
  * from text), so reading the raw value and toString()'ing it lines up with the same
  * text mapping the JDBC/libpq backends use.
  */
@@ -44,7 +44,7 @@ internal class R2dbcResultSet(
         return when (val v = row.get(columnIndex)) {
             null -> null
             // json/jsonb come back as r2dbc-postgresql's Json wrapper; its toString() isn't the raw
-            // text korm's getJson()/text mapping expects, so unwrap it explicitly.
+            // text Kormium's getJson()/text mapping expects, so unwrap it explicitly.
             is Json -> v.asString()
             else -> v.toString()
         }

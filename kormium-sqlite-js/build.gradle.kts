@@ -32,6 +32,8 @@ kotlin {
                 api(project(":kormium-core"))
                 // Reuse the shared, pure SqliteDialect (no duplication) — see ADR 0001.
                 implementation(project(":kormium-sqlite-dialect"))
+                // The extension SPI (SqliteOptions / SuspendSqliteConnectionScope) — ADR 0013.
+                api(project(":kormium-sqlite-spi"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
                 // wa-sqlite: SQLite in WASM with async VFS (IndexedDB-capable). Taken from the

@@ -3,6 +3,9 @@ package io.github.kormium.sqlite.wasm
 import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.KormiumConfig
 import io.github.kormium.SqliteDialect
+import io.github.kormium.SqliteEngine
+import io.github.kormium.perConnectionRegistration
+import io.github.kormium.SqliteOptions
 import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
@@ -84,4 +87,25 @@ public class WorkerSqliteWasmDatabase internal constructor(
  */
 public suspend fun createWorkerSqliteWasmDatabase(
     config: KormiumConfig = KormiumConfig(),
-): WorkerSqliteWasmDatabase = WorkerSqliteWasmDatabase(WorkerConnection.open(opfsPath = null), config)
+    options: SqliteOptions = SqliteOptions(),
+): WorkerSqliteWasmDatabase {
+    options.beforeOpen(perConnectionRegistration(SqliteEngine.SqliteWasm))
+    val connection = WorkerConnection.open(opfsPath = null)
+    try {
+        options.suspendApplyTo(connection.optionsScope(SqliteEngine.SqliteWasm))
+    } catch (e: Throwable) {
+        runCatching { connection.close() }
+        throw e
+    }
+    return WorkerSqliteWasmDatabase(connection, config)
+}
+/**
+ * A [WasmSqliteConnectionScope] over one Worker-hosted connection, for [SqliteOptions].
+ */
+internal fun WorkerConnection.optionsScope(engine: SqliteEngine): WasmSqliteConnectionScope =
+    WasmSqliteConnectionScope(
+        engine = engine,
+        runStatement = { sql -> execute(sql, emptyList()) },
+        readScalar = { sql -> query(sql, emptyList()).rows.firstOrNull()?.firstOrNull()?.toString() },
+    )
+

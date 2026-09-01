@@ -11,7 +11,7 @@ import kotlinx.datetime.toInstant
 /**
  * A core [ResultSet] over a fully-materialized MySQL result. Each cell is the column's raw bytes
  * (or `null` for SQL NULL): the native driver binds every output column as `MYSQL_TYPE_STRING`, so
- * the bytes are the value's text form — exactly what korm's text-based column reading expects (the
+ * the bytes are the value's text form — exactly what Kormium's text-based column reading expects (the
  * same model as libpq's text result format). Binary columns are read verbatim via [getBytes].
  *
  * Date/times come back as MySQL's space-separated `"yyyy-MM-dd HH:mm:ss"`; the session is pinned to

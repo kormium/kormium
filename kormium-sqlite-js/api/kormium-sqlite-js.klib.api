@@ -6,6 +6,15 @@
 // - Show declarations: true
 
 // Library unique name: <io.github.kormium:kormium-sqlite-js>
+abstract fun interface io.github.kormium.sqlite.js/SqliteJsEngine { // io.github.kormium.sqlite.js/SqliteJsEngine|null[0]
+    abstract fun instantiate(kotlin/Any?): kotlin.js/Promise<kotlin/Any> // io.github.kormium.sqlite.js/SqliteJsEngine.instantiate|instantiate(kotlin.Any?){}[0]
+
+    final object Companion { // io.github.kormium.sqlite.js/SqliteJsEngine.Companion|null[0]
+        final val Default // io.github.kormium.sqlite.js/SqliteJsEngine.Companion.Default|{}Default[0]
+            final fun <get-Default>(): io.github.kormium.sqlite.js/SqliteJsEngine // io.github.kormium.sqlite.js/SqliteJsEngine.Companion.Default.<get-Default>|<get-Default>(){}[0]
+    }
+}
+
 final class io.github.kormium.sqlite.js/SqliteJsDatabase : io.github.kormium.database/SuspendDatabase<kotlin/Nothing> { // io.github.kormium.sqlite.js/SqliteJsDatabase|null[0]
     final val config // io.github.kormium.sqlite.js/SqliteJsDatabase.config|{}config[0]
         final fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium.sqlite.js/SqliteJsDatabase.config.<get-config>|<get-config>(){}[0]
@@ -20,4 +29,4 @@ final class io.github.kormium.sqlite.js/SqliteJsDatabase : io.github.kormium.dat
     final suspend fun <#A1: kotlin/Any?> useConnection(kotlin/Boolean, io.github.kormium/TransactionIsolation?, kotlin/Boolean, kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendSqlExecutor, #A1>): #A1 // io.github.kormium.sqlite.js/SqliteJsDatabase.useConnection|useConnection(kotlin.Boolean;io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendSqlExecutor,0:0>){0§<kotlin.Any?>}[0]
 }
 
-final suspend fun io.github.kormium.sqlite.js/createSqliteJsDatabase(kotlin/String? = ..., io.github.kormium/KormiumConfig = ..., kotlin/Any? = ...): io.github.kormium.sqlite.js/SqliteJsDatabase // io.github.kormium.sqlite.js/createSqliteJsDatabase|createSqliteJsDatabase(kotlin.String?;io.github.kormium.KormiumConfig;kotlin.Any?){}[0]
+final suspend fun io.github.kormium.sqlite.js/createSqliteJsDatabase(kotlin/String? = ..., io.github.kormium/KormiumConfig = ..., kotlin/Any? = ..., io.github.kormium/SqliteOptions = ..., io.github.kormium.sqlite.js/SqliteJsEngine = ...): io.github.kormium.sqlite.js/SqliteJsDatabase // io.github.kormium.sqlite.js/createSqliteJsDatabase|createSqliteJsDatabase(kotlin.String?;io.github.kormium.KormiumConfig;kotlin.Any?;io.github.kormium.SqliteOptions;io.github.kormium.sqlite.js.SqliteJsEngine){}[0]

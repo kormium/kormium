@@ -6,6 +6,15 @@
 // - Show declarations: true
 
 // Library unique name: <io.github.kormium:kormium-sqlite-wasm>
+abstract fun interface io.github.kormium.sqlite.wasm/SqliteWasmEngine { // io.github.kormium.sqlite.wasm/SqliteWasmEngine|null[0]
+    abstract fun instantiate(kotlin.js/JsAny?): kotlin.js/Promise<kotlin.js/JsAny> // io.github.kormium.sqlite.wasm/SqliteWasmEngine.instantiate|instantiate(kotlin.js.JsAny?){}[0]
+
+    final object Companion { // io.github.kormium.sqlite.wasm/SqliteWasmEngine.Companion|null[0]
+        final val Default // io.github.kormium.sqlite.wasm/SqliteWasmEngine.Companion.Default|{}Default[0]
+            final fun <get-Default>(): io.github.kormium.sqlite.wasm/SqliteWasmEngine // io.github.kormium.sqlite.wasm/SqliteWasmEngine.Companion.Default.<get-Default>|<get-Default>(){}[0]
+    }
+}
+
 final class io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS : kotlin.js/JsAny { // io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS|null[0]
     constructor <init>(kotlin/String, kotlin.js/JsAny) // io.github.kormium.sqlite.wasm/IDBBatchAtomicVFS.<init>|<init>(kotlin.String;kotlin.js.JsAny){}[0]
 
@@ -56,6 +65,6 @@ final class io.github.kormium.sqlite.wasm/WorkerSqliteWasmDatabase : io.github.k
 }
 
 final fun io.github.kormium.sqlite.wasm/SQLiteESMFactory(kotlin.js/JsAny? = ...): kotlin.js/Promise<kotlin.js/JsAny> // io.github.kormium.sqlite.wasm/SQLiteESMFactory|SQLiteESMFactory(kotlin.js.JsAny?){}[0]
-final suspend fun io.github.kormium.sqlite.wasm/createPooledSqliteWasmDatabase(kotlin/String, kotlin/Int = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium.sqlite.wasm/PooledSqliteWasmDatabase // io.github.kormium.sqlite.wasm/createPooledSqliteWasmDatabase|createPooledSqliteWasmDatabase(kotlin.String;kotlin.Int;io.github.kormium.KormiumConfig){}[0]
-final suspend fun io.github.kormium.sqlite.wasm/createSqliteWasmDatabase(kotlin/String? = ..., io.github.kormium/KormiumConfig = ..., kotlin.js/JsAny? = ...): io.github.kormium.sqlite.wasm/SqliteWasmDatabase // io.github.kormium.sqlite.wasm/createSqliteWasmDatabase|createSqliteWasmDatabase(kotlin.String?;io.github.kormium.KormiumConfig;kotlin.js.JsAny?){}[0]
-final suspend fun io.github.kormium.sqlite.wasm/createWorkerSqliteWasmDatabase(io.github.kormium/KormiumConfig = ...): io.github.kormium.sqlite.wasm/WorkerSqliteWasmDatabase // io.github.kormium.sqlite.wasm/createWorkerSqliteWasmDatabase|createWorkerSqliteWasmDatabase(io.github.kormium.KormiumConfig){}[0]
+final suspend fun io.github.kormium.sqlite.wasm/createPooledSqliteWasmDatabase(kotlin/String, kotlin/Int = ..., io.github.kormium/KormiumConfig = ..., io.github.kormium/SqliteOptions = ...): io.github.kormium.sqlite.wasm/PooledSqliteWasmDatabase // io.github.kormium.sqlite.wasm/createPooledSqliteWasmDatabase|createPooledSqliteWasmDatabase(kotlin.String;kotlin.Int;io.github.kormium.KormiumConfig;io.github.kormium.SqliteOptions){}[0]
+final suspend fun io.github.kormium.sqlite.wasm/createSqliteWasmDatabase(kotlin/String? = ..., io.github.kormium/KormiumConfig = ..., kotlin.js/JsAny? = ..., io.github.kormium/SqliteOptions = ..., io.github.kormium.sqlite.wasm/SqliteWasmEngine = ...): io.github.kormium.sqlite.wasm/SqliteWasmDatabase // io.github.kormium.sqlite.wasm/createSqliteWasmDatabase|createSqliteWasmDatabase(kotlin.String?;io.github.kormium.KormiumConfig;kotlin.js.JsAny?;io.github.kormium.SqliteOptions;io.github.kormium.sqlite.wasm.SqliteWasmEngine){}[0]
+final suspend fun io.github.kormium.sqlite.wasm/createWorkerSqliteWasmDatabase(io.github.kormium/KormiumConfig = ..., io.github.kormium/SqliteOptions = ...): io.github.kormium.sqlite.wasm/WorkerSqliteWasmDatabase // io.github.kormium.sqlite.wasm/createWorkerSqliteWasmDatabase|createWorkerSqliteWasmDatabase(io.github.kormium.KormiumConfig;io.github.kormium.SqliteOptions){}[0]

@@ -44,8 +44,13 @@ public class Scope<G : Catalog> internal constructor(
     }
 
     /**
-     * Inserts all [entities] in one statement. By default returns [entities] as given; pass
+     * Inserts all [entities] as a batch. By default returns [entities] as given; pass
      * `returning = true` to fetch the stored rows back via SQL `RETURNING`.
+     *
+     * The batch renders as few multi-row `INSERT`s as possible: one per shape group (see
+     * [BatchInsertMode]), split further so no statement exceeds the backend's bound-parameter
+     * ceiling ([Dialect.maxBoundParameters]). All of them run inside the caller's scope, so a
+     * split batch stays as atomic as the surrounding transaction.
      */
     public fun <T : Entity> Table<G, T>.insertAll(
         entities: List<T>,
@@ -260,7 +265,7 @@ public class Scope<G : Catalog> internal constructor(
     public fun <R> savepoint(block: Scope<G>.() -> R): R {
         contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         check(transactional) { "savepoint { } requires a transaction; use transaction { }, not autocommit { }" }
-        val name = "korm_sp_${savepointCounter++}"
+        val name = "kormium_sp_${savepointCounter++}"
         exec.executeUpdate("SAVEPOINT $name")
         return try {
             block().also { exec.executeUpdate("RELEASE SAVEPOINT $name") }

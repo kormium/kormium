@@ -8,7 +8,7 @@ import kotlinx.datetime.LocalTime
 
 /**
  * A [ResultSet] over one positional JS result row, reading every value as text (via [cellText]) and
- * parsing it. Shared by all Wasm engines: their drivers return JS-native values, and korm's
+ * parsing it. Shared by all Wasm engines: their drivers return JS-native values, and Kormium's
  * non-native types (UUID/BigDecimal/temporals) are stored/sent as text anyway, so one text path
  * covers them all. Each driver hands the engine a full row, so [next] is always false; column
  * indexes are 0-based.

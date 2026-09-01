@@ -3,6 +3,9 @@ package io.github.kormium.sqlite.wasm
 import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.KormiumConfig
 import io.github.kormium.SqliteDialect
+import io.github.kormium.SqliteEngine
+import io.github.kormium.perConnectionRegistration
+import io.github.kormium.SqliteOptions
 import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
@@ -174,7 +177,9 @@ public suspend fun createPooledSqliteWasmDatabase(
     opfsPath: String,
     readerPoolSize: Int = 4,
     config: KormiumConfig = KormiumConfig(),
+    options: SqliteOptions = SqliteOptions(),
 ): PooledSqliteWasmDatabase {
+    options.beforeOpen(perConnectionRegistration(SqliteEngine.SqliteWasm))
     // Analytical page cache: SQLite's default (~2 MB) forces re-reading hot index pages through
     // OPFS on every aggregate over a large table; 32 MB keeps a 1M-row table's per-dimension
     // covering index fully cached, making repeat aggregates near-memory-speed. temp_store=MEMORY
@@ -184,16 +189,33 @@ public suspend fun createPooledSqliteWasmDatabase(
         execute("PRAGMA temp_store=MEMORY", emptyList())
     }
 
-    val writer = WorkerConnection.open(opfsPath).also { it.applyPerfPragmas() }
-    // query_only is set ONCE here, for the reader's whole lifetime, rather than toggled on/off
-    // around every read-only transaction: a reader is never picked for a write (see pickReader),
-    // so there's no round trip to save by deferring it, and it also guards a suspendTransaction(
-    // readOnly = true, transactional = false) call, which used to skip the old per-transaction guard.
-    val readers = List(readerPoolSize) {
-        WorkerConnection.open(opfsPath).also {
-            it.execute("PRAGMA query_only=ON", emptyList())
-            it.applyPerfPragmas()
+    // The caller's options go on after the perf pragmas above, so a `pragma("cache_size", …)` of
+    // their own wins over Kormium's analytical default rather than being silently overwritten.
+    suspend fun WorkerConnection.applyOptions() = options.suspendApplyTo(optionsScope(SqliteEngine.SqliteWasm))
+
+    // Connections are tracked as they open so that a failure part-way through — a broken extension
+    // on reader 3, say — does not leave the ones already open holding their OPFS access handles for
+    // the life of the page.
+    val opened = mutableListOf<WorkerConnection>()
+    try {
+        val writer = WorkerConnection.open(opfsPath).also { opened += it }
+        writer.applyPerfPragmas()
+        writer.applyOptions()
+        // query_only is set ONCE here, for the reader's whole lifetime, rather than toggled on/off
+        // around every read-only transaction: a reader is never picked for a write (see pickReader),
+        // so there's no round trip to save by deferring it, and it also guards a suspendTransaction(
+        // readOnly = true, transactional = false) call, which used to skip the old per-transaction guard.
+        val readers = List(readerPoolSize) {
+            WorkerConnection.open(opfsPath).also { reader ->
+                opened += reader
+                reader.execute("PRAGMA query_only=ON", emptyList())
+                reader.applyPerfPragmas()
+                reader.applyOptions()
+            }
         }
+        return PooledSqliteWasmDatabase(writer, readers, config)
+    } catch (e: Throwable) {
+        opened.forEach { runCatching { it.close() } }
+        throw e
     }
-    return PooledSqliteWasmDatabase(writer, readers, config)
 }

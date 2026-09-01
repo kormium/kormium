@@ -34,7 +34,11 @@ public class RenderScope<G : Catalog> internal constructor(public val dialect: D
     public fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): RenderedSql =
         RenderedSql(insertSql(entity, dialect, typeMapper, returning))
 
-    /** A batch insert may split into several statements (per [BatchInsertMode]), so this returns one [RenderedSql] each. */
+    /**
+     * A batch insert may split into several statements — one per shape group (per
+     * [BatchInsertMode]), and further so no statement exceeds [Dialect.maxBoundParameters] — so
+     * this returns one [RenderedSql] each.
+     */
     public fun <T : Entity> Table<G, T>.insertAll(
         entities: List<T>,
         returning: Boolean = false,

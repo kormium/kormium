@@ -3,6 +3,9 @@ package io.github.kormium.sqlite.wasm
 import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.KormiumConfig
 import io.github.kormium.SqliteDialect
+import io.github.kormium.SqliteEngine
+import io.github.kormium.perConnectionRegistration
+import io.github.kormium.SqliteOptions
 import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
@@ -39,6 +42,17 @@ public class SqliteWasmDatabase internal constructor(
 
     private val executor = WaSqliteExecutor(api, db, SqliteDialect, StandardTypeMapper)
 
+    /** Applies the caller's [SqliteOptions] to this connection; see the factory below. */
+    internal suspend fun applyOptions(options: SqliteOptions) {
+        options.suspendApplyTo(
+            WasmSqliteConnectionScope(
+                engine = SqliteEngine.WaSqlite,
+                runStatement = { sql -> executor.execute(sql, emptyMap()) },
+                readScalar = { sql -> executor.execute(sql, emptyMap()) { it.getString(0) }.firstOrNull() },
+            ),
+        )
+    }
+
     override suspend fun <R> useConnection(
         transactional: Boolean,
         isolation: TransactionIsolation?,
@@ -67,6 +81,11 @@ public class SqliteWasmDatabase internal constructor(
 /**
  * Opens a SQLite database via wa-sqlite.
  *
+ * @param options extensions to install and pragmas to apply on the connection. Runtime extension
+ *   loading needs a WASM build that supports it; the default one does not (see [engine]).
+ * @param engine which WASM SQLite build to run on. Defaults to the wa-sqlite build Kormium ships;
+ *   pass another to use an engine with extensions compiled in — in the browser an extension is a
+ *   different build, not a file loaded into the existing one.
  * @param dataDir `null` (default) opens an in-memory database (`:memory:`). A non-null name opens a
  *   database persisted to IndexedDB under that name (browser only) via wa-sqlite's
  *   `IDBBatchAtomicVFS`, so data survives a page reload.
@@ -78,8 +97,12 @@ public suspend fun createSqliteWasmDatabase(
     // factory fetches its `.wasm` itself; under Node (where fetch can't read file://) pass
     // `{ wasmBinary: <bytes> }` here so it loads the module without fetching.
     moduleConfig: JsAny? = null,
+    options: SqliteOptions = SqliteOptions(),
+    engine: SqliteWasmEngine = SqliteWasmEngine.Default,
 ): SqliteWasmDatabase {
-    val module = (if (moduleConfig == null) SQLiteESMFactory() else SQLiteESMFactory(moduleConfig)).await<JsAny>()
+    // Rejects an extension this engine cannot install before anything is opened.
+    options.beforeOpen(perConnectionRegistration(SqliteEngine.WaSqlite))
+    val module = engine.instantiate(moduleConfig).await<JsAny>()
     val api = Factory(module)
     val flags = SQLITE_OPEN_CREATE or SQLITE_OPEN_READWRITE
     val db = when (dataDir) {
@@ -95,5 +118,14 @@ public suspend fun createSqliteWasmDatabase(
         }
     }
     check(db.toInt() != 0) { "wa-sqlite open_v2 returned a null database handle (dataDir=$dataDir)" }
-    return SqliteWasmDatabase(api, db, config)
+    val database = SqliteWasmDatabase(api, db, config)
+    // A connection that cannot be prepared must not be handed out: close it and let the failure
+    // surface here rather than at the first query.
+    try {
+        database.applyOptions(options)
+    } catch (e: Throwable) {
+        runCatching { database.close() }
+        throw e
+    }
+    return database
 }

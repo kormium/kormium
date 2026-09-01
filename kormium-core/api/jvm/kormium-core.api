@@ -260,6 +260,7 @@ public abstract interface annotation class io/github/kormium/DelicateKormiumApi 
 
 public abstract interface class io/github/kormium/Dialect {
 	public fun advisoryLockSql (J)Ljava/lang/String;
+	public fun getMaxBoundParameters ()I
 	public fun getReadOnlyToggle ()Lio/github/kormium/ReadOnlyToggle;
 	public fun getSupportsReturning ()Z
 	public fun getSupportsTransactionIsolation ()Z
@@ -276,6 +277,7 @@ public abstract interface class io/github/kormium/Dialect {
 
 public final class io/github/kormium/Dialect$DefaultImpls {
 	public static fun advisoryLockSql (Lio/github/kormium/Dialect;J)Ljava/lang/String;
+	public static fun getMaxBoundParameters (Lio/github/kormium/Dialect;)I
 	public static fun getReadOnlyToggle (Lio/github/kormium/Dialect;)Lio/github/kormium/ReadOnlyToggle;
 	public static fun getSupportsReturning (Lio/github/kormium/Dialect;)Z
 	public static fun getSupportsTransactionIsolation (Lio/github/kormium/Dialect;)Z
@@ -476,7 +478,7 @@ public final class io/github/kormium/JsonColumnType : io/github/kormium/ColumnTy
 	public fun toParam (Lkotlinx/serialization/json/JsonElement;)Ljava/lang/Object;
 }
 
-public final class io/github/kormium/KormiumBuilder {
+public class io/github/kormium/KormiumBuilder {
 	public fun <init> ()V
 	public final fun beforeStart (Lkotlin/jvm/functions/Function1;)V
 	public final fun config (Lkotlin/jvm/functions/Function1;)V
@@ -883,6 +885,7 @@ public final class io/github/kormium/SqlParameterSource$DefaultImpls {
 public final class io/github/kormium/StandardDialect : io/github/kormium/Dialect {
 	public static final field INSTANCE Lio/github/kormium/StandardDialect;
 	public fun advisoryLockSql (J)Ljava/lang/String;
+	public fun getMaxBoundParameters ()I
 	public fun getReadOnlyToggle ()Lio/github/kormium/ReadOnlyToggle;
 	public fun getSupportsReturning ()Z
 	public fun getSupportsTransactionIsolation ()Z

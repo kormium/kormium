@@ -11,6 +11,7 @@ final class io.github.kormium.sqlite.node/Database : kotlin.js/JsAny { // io.git
 
     final fun close() // io.github.kormium.sqlite.node/Database.close|close(){}[0]
     final fun exec(kotlin/String) // io.github.kormium.sqlite.node/Database.exec|exec(kotlin.String){}[0]
+    final fun loadExtension(kotlin/String, kotlin/String? = ...) // io.github.kormium.sqlite.node/Database.loadExtension|loadExtension(kotlin.String;kotlin.String?){}[0]
 }
 
 final class io.github.kormium.sqlite.node/NodeSqliteDatabase : io.github.kormium.database/SuspendDatabase<kotlin/Nothing> { // io.github.kormium.sqlite.node/NodeSqliteDatabase|null[0]
@@ -27,4 +28,4 @@ final class io.github.kormium.sqlite.node/NodeSqliteDatabase : io.github.kormium
     final suspend fun <#A1: kotlin/Any?> useConnection(kotlin/Boolean, io.github.kormium/TransactionIsolation?, kotlin/Boolean, kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendSqlExecutor, #A1>): #A1 // io.github.kormium.sqlite.node/NodeSqliteDatabase.useConnection|useConnection(kotlin.Boolean;io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendSqlExecutor,0:0>){0§<kotlin.Any?>}[0]
 }
 
-final fun io.github.kormium.sqlite.node/createNodeSqliteDatabase(kotlin/String = ..., io.github.kormium/KormiumConfig = ...): io.github.kormium.sqlite.node/NodeSqliteDatabase // io.github.kormium.sqlite.node/createNodeSqliteDatabase|createNodeSqliteDatabase(kotlin.String;io.github.kormium.KormiumConfig){}[0]
+final fun io.github.kormium.sqlite.node/createNodeSqliteDatabase(kotlin/String = ..., io.github.kormium/KormiumConfig = ..., io.github.kormium/SqliteOptions = ...): io.github.kormium.sqlite.node/NodeSqliteDatabase // io.github.kormium.sqlite.node/createNodeSqliteDatabase|createNodeSqliteDatabase(kotlin.String;io.github.kormium.KormiumConfig;io.github.kormium.SqliteOptions){}[0]

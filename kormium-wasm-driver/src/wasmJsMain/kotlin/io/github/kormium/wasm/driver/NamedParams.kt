@@ -13,7 +13,7 @@ public val DollarMarker: ParamMarker = { i -> "\$${i + 1}" }
 public class ParsedSql(public val sql: String, public val names: List<String>)
 
 /**
- * Rewrites korm's Spring-style `:name` placeholders to the driver's positional marker and records
+ * Rewrites Kormium's Spring-style `:name` placeholders to the driver's positional marker and records
  * the names in occurrence order so values can be bound by index. Quoted literals (`'`, `"`, backtick),
  * line/block comments and Postgres `::` casts are copied verbatim. Shared by every Wasm engine —
  * only the [marker] differs.

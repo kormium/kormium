@@ -46,7 +46,7 @@ internal class R2dbcExecutor(
             // instead of silently binding NULL. An explicit `null` value is still bound below.
             require(namedParameters.containsKey(name)) { "No value supplied for parameter \"$name\"" }
             when (val value = namedParameters[name]) {
-                // korm's TypeMapper has already reduced values to String/primitive; a null
+                // Kormium's TypeMapper has already reduced values to String/primitive; a null
                 // binds as text and any ::cast in the SQL turns it into a typed NULL.
                 null -> statement.bindNull(index, String::class.java)
                 else -> statement.bind(index, value)
@@ -84,7 +84,7 @@ internal class R2dbcExecutor(
     override suspend fun executeUpdate(sql: String, namedParameters: Map<String, Any?>): Long =
         execute(sql, namedParameters)
 
-    // Map r2dbc's exceptions to korm's typed ones via the backend-supplied translator (SQLSTATE
+    // Map r2dbc's exceptions to Kormium's typed ones via the backend-supplied translator (SQLSTATE
     // for Postgres, vendor code for MySQL).
     private suspend fun <T> translating(block: suspend () -> T): T =
         try {

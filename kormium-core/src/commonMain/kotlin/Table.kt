@@ -220,7 +220,8 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
 
     private class BatchGroup(val columns: List<Column<*, *, *>>, val entityIndices: List<Int>)
 
-    // Splits a batch into groups per the [BatchInsertMode]. Each group becomes one INSERT.
+    // Splits a batch into groups per the [BatchInsertMode]. Each group becomes one or more
+    // INSERTs — see [buildBatchStatements], which splits a group further on the parameter limit.
     private fun batchGroups(entities: List<T>, mode: BatchInsertMode): List<BatchGroup> {
         val shapes = entities.map { presentColumns(it) }
         return when (mode) {
@@ -268,22 +269,30 @@ public abstract class Table<G: Catalog, T: Entity>(public val tableName: String,
                     )
                 }
             } else {
-                val builder = paramBuilder(dialect, typeMapper)
                 val colSql = group.columns.joinToString(", ") { dialect.quoteIdentifier(it.name) }
-                val tuples = group.entityIndices.joinToString(", ") { idx ->
-                    val entity = entities[idx]
-                    "(${group.columns.joinToString(", ") { col ->
-                        // UnionNulls widens the shape, so a column may be absent on this row:
-                        // bind it as SQL NULL, exactly as an unset field bound before.
-                        val value = entity.slotGet(col)
-                        builder.bind(col.bindParam(if (value === ABSENT) null else value))
-                    }})"
+                // Every row binds one parameter per column, so the backend's per-statement
+                // parameter ceiling caps how many rows one INSERT can carry; past that the group
+                // is split into as many statements as it takes. Each keeps its own ParamBuilder,
+                // so placeholder numbering restarts per statement. A table wider than the ceiling
+                // still emits one row per statement — nothing smaller exists to fall back to.
+                val rowsPerStatement = maxOf(1, dialect.maxBoundParameters / group.columns.size)
+                for (chunk in group.entityIndices.chunked(rowsPerStatement)) {
+                    val builder = paramBuilder(dialect, typeMapper)
+                    val tuples = chunk.joinToString(", ") { idx ->
+                        val entity = entities[idx]
+                        "(${group.columns.joinToString(", ") { col ->
+                            // UnionNulls widens the shape, so a column may be absent on this row:
+                            // bind it as SQL NULL, exactly as an unset field bound before.
+                            val value = entity.slotGet(col)
+                            builder.bind(col.bindParam(if (value === ABSENT) null else value))
+                        }})"
+                    }
+                    statements += BatchStatement(
+                        "INSERT INTO ${qualifiedTableName(dialect)} ($colSql) VALUES $tuples$returningSuffix",
+                        builder.params,
+                        chunk,
+                    )
                 }
-                statements += BatchStatement(
-                    "INSERT INTO ${qualifiedTableName(dialect)} ($colSql) VALUES $tuples$returningSuffix",
-                    builder.params,
-                    group.entityIndices,
-                )
             }
         }
         return statements

@@ -1,0 +1,109 @@
+public final class io/github/kormium/SqliteBuilder : io/github/kormium/KormiumBuilder {
+	public fun <init> ()V
+	public final fun options ()Lio/github/kormium/SqliteOptions;
+	public final fun sqlite (Lkotlin/jvm/functions/Function1;)V
+}
+
+public abstract interface class io/github/kormium/SqliteConnectionScope {
+	public abstract fun exec (Ljava/lang/String;)V
+	public abstract fun getEngine ()Lio/github/kormium/SqliteEngine;
+	public abstract fun loadLibrary (Ljava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun loadLibrary$default (Lio/github/kormium/SqliteConnectionScope;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public abstract fun queryScalar (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class io/github/kormium/SqliteConnectionScope$DefaultImpls {
+	public static synthetic fun loadLibrary$default (Lio/github/kormium/SqliteConnectionScope;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+}
+
+public final class io/github/kormium/SqliteConnectionScopeKt {
+	public static final fun perConnectionRegistration (Lio/github/kormium/SqliteEngine;)Lio/github/kormium/SqliteRegistrationScope;
+}
+
+public final class io/github/kormium/SqliteEngine : java/lang/Enum {
+	public static final field AndroidX Lio/github/kormium/SqliteEngine;
+	public static final field BetterSqlite3 Lio/github/kormium/SqliteEngine;
+	public static final field Native Lio/github/kormium/SqliteEngine;
+	public static final field SqliteWasm Lio/github/kormium/SqliteEngine;
+	public static final field WaSqlite Lio/github/kormium/SqliteEngine;
+	public static final field Xerial Lio/github/kormium/SqliteEngine;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/kormium/SqliteEngine;
+	public static fun values ()[Lio/github/kormium/SqliteEngine;
+}
+
+public abstract interface class io/github/kormium/SqliteExtension {
+	public fun beforeOpen (Lio/github/kormium/SqliteRegistrationScope;)V
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getSupportedEngines ()Ljava/util/Set;
+	public fun install (Lio/github/kormium/SqliteConnectionScope;)V
+	public fun suspendInstall (Lio/github/kormium/SuspendSqliteConnectionScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/SqliteExtension$DefaultImpls {
+	public static fun beforeOpen (Lio/github/kormium/SqliteExtension;Lio/github/kormium/SqliteRegistrationScope;)V
+	public static fun install (Lio/github/kormium/SqliteExtension;Lio/github/kormium/SqliteConnectionScope;)V
+	public static fun suspendInstall (Lio/github/kormium/SqliteExtension;Lio/github/kormium/SuspendSqliteConnectionScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/SqliteExtensionUnsupportedException : io/github/kormium/KormiumException {
+	public fun <init> (Ljava/lang/String;Lio/github/kormium/SqliteEngine;Ljava/lang/String;)V
+	public final fun getEngine ()Lio/github/kormium/SqliteEngine;
+	public final fun getExtension ()Ljava/lang/String;
+}
+
+public final class io/github/kormium/SqliteOptions {
+	public fun <init> ([Lio/github/kormium/SqliteExtension;)V
+	public final fun applyTo (Lio/github/kormium/SqliteConnectionScope;)V
+	public final fun beforeOpen (Lio/github/kormium/SqliteRegistrationScope;)V
+	public final fun declaredPragmas ()Ljava/util/Set;
+	public final fun isEmpty ()Z
+	public final fun suspendApplyTo (Lio/github/kormium/SuspendSqliteConnectionScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/SqliteOptionsBuilder {
+	public final fun extension (Lio/github/kormium/SqliteExtension;)V
+	public final fun onConnection (Lkotlin/jvm/functions/Function1;)V
+	public final fun pragma (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class io/github/kormium/SqliteOptionsKt {
+	public static final fun sqliteOptions (Lkotlin/jvm/functions/Function1;)Lio/github/kormium/SqliteOptions;
+}
+
+public abstract interface class io/github/kormium/SqliteRegistrationScope {
+	public abstract fun getEngine ()Lio/github/kormium/SqliteEngine;
+	public abstract fun registerLibrary (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public abstract interface class io/github/kormium/SqliteStep {
+}
+
+public final class io/github/kormium/SqliteStep$Extension : io/github/kormium/SqliteStep {
+	public fun <init> (Lio/github/kormium/SqliteExtension;)V
+	public final fun getExtension ()Lio/github/kormium/SqliteExtension;
+}
+
+public final class io/github/kormium/SqliteStep$OnConnection : io/github/kormium/SqliteStep {
+	public fun <init> (Lkotlin/jvm/functions/Function1;)V
+	public final fun getBlock ()Lkotlin/jvm/functions/Function1;
+}
+
+public final class io/github/kormium/SqliteStep$Pragma : io/github/kormium/SqliteStep {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun getValue ()Ljava/lang/String;
+}
+
+public abstract interface class io/github/kormium/SuspendSqliteConnectionScope {
+	public abstract fun exec (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getEngine ()Lio/github/kormium/SqliteEngine;
+	public abstract fun loadLibrary (Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun loadLibrary$default (Lio/github/kormium/SuspendSqliteConnectionScope;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public abstract fun queryScalar (Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/SuspendSqliteConnectionScope$DefaultImpls {
+	public static synthetic fun loadLibrary$default (Lio/github/kormium/SuspendSqliteConnectionScope;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+

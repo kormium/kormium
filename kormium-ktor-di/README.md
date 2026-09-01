@@ -1,9 +1,9 @@
-# korm-ktor-di
+# kormium-ktor-di
 
 [Ktor](https://ktor.io) integration for [Kormium](../readme.md) that resolves the database from
 **Ktor's built-in DI** container — no explicit `db` argument in your routes.
 
-Builds on [`korm-ktor`](../kormium-ktor/README.md), adding reified `ApplicationCall` helpers that
+Builds on [`kormium-ktor`](../kormium-ktor/README.md), adding reified `ApplicationCall` helpers that
 look up `SuspendDatabase<G>` by its parameterized type. Ktor DI keys by full type, so
 `SuspendDatabase<App>` and `SuspendDatabase<Cache>` are distinct dependencies — catalog safety
 carries through to resolution.
@@ -12,12 +12,12 @@ carries through to resolution.
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.kormium:korm-bom:<version>"))
-    implementation("io.github.kormium:korm-ktor-di")
+    implementation(platform("io.github.kormium:kormium-bom:<version>"))
+    implementation("io.github.kormium:kormium-ktor-di")
 }
 ```
 
-`korm-ktor` (and `korm-core`) are pulled in transitively.
+`kormium-ktor` (and `kormium-core`) are pulled in transitively.
 
 ## Example
 
@@ -43,11 +43,11 @@ fun Application.module() {
 ```kotlin
 call.transaction<App, _> { ... }   // catalog as a type argument
 call.transaction(App) { ... }      // catalog as a value
-call.korm<App>().transaction { ... } // resolve a handle, then use it
+call.kormium<App>().transaction { ... } // resolve a handle, then use it
 ```
 
 All delegate to `suspendTransaction` / `suspendAutocommit`, so the same routes work over the
-offloaded blocking drivers or `korm-r2dbc`.
+offloaded blocking drivers or `kormium-r2dbc`.
 
 ## Documentation
 

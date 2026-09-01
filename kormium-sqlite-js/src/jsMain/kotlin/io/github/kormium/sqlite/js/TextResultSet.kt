@@ -8,7 +8,7 @@ import kotlinx.datetime.LocalTime
 
 /**
  * A [ResultSet] over one positional JS result row, reading every value as text (via [cellText]) and
- * parsing it. wa-sqlite returns JS-native values, and korm's non-native types (UUID/temporals) are
+ * parsing it. wa-sqlite returns JS-native values, and Kormium's non-native types (UUID/temporals) are
  * stored/sent as text anyway, so one text path covers them all. Each `step` hands the engine a full
  * row, so [next] is always false; column indexes are 0-based. Kotlin/JS counterpart of
  * `kormium-wasm-driver`'s `TextResultSet`.

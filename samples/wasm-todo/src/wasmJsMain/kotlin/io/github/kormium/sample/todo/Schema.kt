@@ -26,7 +26,7 @@ object Todos : Table<TodoCatalog, Todo>("todos", ::Todo) {
     init { id; title; done; createdAt }
 }
 
-/** Schema bootstrap. SQLite is dynamically typed; korm's non-native types are stored as TEXT. */
+/** Schema bootstrap. SQLite is dynamically typed; Kormium's non-native types are stored as TEXT. */
 val todosDdl = """
     CREATE TABLE IF NOT EXISTS "todos" (
         "id" text NOT NULL,

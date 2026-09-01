@@ -33,9 +33,9 @@ class PgIntegrationTest {
         val db: SuspendDatabase<WidgetCatalog> = createNodePostgresDatabase(
             host = env("KORMIUM_PG_HOST", "localhost"),
             port = env("KORMIUM_PG_PORT", "5433").toInt(),
-            database = env("KORMIUM_PG_DB", "kormtest"),
+            database = env("KORMIUM_PG_DB", "postgres"),
             user = env("KORMIUM_PG_USER", "postgres"),
-            password = env("KORMIUM_PG_PASSWORD", "korm"),
+            password = env("KORMIUM_PG_PASSWORD", "password"),
         )
         // The pool connects lazily, so probe a connection here to skip cleanly if no server is up.
         return try {

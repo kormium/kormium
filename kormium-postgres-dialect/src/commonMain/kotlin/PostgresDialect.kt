@@ -19,6 +19,10 @@ public object PostgresDialect : Dialect by StandardDialect {
         else -> StandardDialect.renderBind(name, value)
     }
 
+    // The wire protocol's Bind message counts parameters in an int16, so 65535 is a hard
+    // protocol ceiling, not a server setting.
+    override val maxBoundParameters: Int get() = 65535
+
     /** Transaction-scoped advisory lock; auto-released at COMMIT/ROLLBACK. */
     override fun advisoryLockSql(key: Long): String = "SELECT pg_advisory_xact_lock($key)"
 }

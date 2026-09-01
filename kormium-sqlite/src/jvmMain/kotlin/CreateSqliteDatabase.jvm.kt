@@ -23,7 +23,7 @@ private val sqliteTranslator: SqlExceptionTranslator = { e: SQLException ->
 // (issue #131). A caller's own `file:` URI is otherwise left as written — that is the way to opt
 // back into one in-memory database behind several drivers — and only the pragmas it does not
 // already set are appended.
-private fun sqliteJdbcUrl(path: String): String {
+private fun sqliteJdbcUrl(path: String, declaredPragmas: Set<String> = emptySet()): String {
     val filename = if (path == ":memory:") "file:${newInMemoryDatabaseName()}?mode=memory&cache=shared" else path
     val callerParams = sqlitePathParams(filename)
     // WAL gives concurrent readers alongside one writer (and is meaningless without a file);
@@ -33,7 +33,7 @@ private fun sqliteJdbcUrl(path: String): String {
         if (!isInMemorySqlitePath(filename)) add("journal_mode" to "WAL")
         add("foreign_keys" to "on")
         add("busy_timeout" to "5000")
-    }.filterNot { (key, _) -> key in callerParams }
+    }.filterNot { (key, _) -> key in callerParams || key in declaredPragmas }
     val appended = if (defaults.isEmpty()) {
         ""
     } else {
@@ -42,17 +42,26 @@ private fun sqliteJdbcUrl(path: String): String {
     return "jdbc:sqlite:$filename$appended"
 }
 
-private class SqliteJdbcDriver(jdbcUrl: String, poolSize: Int, acquireTimeout: Duration, config: KormiumConfig) :
-    JdbcDatabase(
-        jdbcUrl = jdbcUrl,
-        poolSize = poolSize,
-        acquireTimeout = acquireTimeout,
-        dialect = SqliteDialect,
-        typeMapper = StandardTypeMapper,
-        wrap = ::SqliteResultSetWrapper,
-        translate = sqliteTranslator,
-        config = config,
-    ),
+private class SqliteJdbcDriver(
+    jdbcUrl: String,
+    poolSize: Int,
+    acquireTimeout: Duration,
+    config: KormiumConfig,
+    options: SqliteOptions,
+) : JdbcDatabase(
+    jdbcUrl = jdbcUrl,
+    poolSize = poolSize,
+    acquireTimeout = acquireTimeout,
+    dialect = SqliteDialect,
+    typeMapper = StandardTypeMapper,
+    wrap = ::SqliteResultSetWrapper,
+    translate = sqliteTranslator,
+    // Extensions and pragmas are per-connection, and Hikari recreates connections on maxLifetime,
+    // so they have to be reapplied on each one — hence the hook rather than a startup block. Left
+    // null when nothing was declared, keeping the plain jdbcUrl path for everyone else.
+    onConnection = if (options.isEmpty) null else { conn -> options.applyTo(SqliteJdbcConnectionScope(conn)) },
+    config = config,
+),
     SqliteDriver {
 
     // An in-memory database exists only while at least one connection to it is open, and HikariCP
@@ -88,4 +97,10 @@ public actual fun createSqliteDatabase(
     poolSize: Int,
     acquireTimeout: Duration,
     config: KormiumConfig,
-): SqliteDriver = SqliteJdbcDriver(sqliteJdbcUrl(path), poolSize, acquireTimeout, config)
+    options: SqliteOptions,
+): SqliteDriver {
+    // Process-global registration (sqlite3_auto_extension on the engines that use it) has to
+    // happen before the pool opens its first connection.
+    options.beforeOpen(perConnectionRegistration(SqliteEngine.Xerial))
+    return SqliteJdbcDriver(sqliteJdbcUrl(path, options.declaredPragmas()), poolSize, acquireTimeout, config, options)
+}

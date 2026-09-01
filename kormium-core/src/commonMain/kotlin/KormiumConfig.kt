@@ -17,7 +17,7 @@ public enum class BatchInsertMode {
 
     /**
      * Use the union of all assigned fields across the batch and bind `NULL` for fields absent
-     * on some entities, keeping the whole batch as one statement. Convenient but does NOT
+     * on some entities, keeping the whole batch on one shape. Convenient but does NOT
      * preserve absent/default semantics: an omitted (default-bearing) column becomes an
      * explicit `NULL`. Opt-in.
      */

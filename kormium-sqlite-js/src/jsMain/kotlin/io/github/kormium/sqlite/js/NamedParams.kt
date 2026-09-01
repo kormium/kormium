@@ -4,7 +4,7 @@ package io.github.kormium.sqlite.js
 internal class ParsedSql(val sql: String, val names: List<String>)
 
 /**
- * Rewrites korm's Spring-style `:name` placeholders to SQLite's positional `?` marker and records
+ * Rewrites Kormium's Spring-style `:name` placeholders to SQLite's positional `?` marker and records
  * the names in occurrence order so values can be bound by index. Quoted literals (`'`, `"`, backtick),
  * line/block comments and `::` casts are copied verbatim. A Kotlin/JS copy of the shared
  * `kormium-wasm-driver` parser (that module is typed for Kotlin/Wasm and has no js artifact); the

@@ -19,7 +19,7 @@ import java.time.OffsetDateTime
  * (rather than text) so there is no string-parsing or timezone guesswork: `TIMESTAMP` comes back
  * as an [OffsetDateTime] (the session is pinned to UTC by the connection URL) and yields the
  * correct [Instant]. UUID (`CHAR(36)`) and `JSON` columns are plain text via [getString], which
- * lines up with korm's text-based column reading.
+ * lines up with Kormium's text-based column reading.
  */
 internal class MySqlResultSetWrapper(private val rs: java.sql.ResultSet) : ResultSet {
     // Lazy: the hot read path maps columns positionally and never touches this.

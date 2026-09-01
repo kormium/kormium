@@ -1,6 +1,6 @@
 package io.github.kormium
 
-/** Base type for all korm errors. */
+/** Base type for all Kormium errors. */
 public open class KormiumException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /**

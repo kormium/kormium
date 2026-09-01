@@ -3,6 +3,9 @@ package io.github.kormium.sqlite.node
 import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.KormiumConfig
 import io.github.kormium.SqliteDialect
+import io.github.kormium.SqliteEngine
+import io.github.kormium.perConnectionRegistration
+import io.github.kormium.SqliteOptions
 import io.github.kormium.StandardTypeMapper
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
@@ -64,8 +67,23 @@ public class NodeSqliteDatabase internal constructor(
  * Opens a SQLite database via better-sqlite3 on Node.
  *
  * @param path `":memory:"` (default) for an in-memory database, or a filesystem path to persist.
+ * @param options extensions to install and pragmas to apply. An extension that cannot be installed
+ *   fails this call, so the problem surfaces here rather than at the first query that needed it.
  */
 public fun createNodeSqliteDatabase(
     path: String = ":memory:",
     config: KormiumConfig = KormiumConfig(),
-): NodeSqliteDatabase = NodeSqliteDatabase(Database(path), config)
+    options: SqliteOptions = SqliteOptions(),
+): NodeSqliteDatabase {
+    options.beforeOpen(perConnectionRegistration(SqliteEngine.BetterSqlite3))
+    val db = Database(path)
+    // A connection that could not be prepared must not be left open: better-sqlite3 holds the file
+    // handle and its lock for the life of the process otherwise.
+    try {
+        options.applyTo(NodeSqliteConnectionScope(db))
+    } catch (e: Throwable) {
+        runCatching { db.close() }
+        throw e
+    }
+    return NodeSqliteDatabase(db, config)
+}

@@ -1,7 +1,7 @@
 package io.github.kormium.sqlite.js
 
 /**
- * Normalises a JS result cell to the text form korm's text-based reads expect: `Date` → ISO-8601
+ * Normalises a JS result cell to the text form Kormium's text-based reads expect: `Date` → ISO-8601
  * (so Instant/LocalDateTime parse), objects (json/jsonb) → JSON, everything else via `String(...)`.
  * SQL `NULL` stays `null`. Kotlin/JS counterpart of `kormium-wasm-driver`'s `cellText`.
  */

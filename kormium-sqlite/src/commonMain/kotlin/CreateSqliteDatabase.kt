@@ -29,24 +29,33 @@ import kotlin.time.Duration.Companion.seconds
  *   JVM this is HikariCP's `connectionTimeout`, which has a 250 ms floor). A bounded wait
  *   turns a saturated pool — e.g. `poolSize = 1` and a long transaction — into a clear,
  *   catchable error instead of an indefinite hang.
+ * @param options SQLite-specific options — extensions to install and pragmas to apply on every
+ *   connection this driver opens. Usually built with the `sqlite { }` block of the builder
+ *   overload below. An extension that cannot be installed fails this call, so the problem
+ *   surfaces at startup rather than at the first query that needed it.
  */
 public expect fun createSqliteDatabase(
     path: String = ":memory:",
     poolSize: Int = 1,
     acquireTimeout: Duration = 30.seconds,
     config: KormiumConfig = KormiumConfig(),
+    options: SqliteOptions = SqliteOptions(),
 ): SqliteDriver
 
 /**
  * Opens a SQLite database with a configuration block: `createSqliteDatabase("app.db") {`
- * `config { … }; beforeStart { migrate(appMigrations) } }`. See [KormiumBuilder].
+ * `config { … }; sqlite { extension(SqliteVec) }; beforeStart { migrate(appMigrations) } }`.
+ * See [SqliteBuilder].
  */
 public fun createSqliteDatabase(
     path: String = ":memory:",
     poolSize: Int = 1,
     acquireTimeout: Duration = 30.seconds,
-    block: KormiumBuilder.() -> Unit,
-): SqliteDriver = KormiumBuilder().apply(block).finish { createSqliteDatabase(path, poolSize, acquireTimeout, it) }
+    block: SqliteBuilder.() -> Unit,
+): SqliteDriver {
+    val builder = SqliteBuilder().apply(block)
+    return builder.finish { createSqliteDatabase(path, poolSize, acquireTimeout, it, builder.options()) }
+}
 
 /**
  * A process-unique name for an in-memory database, used by the JVM and native drivers to build

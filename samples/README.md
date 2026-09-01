@@ -12,6 +12,8 @@ Each subdirectory is a focused, runnable sample. Run gradle commands from the re
 | [crud-sqlite](crud-sqlite) | SQLite | no | Standalone CRUD + migrations (JVM + native) |
 | [repository](repository) | SQLite | no | A copyable Repository pattern: CRUD, custom queries, observe, cross-repo transactions |
 | [sharding](sharding) | SQLite | no | Multiple catalogs (compile-time safety) + sharding |
+| [sqlite-vec](sqlite-vec) | SQLite | no | A SQLite extension packaged for Kormium ([sqlite-vec](https://github.com/asg017/sqlite-vec)): vector search via `sqlite { extension(SqliteVec) }` (Kotlin/Native) |
+| [sqlite-uuid](sqlite-uuid) | SQLite | no | A second extension package (SQLite's `ext/misc/uuid.c`), showing that extensions from different packages compose |
 
 The Postgres samples ship a `docker-compose.yml` matching their connection settings:
 

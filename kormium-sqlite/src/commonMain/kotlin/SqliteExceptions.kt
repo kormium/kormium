@@ -1,6 +1,6 @@
 package io.github.kormium
 
-// SQLite extended result codes for the constraint violations korm distinguishes.
+// SQLite extended result codes for the constraint violations Kormium distinguishes.
 // https://www.sqlite.org/rescode.html
 private const val SQLITE_CONSTRAINT_CHECK = 275
 private const val SQLITE_CONSTRAINT_FOREIGNKEY = 787

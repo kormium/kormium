@@ -46,6 +46,17 @@ public interface Dialect {
     public val supportsReturning: Boolean get() = true
 
     /**
+     * The maximum number of bound parameters one statement may carry. A multi-row `INSERT` binds
+     * `rows * columns` parameters, so a large [insertAll] is split into as many statements as this
+     * ceiling requires (see [BatchInsertMode]); without the split the backend rejects the whole
+     * batch with a protocol-level error that says nothing about batch size.
+     *
+     * The default is the lowest ceiling among the supported backends, so an unknown dialect is
+     * safe by default. Backends that allow more override it upward.
+     */
+    public val maxBoundParameters: Int get() = 32766
+
+    /**
      * The full `INSERT` statement for a row with no assigned columns (every column takes its DB
      * default). Standard SQL is `INSERT INTO t DEFAULT VALUES`; MySQL has no `DEFAULT VALUES` and
      * spells it `INSERT INTO t () VALUES ()`.

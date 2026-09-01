@@ -1,3 +1,6 @@
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
     kotlin("multiplatform")
     id("com.android.kotlin.multiplatform.library")
@@ -80,10 +83,12 @@ kotlin {
             outputs.file(objFile)
             doFirst {
                 objFile.get().asFile.parentFile.mkdirs()
-                // The compiler arguments go through a clang response file: on Windows the
-                // run_konan.bat hop strips `=` from arguments (cmd argument splitting), which
-                // silently destroyed the -DSQLITE_*=1 defines. Forward slashes keep the paths
-                // out of response-file escaping trouble.
+                // The compiler arguments go through a clang response file because run_konan
+                // silently swallows `-DFOO=1` arguments passed directly — its JVM launcher takes
+                // them for system properties, so the -DSQLITE_*=1 defines never reached clang.
+                // This happens on every host, not only on Windows (where the run_konan.bat hop
+                // mangles `=` as well). Forward slashes keep the paths out of response-file
+                // escaping trouble.
                 fun q(f: File) = "\"" + f.absolutePath.replace('\\', '/') + "\""
                 val rsp = objFile.get().asFile.resolveSibling("clang-args.rsp")
                 rsp.writeText(
@@ -128,6 +133,25 @@ kotlin {
             inputs.file(staticLib)
         }
     }
+    // The SQLite headers this driver links, published as a `sqlite-headers` zip. An extension
+    // package compiles its C against them (sqlite3ext.h is needed even for -DSQLITE_CORE builds:
+    // ext/misc sources include it unconditionally, and it is what turns SQLITE_EXTENSION_INIT1
+    // into a no-op), and taking them from here guarantees it matches the SQLite we actually link.
+    val sqliteHeaders = tasks.register<Zip>("sqliteHeadersZip") {
+        description = "Zips the vendored SQLite headers for extension authors"
+        archiveClassifier.set("sqlite-headers")
+        from(cinteropDir) { include("sqlite3.h", "sqlite3ext.h") }
+    }
+    // project.extensions, not the implicit one: inside `kotlin { }` the receiver is the Kotlin
+    // extension, which is itself ExtensionAware and simply has no PublishingExtension — so the
+    // whole chain would no-op silently and the artifact would never be published.
+    project.afterEvaluate {
+        project.extensions.findByType<PublishingExtension>()?.publications
+            ?.withType<MavenPublication>()
+            ?.matching { it.name == "kotlinMultiplatform" }
+            ?.configureEach { artifact(sqliteHeaders) }
+    }
+
     // Optimized test binary (linkBenchReleaseTest<Target>) for SqliteE2EBench: the default debug
     // test kexe is unoptimized K/N code and misrepresents CPU-bound throughput by ~10x. Linked
     // only when explicitly requested, so regular test and CI builds don't pay for it.
@@ -148,6 +172,9 @@ kotlin {
                 // to js/wasm). `api` keeps `io.github.kormium.SqliteDialect` visible to existing
                 // consumers exactly as before.
                 api(project(":kormium-sqlite-dialect"))
+                // The extension SPI (SqliteExtension / SqliteConnectionScope), shared with the js/wasm
+                // engines and with third-party extension packages — see ADR 0013.
+                api(project(":kormium-sqlite-spi"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }
@@ -175,6 +202,11 @@ kotlin {
                 // so the driver works on-device without relying on the framework's sqlite.
                 implementation("androidx.sqlite:sqlite:2.7.0")
                 implementation("androidx.sqlite:sqlite-bundled:2.7.0")
+                // The JNI shim reaching sqlite3_auto_extension inside androidx's libsqliteJni.so —
+                // the only way to install an extension on this engine, since BundledSQLiteDriver
+                // never exposes the sqlite3 handle. It is a separate module because AGP's KMP
+                // library plugin has no NDK support. See ADR 0013.
+                implementation(project(":kormium-sqlite-android-ext"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
             }
         }

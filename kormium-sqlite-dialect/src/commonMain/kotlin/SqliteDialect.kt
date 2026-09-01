@@ -29,6 +29,14 @@ public object SqliteDialect : Dialect by StandardDialect {
     // SQLite has a single isolation level (effectively SERIALIZABLE), so a requested level is ignored.
     override val supportsTransactionIsolation: Boolean get() = false
 
+    // SQLITE_MAX_VARIABLE_NUMBER, which is a *build* option, not an engine version: 32766 is the
+    // default since SQLite 3.32 (999 before it), while sqlite-jdbc compiles its bundled library
+    // with 250000 (measured: it rejects the 250002nd parameter). One dialect object serves every
+    // SQLite driver — sqlite-jdbc, androidx.sqlite-bundled, and a cinterop build against whatever
+    // system libsqlite3 the target has — so take the floor of the modern default rather than the
+    // ceiling any one of them happens to allow.
+    override val maxBoundParameters: Int get() = 32766
+
     // sqlite-jdbc rejects Connection.setReadOnly after connect; PRAGMA query_only is the SQLite way.
     override val readOnlyToggle: ReadOnlyToggle =
         ReadOnlyToggle(enter = "PRAGMA query_only=ON", exit = "PRAGMA query_only=OFF")

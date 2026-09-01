@@ -21,7 +21,11 @@ public actual fun createSqliteDatabase(
     poolSize: Int,
     acquireTimeout: Duration,
     config: KormiumConfig,
-): SqliteDriver = SqliteAndroidDriver(path, poolSize, acquireTimeout, config)
+    options: SqliteOptions,
+): SqliteDriver {
+    options.beforeOpen(SqliteAndroidRegistrationScope)
+    return SqliteAndroidDriver(path, poolSize, acquireTimeout, config, options)
+}
 
 // Android can't use the Kotlin/Native sqlite3 cinterop (it runs on the JVM/ART), so it
 // gets this driver on top of androidx.sqlite's bundled SQLite — which ships its own native
@@ -33,6 +37,7 @@ private class SqliteAndroidDriver(
     private val poolSize: Int,
     private val acquireTimeout: Duration,
     override val config: KormiumConfig,
+    private val options: SqliteOptions,
 ) : SqliteDriver {
 
     init {
@@ -76,7 +81,10 @@ private class SqliteAndroidDriver(
     // A `:memory:` database is private to its connection here (poolSize is forced to 1 above);
     // file-backed databases pool freely (WAL below).
     private val connections: List<SQLiteConnection> = List(poolSize) {
-        driver.open(path).also { initPragmas(it, file = !isMemory) }
+        driver.open(path).also { conn ->
+            initPragmas(conn, file = !isMemory, declared = options.declaredPragmas())
+            options.applyTo(SqliteAndroidConnectionScope(conn))
+        }
     }
 
     private val pool = Channel<SQLiteConnection>(poolSize).also { channel ->
@@ -301,8 +309,10 @@ private class SqliteAndroidDriver(
 
 // foreign_keys are OFF by default in SQLite; WAL only applies to a real file. busy_timeout
 // lets a blocked writer wait instead of failing immediately with SQLITE_BUSY.
-private fun initPragmas(conn: SQLiteConnection, file: Boolean) {
-    if (file) conn.prepare("PRAGMA journal_mode=WAL").use { it.step() }
-    conn.prepare("PRAGMA foreign_keys=ON").use { it.step() }
-    conn.prepare("PRAGMA busy_timeout=5000").use { it.step() }
+// A pragma the caller set through `sqlite { pragma(...) }` is skipped here: it is applied
+// afterwards, from the options, and must win over our default.
+private fun initPragmas(conn: SQLiteConnection, file: Boolean, declared: Set<String> = emptySet()) {
+    if (file && "journal_mode" !in declared) conn.prepare("PRAGMA journal_mode=WAL").use { it.step() }
+    if ("foreign_keys" !in declared) conn.prepare("PRAGMA foreign_keys=ON").use { it.step() }
+    if ("busy_timeout" !in declared) conn.prepare("PRAGMA busy_timeout=5000").use { it.step() }
 }

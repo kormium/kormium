@@ -10,6 +10,10 @@ package io.github.kormium.sqlite.node
 public external class Database(filename: String) : JsAny {
     /** Runs one or more statements without parameters (DDL / scripts). */
     public fun exec(sql: String)
+
+    /** Loads a SQLite extension from [file], optionally at a named [entryPoint]. */
+    public fun loadExtension(file: String, entryPoint: String? = definedExternally)
+
     public fun close()
 }
 
@@ -26,3 +30,10 @@ internal fun rowKeys(row: JsAny?): JsArray<JsString> = js("Object.keys(row)")
 
 /** Column values of a result row object, in select order (aligns positionally with [rowKeys]). */
 internal fun rowValues(row: JsAny?): JsArray<JsAny?> = js("Object.values(row)")
+
+/**
+ * First column of the first row of [sql] as text, or `null` when the statement returns no row.
+ * `get()` yields a plain object, so the value is taken positionally like [rowValues] does.
+ */
+internal fun bsScalar(db: Database, sql: String): JsString? =
+    js("(() => { const r = db.prepare(sql).get(); if (r == null) return null; const v = Object.values(r)[0]; return v == null ? null : String(v); })()")

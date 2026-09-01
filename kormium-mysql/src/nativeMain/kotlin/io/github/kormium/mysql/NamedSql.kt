@@ -4,7 +4,7 @@ package io.github.kormium.mysql
 internal class NamedSql(val sql: String, val names: List<String>)
 
 /**
- * Rewrites korm's `:name` placeholders to MySQL positional `?` and records the names in occurrence
+ * Rewrites Kormium's `:name` placeholders to MySQL positional `?` and records the names in occurrence
  * order so values bind by index. Quoted strings/identifiers (`'…'`, `"…"`, `` `…` ``) and `--` /
  * `/* */` comments are copied verbatim so a `:` inside them is not treated as a parameter. MySQL has
  * no `::` cast operator, so (unlike the Postgres parser) there is no special-casing for it.

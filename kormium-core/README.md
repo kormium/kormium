@@ -1,12 +1,12 @@
-# korm-core
+# kormium-core
 
 The multiplatform core of [Kormium](../readme.md): the type-safe table/entity DSL, the typed
 SQL predicate builder, transaction scopes and the driver seam (`Dialect`, `SqlExecutor`,
 `ResultSet`, `WriteListener`) that the backend modules implement.
 
 This module contains **no database driver**. You normally do not depend on it directly — a
-backend artifact (`korm-postgres`, `korm-sqlite`, `korm-r2dbc`) brings it in transitively. Add
-`korm-core` on its own only when you:
+backend artifact (`kormium-postgres`, `kormium-sqlite`, `kormium-r2dbc`) brings it in transitively. Add
+`kormium-core` on its own only when you:
 
 - write pure common code (tables, entities, queries) shared across modules, or
 - implement a custom backend against the driver seam.
@@ -15,8 +15,8 @@ backend artifact (`korm-postgres`, `korm-sqlite`, `korm-r2dbc`) brings it in tra
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.kormium:korm-bom:<version>"))
-    implementation("io.github.kormium:korm-core")
+    implementation(platform("io.github.kormium:kormium-bom:<version>"))
+    implementation("io.github.kormium:kormium-core")
 }
 ```
 
@@ -30,12 +30,12 @@ dependencies {
   values are always bound as parameters.
 - **Transaction scopes.** Blocking `transaction { }` / `autocommit { }` and suspend
   `suspendTransaction { }` / `suspendAutocommit { }`.
-- **Configuration.** `KormConfig` and the `KormBuilder` used by the `createX { }` builders
+- **Configuration.** `KormiumConfig` and the `KormiumBuilder` used by the `createX { }` builders
   (`config { }`, `beforeStart { }`).
 - **Extensible types.** Open `ColumnType<T>` (enum / json / custom converters) plus the 14
   built-in column types.
 - **Driver seam.** `Dialect`, `SqlExecutor`, `ResultSet`, `SqlParameterSource`, and the
-  `WriteListener` commit hook that `korm-observe` builds on.
+  `WriteListener` commit hook that `kormium-observe` builds on.
 
 ## Example
 
@@ -54,7 +54,7 @@ class User : Entity() {
     var age by Users.age
 }
 
-// A driver module supplies the actual Database<App>; the DSL above is pure korm-core.
+// A driver module supplies the actual Database<App>; the DSL above is pure kormium-core.
 val adults = db.autocommit {
     Users.find {
         where { Users.age gtEq 18 }

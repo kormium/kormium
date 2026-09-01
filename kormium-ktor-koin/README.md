@@ -1,9 +1,9 @@
-# korm-ktor-koin
+# kormium-ktor-koin
 
 [Ktor](https://ktor.io) integration for [Kormium](../readme.md) that resolves the database from
 **[Koin](https://insert-koin.io)** — no explicit `db` argument in your routes.
 
-Builds on [`korm-ktor`](../kormium-ktor/README.md), adding reified `ApplicationCall` helpers that
+Builds on [`kormium-ktor`](../kormium-ktor/README.md), adding reified `ApplicationCall` helpers that
 resolve `SuspendDatabase<G>` from Koin.
 
 > Koin keys by `KClass`, so the generic catalog tag is erased. If you use more than one
@@ -13,12 +13,12 @@ resolve `SuspendDatabase<G>` from Koin.
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.kormium:korm-bom:<version>"))
-    implementation("io.github.kormium:korm-ktor-koin")
+    implementation(platform("io.github.kormium:kormium-bom:<version>"))
+    implementation("io.github.kormium:kormium-ktor-koin")
 }
 ```
 
-`korm-ktor` (and `korm-core`) are pulled in transitively.
+`kormium-ktor` (and `kormium-core`) are pulled in transitively.
 
 ## Example
 

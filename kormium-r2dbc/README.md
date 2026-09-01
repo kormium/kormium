@@ -1,23 +1,23 @@
-# korm-r2dbc
+# kormium-r2dbc
 
 A truly non-blocking PostgreSQL backend for [Kormium](../readme.md), built on
 [r2dbc-postgresql](https://github.com/pgjdbc/r2dbc-postgresql) with an r2dbc connection pool.
 **JVM only.**
 
-Unlike `korm-postgres` on JVM (which offloads blocking JDBC calls onto virtual threads), this
+Unlike `kormium-postgres` on JVM (which offloads blocking JDBC calls onto virtual threads), this
 driver is reactive end to end — there is no blocking call to offload. It reuses
-`PostgresDialect` from `korm-postgres` for SQL rendering, so the query DSL is identical.
+`PostgresDialect` from `kormium-postgres` for SQL rendering, so the query DSL is identical.
 
 ## Install
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.kormium:korm-bom:<version>"))
-    implementation("io.github.kormium:korm-r2dbc")
+    implementation(platform("io.github.kormium:kormium-bom:<version>"))
+    implementation("io.github.kormium:kormium-r2dbc")
 }
 ```
 
-`korm-core` and `korm-postgres` are pulled in transitively.
+`kormium-core` and `kormium-postgres` are pulled in transitively.
 
 ## Example
 
@@ -38,11 +38,11 @@ val adults = db.suspendAutocommit {
 
 `createR2dbcDatabase` returns a `SuspendDatabase`, so use the suspend API
 (`suspendTransaction { }` / `suspendAutocommit { }`). The Ktor helpers
-([`korm-ktor`](../kormium-ktor/README.md) and friends) work with it unchanged.
+([`kormium-ktor`](../kormium-ktor/README.md) and friends) work with it unchanged.
 
 ## Platforms
 
-JVM only. For PostgreSQL on Native use [`korm-postgres`](../kormium-postgres/README.md).
+JVM only. For PostgreSQL on Native use [`kormium-postgres`](../kormium-postgres/README.md).
 
 ## Documentation
 

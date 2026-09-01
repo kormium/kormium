@@ -1,4 +1,4 @@
-# korm-bom
+# kormium-bom
 
 The Bill of Materials for [Kormium](../readme.md). Import it once and omit the version on every
 other Kormium artifact — the BOM pins them all to a single, consistent release.
@@ -7,21 +7,21 @@ other Kormium artifact — the BOM pins them all to a single, consistent release
 
 ```kotlin
 dependencies {
-    implementation(platform("io.github.kormium:korm-bom:<version>"))
+    implementation(platform("io.github.kormium:kormium-bom:<version>"))
 
     // versions come from the BOM
-    implementation("io.github.kormium:korm-postgres")
-    implementation("io.github.kormium:korm-ktor")
-    implementation("io.github.kormium:korm-observe")
+    implementation("io.github.kormium:kormium-postgres")
+    implementation("io.github.kormium:kormium-ktor")
+    implementation("io.github.kormium:kormium-observe")
 }
 ```
 
 ## Managed artifacts
 
-`korm-core`, `korm-postgres`, `korm-jdbc`, `korm-sqlite`, `korm-migrate`, `korm-ktor`,
-`korm-ktor-di`, `korm-ktor-koin`.
+`kormium-core`, `kormium-postgres`, `kormium-jdbc`, `kormium-sqlite`, `kormium-migrate`, `kormium-ktor`,
+`kormium-ktor-di`, `kormium-ktor-koin`.
 
-> `korm-r2dbc` is not yet pinned by the BOM — give it an explicit version for now.
+> `kormium-r2dbc` is not yet pinned by the BOM — give it an explicit version for now.
 
 ## Documentation
 
