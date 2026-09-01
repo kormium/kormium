@@ -14,15 +14,15 @@ import io.github.kormium.SuspendSqliteConnectionScope
  * SQLite differently (a `WaSqliteExecutor` here, a `WorkerConnection` there) and all this scope
  * needs from them is "run a statement" and "read one value".
  *
- * `loadLibrary` is not available yet: the WASM builds Kormium currently consumes come from upstream
- * compiled with `SQLITE_OMIT_LOAD_EXTENSION`, so there is nothing to load into. Reaching it needs
- * Kormium's own Emscripten build with dynamic linking (ADR 0013, decision 7). Pragmas and probes
- * work today.
+ * `loadLibrary` is supplied by the engine that has something to load into — today the wa-sqlite
+ * one, which owns the Emscripten module and the database handle. The Worker-hosted engines run
+ * SQLite in another thread and hand out neither, so they leave it null and refuse.
  */
 internal class WasmSqliteConnectionScope(
     override val engine: SqliteEngine,
     private val runStatement: suspend (String) -> Unit,
     private val readScalar: suspend (String) -> String?,
+    private val loader: (suspend (String, String?) -> Unit)? = null,
 ) : SuspendSqliteConnectionScope {
 
     override suspend fun exec(sql: String) {
@@ -31,12 +31,14 @@ internal class WasmSqliteConnectionScope(
 
     override suspend fun queryScalar(sql: String): String? = runCatching { readScalar(sql) }.getOrNull()
 
-    override suspend fun loadLibrary(path: String, entryPoint: String?): Nothing =
-        throw SqliteExtensionUnsupportedException(
+    override suspend fun loadLibrary(path: String, entryPoint: String?) {
+        val load = loader ?: throw SqliteExtensionUnsupportedException(
             extension = path,
             engine = engine,
-            message = "loading a SQLite extension at runtime is not available on the $engine " +
-                "engine: its WASM build comes from upstream and is compiled with " +
-                "SQLITE_OMIT_LOAD_EXTENSION. An extension compiled into the engine still works.",
+            message = "the $engine engine runs SQLite in a Worker and exposes neither the module " +
+                "nor the database handle, so an extension cannot be loaded into it at runtime. " +
+                "Use an engine build with the extension compiled in.",
         )
+        load(path, entryPoint)
+    }
 }

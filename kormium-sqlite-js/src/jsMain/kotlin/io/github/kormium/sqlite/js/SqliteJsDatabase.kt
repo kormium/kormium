@@ -43,11 +43,13 @@ public class SqliteJsDatabase internal constructor(
     private val executor = WaSqliteExecutor(api, db, SqliteDialect, StandardTypeMapper)
 
     /** Applies the caller's [SqliteOptions] to this connection; see the factory below. */
-    internal suspend fun applyOptions(options: SqliteOptions) {
+    internal suspend fun applyOptions(options: SqliteOptions, module: Any) {
+        val exec: suspend (String) -> Unit = { sql -> executor.execute(sql, emptyMap()) }
         options.suspendApplyTo(
             JsSqliteConnectionScope(
-                runStatement = { sql -> executor.execute(sql, emptyMap()) },
+                runStatement = exec,
                 readScalar = { sql -> executor.execute(sql, emptyMap()) { it.getString(0) }.firstOrNull() },
+                loader = { path, entryPoint -> loadSideModule(module, db, path, entryPoint, exec) },
             ),
         )
     }
@@ -114,7 +116,7 @@ public suspend fun createSqliteJsDatabase(
     check(db != 0) { "wa-sqlite open_v2 returned a null database handle (dataDir=$dataDir)" }
     val database = SqliteJsDatabase(api, db, config)
     try {
-        database.applyOptions(options)
+        database.applyOptions(options, module)
     } catch (e: Throwable) {
         runCatching { database.close() }
         throw e
