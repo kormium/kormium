@@ -24,6 +24,15 @@ private class ServerOnlyExtension : SqliteExtension {
     override val supportedEngines: Set<SqliteEngine> = setOf(SqliteEngine.Xerial, SqliteEngine.Native)
 }
 
+/** Asks the engine to load a side module — which only an extension-capable build can do. */
+private class LoadingExtension : SqliteExtension {
+    override val name: String = "loading"
+    override val supportedEngines: Set<SqliteEngine> = setOf(SqliteEngine.WaSqlite)
+    override suspend fun suspendInstall(connection: SuspendSqliteConnectionScope) {
+        connection.loadLibrary("https://example.invalid/vec.so")
+    }
+}
+
 private class BrowserExtension : SqliteExtension {
     override val name: String = "browser-ok"
     override val supportedEngines: Set<SqliteEngine> = setOf(SqliteEngine.WaSqlite)
@@ -67,6 +76,27 @@ class SqliteWasmOptionsTest {
         } finally {
             db.close()
         }
+    }
+
+    /**
+     * The default engine is upstream's build, compiled with `SQLITE_OMIT_LOAD_EXTENSION`, so it
+     * cannot load anything and must say so by name. The successful path needs the loadable build
+     * and a real fetch, which Node cannot do for a local file — it is covered end to end by
+     * kormium/sqlite-wasm-engines' own smoke tests instead.
+     */
+    @Test
+    fun loadingIntoTheDefaultEngineFailsWithTheFix() = runTest {
+        var failure: SqliteExtensionUnsupportedException? = null
+        try {
+            createSqliteWasmDatabase(moduleConfig = wasmConfig(), options = SqliteOptions(LoadingExtension()))
+        } catch (e: SqliteExtensionUnsupportedException) {
+            failure = e
+        }
+        assertEquals(SqliteEngine.WaSqlite, failure?.engine)
+        assertTrue(
+            failure!!.message!!.contains("wa-sqlite-loadable"),
+            "the message should name the engine that can do it, was: ${failure.message}",
+        )
     }
 
     @Test

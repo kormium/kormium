@@ -4,6 +4,20 @@ All notable changes to Kormium are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Browser extensions actually load.** `loadLibrary` on the wa-sqlite engines (`kormium-sqlite-wasm`
+  and `kormium-sqlite-js`) fetches the extension as an Emscripten side module, writes it into the
+  virtual filesystem and has SQLite `dlopen` it — the mechanism proven in
+  [sqlite-wasm-engines](https://github.com/kormium/sqlite-wasm-engines), now reachable from
+  `sqlite { extension(...) }`. It needs an engine built with dynamic linking, so the capability is
+  probed and the failure names the build that can do it
+  (`@kormium/wa-sqlite-loadable`) rather than surfacing as a missing symbol. Extension loading is
+  armed only for the duration of the call: leaving `load_extension()` enabled would let any SQL in
+  the page load code. The Worker-hosted engines still refuse — they expose neither the module nor
+  the database handle.
+
 ## [0.13.0] — SQLite extensions
 
 ### Added

@@ -198,7 +198,8 @@ Every engine applies `pragma(...)`. Loading an extension differs:
 | Native / iOS | yes | the package links its own static library and registers it before the pool opens |
 | Node (better-sqlite3) | yes | `loadExtension()` when the connection is opened |
 | Android (androidx) | yes | registered process-wide via `sqlite3_auto_extension`, through Kormium's JNI shim (`kormium-sqlite-android-ext`); the package ships only its `.so` per ABI |
-| Browser (wa-sqlite, sqlite-wasm) | with the loadable build | an extension is a *different* WASM build; pass it via the `engine` parameter (`SqliteWasmEngine` / `SqliteJsEngine`). The default is upstream's, compiled with `SQLITE_OMIT_LOAD_EXTENSION`; [sqlite-wasm-engines](https://github.com/kormium/sqlite-wasm-engines) publishes an extension-capable one |
+| Browser (wa-sqlite) | with the loadable build | the extension is fetched as an Emscripten side module, written into the virtual filesystem and `dlopen`ed. Needs an engine built for it — pass `@kormium/wa-sqlite-loadable` via the `engine` parameter; the default is upstream's, compiled with `SQLITE_OMIT_LOAD_EXTENSION` |
+| Browser (Worker engines) | no | SQLite runs in a Worker, which exposes neither the module nor the database handle; use a build with the extension compiled in |
 
 An extension declares the engines it supports, and a driver rejects one it was not built for while
 opening the database — by name, rather than leaving it to surface as `no such module` later. The

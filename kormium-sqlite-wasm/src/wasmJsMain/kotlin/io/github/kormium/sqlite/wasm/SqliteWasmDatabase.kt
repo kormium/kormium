@@ -42,13 +42,21 @@ public class SqliteWasmDatabase internal constructor(
 
     private val executor = WaSqliteExecutor(api, db, SqliteDialect, StandardTypeMapper)
 
-    /** Applies the caller's [SqliteOptions] to this connection; see the factory below. */
-    internal suspend fun applyOptions(options: SqliteOptions) {
+    /**
+     * Applies the caller's [SqliteOptions] to this connection; see the factory below. [module] is
+     * the Emscripten module behind [api] — an extension is a side module written into its virtual
+     * filesystem, so loading one needs the module itself, not just the SQLite API over it.
+     */
+    internal suspend fun applyOptions(options: SqliteOptions, module: JsAny) {
+        val exec: suspend (String) -> Unit = { sql -> executor.execute(sql, emptyMap()) }
         options.suspendApplyTo(
             WasmSqliteConnectionScope(
                 engine = SqliteEngine.WaSqlite,
-                runStatement = { sql -> executor.execute(sql, emptyMap()) },
+                runStatement = exec,
                 readScalar = { sql -> executor.execute(sql, emptyMap()) { it.getString(0) }.firstOrNull() },
+                loader = { path, entryPoint ->
+                    loadSideModule(module, db, SqliteEngine.WaSqlite, path, entryPoint, exec)
+                },
             ),
         )
     }
@@ -122,7 +130,7 @@ public suspend fun createSqliteWasmDatabase(
     // A connection that cannot be prepared must not be handed out: close it and let the failure
     // surface here rather than at the first query.
     try {
-        database.applyOptions(options)
+        database.applyOptions(options, module)
     } catch (e: Throwable) {
         runCatching { database.close() }
         throw e
