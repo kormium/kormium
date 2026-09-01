@@ -19,7 +19,7 @@ apiValidation {
     ignoredProjects.addAll(
         listOf(
             "benchmarks", "kormium-bom", "kormium-sqlite-android-ext",
-            "ktor-di", "ktor-koin", "crud-sqlite", "repository", "sharding", "sqlite-vec", "sqlite-uuid",
+            "ktor-di", "ktor-koin", "crud-sqlite", "repository", "sharding", "sqlite-extensions",
             "sqlite-cache", "cross-instance-cache", "r2dbc", "wasm-todo",
         ),
     )

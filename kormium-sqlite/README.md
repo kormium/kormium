@@ -71,13 +71,16 @@ A pragma set here wins over Kormium's own default for it (`journal_mode`, `forei
 Extensions are ordinary dependencies implementing `SqliteExtension` (from `kormium-sqlite-spi`);
 Kormium ships none and curates no list. An extension that cannot be installed fails the
 `createSqliteDatabase` call, so the problem shows up at startup rather than at the first query that
-needed it. See `samples/sqlite-vec` for a working reference package and
-[ADR 0013](../docs/adr/0013-sqlite-extensions.md) for the design.
+needed it. Ready-made packages live in
+[kormium/sqlite-extensions](https://github.com/kormium/sqlite-extensions); `samples/sqlite-extensions`
+uses four of them at once, and [ADR 0013](../docs/adr/0013-sqlite-extensions.md) records the design.
 
-Support differs by engine: JVM and Node load a shared library per connection; Kotlin/Native and
-iOS link the extension statically and register it before the pool opens. Android and the browser
-engines do not support extensions yet and say so — `loadLibrary` throws
-`SqliteExtensionUnsupportedException`.
+Support differs by engine: JVM and Node load a shared library per connection; Kotlin/Native and iOS
+link the extension statically and register it before the pool opens; Android registers it
+process-wide through Kormium's JNI shim; the browser `dlopen`s it as an Emscripten side module, and
+needs an engine built for that (`@kormium/wa-sqlite-loadable`). The per-connection `loadLibrary`
+throws `SqliteExtensionUnsupportedException` on the engines that hand out no `sqlite3` handle —
+Android and the Worker browser engines — which register in `beforeOpen` instead.
 
 > On Kotlin/Native, static registration is process-global: once any database declares an extension,
 > every SQLite connection opened afterwards in the process has it, including databases that never

@@ -18,6 +18,15 @@ All notable changes to Kormium are documented here. The format is based on
   the page load code. The Worker-hosted engines still refuse — they expose neither the module nor
   the database handle.
 
+### Changed
+- **The extension samples now consume published packages.** `samples/sqlite-vec` and
+  `samples/sqlite-uuid` — which vendored and compiled C to show what a package looks like from the
+  inside — are replaced by `samples/sqlite-extensions`, which declares four coordinates from
+  [kormium/sqlite-extensions](https://github.com/kormium/sqlite-extensions) and uses vector search,
+  `uuid()`, `REGEXP` and `generate_series` in one database. That is how an application meets an
+  extension, and it makes the sample a regression test over the artifacts people actually resolve:
+  the linked test binary carries one SQLite and four entry points, each defined exactly once.
+
 ## [0.13.0] — SQLite extensions
 
 ### Added
@@ -35,8 +44,7 @@ All notable changes to Kormium are documented here. The format is based on
   Working on JVM (sqlite-jdbc), Kotlin/Native and iOS, Node (better-sqlite3) and Android. Loading a
   library *into one connection* is not possible on Android or in the browser — neither hands out a
   `sqlite3` handle — so `loadLibrary` throws `SqliteExtensionUnsupportedException` there and those
-  engines register process-wide in `beforeOpen` instead. `samples/sqlite-vec` and
-  `samples/sqlite-uuid` are reference packages, and Kormium now publishes the SQLite headers it
+  engines register process-wide in `beforeOpen` instead. Kormium now publishes the SQLite headers it
   links as a `sqlite-headers` artifact so an extension author compiles against exactly the SQLite
   the driver uses. See
   [ADR 0013](docs/adr/0013-sqlite-extensions.md).

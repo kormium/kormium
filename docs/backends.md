@@ -188,7 +188,9 @@ The `sqlite { }` block of `createSqliteDatabase` installs extensions (`sqlite-ve
 applies pragmas on every connection a driver opens. Kormium ships no extensions and curates no set
 of them: an extension package is an ordinary dependency implementing `SqliteExtension` from
 `kormium-sqlite-spi`, and anyone can publish one. See
-[ADR 0013](adr/0013-sqlite-extensions.md) and the reference package in `samples/sqlite-vec`.
+[ADR 0013](adr/0013-sqlite-extensions.md) for the design, and
+[kormium/sqlite-extensions](https://github.com/kormium/sqlite-extensions) for ready-made packages —
+`samples/sqlite-extensions` consumes four of them from Maven Central.
 
 Every engine applies `pragma(...)`. Loading an extension differs:
 

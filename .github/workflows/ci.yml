@@ -104,6 +104,12 @@ jobs:
           :samples:sharding:jvmTest :samples:sharding:nativeTest
           --console=plain
 
+      # Four extension packages resolved from Maven Central, linked into one test binary: the
+      # regression test that extensions still compose as published artifacts (ADR 0013). Native
+      # only — that is where they link statically.
+      - name: SQLite extension sample (published packages, native)
+        run: ./gradlew :samples:sqlite-extensions:linuxX64Test --console=plain
+
       # Async r2dbc backend (JVM-only) — end-to-end tests spin up their own Postgres via
       # Testcontainers.
       - name: r2dbc tests (Testcontainers, JVM)
