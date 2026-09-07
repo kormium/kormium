@@ -18,7 +18,7 @@ package io.github.kormium
  * no ordering, no limit/offset). [Query] stays available for reusable/prebuilt queries.
  */
 @KormiumDsl
-public class QueryBuilder {
+public class QueryBuilderOf<out B : Backend> {
     private val conditions = mutableListOf<Expression>()
     private val orderings = LinkedHashMap<Selectable<*>, AscDescOrder>()
 
@@ -32,6 +32,14 @@ public class QueryBuilder {
     public var offset: Int? = null
 
     /**
+     * The row-level lock this query takes, if any — the seam a dialect module's gated DSL writes
+     * through. Application code sets it via [forUpdate] / [forShare], which only resolve when [B]
+     * is a [RowLockingBackend]; assigning here bypasses that check (see [KormiumDialectApi]).
+     */
+    @KormiumDialectApi
+    public var rowLock: RowLock? = null
+
+    /**
      * Adds a predicate. Multiple `where { ... }` calls combine with `AND`; put complex
      * boolean logic inside a single block using `and` / `or` / `not(...)`.
      */
@@ -39,6 +47,7 @@ public class QueryBuilder {
         conditions += block()
     }
 
+    @OptIn(KormiumDialectApi::class)
     internal fun build(): Query {
         // Reject negative limit/offset: toUInt() would wrap (-1 -> 4294967295) and render a
         // huge LIMIT instead of failing fast on what is almost always bad user input.
@@ -56,9 +65,17 @@ public class QueryBuilder {
             limit = limit?.toUInt() ?: UInt.MAX_VALUE,
             offset = offset?.toUInt() ?: 0u,
             orderBy = orderings.ifEmpty { null },
+            lock = rowLock,
         )
     }
 }
+
+/**
+ * The portable query builder — [QueryBuilderOf] with the baseline [AnyBackend] tag. Every
+ * existing `QueryBuilder` reference keeps working; a backend-specific scope hands its block a
+ * builder carrying that backend's tag instead, which is what unlocks the gated DSL.
+ */
+public typealias QueryBuilder = QueryBuilderOf<AnyBackend>
 
 /**
  * Infix ordering for [QueryBuilder.orderBy]: `orderBy DESC column`, `orderBy ASC column`. The

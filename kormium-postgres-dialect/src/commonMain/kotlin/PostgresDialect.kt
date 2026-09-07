@@ -10,6 +10,19 @@ import kotlin.uuid.Uuid
  * for the truly-typed r2dbc driver as well as the text-based JDBC/libpq paths.
  */
 public object PostgresDialect : Dialect by StandardDialect {
+    /**
+     * `FOR UPDATE` / `FOR SHARE`, plus the contention modifier. Postgres has had all three since
+     * 9.5, so there is no version gate here (unlike MySQL, where SKIP LOCKED needs 8.0.1).
+     */
+    override fun renderRowLock(lock: RowLock): String = buildString {
+        append(if (lock.share) "FOR SHARE" else "FOR UPDATE")
+        when (lock.wait) {
+            LockWait.NoWait -> append(" NOWAIT")
+            LockWait.SkipLocked -> append(" SKIP LOCKED")
+            LockWait.Wait -> {}
+        }
+    }
+
     override fun renderBind(name: String, value: Any?): String = when (value) {
         is Uuid -> ":$name::uuid"
         is JsonElement -> ":$name::jsonb"

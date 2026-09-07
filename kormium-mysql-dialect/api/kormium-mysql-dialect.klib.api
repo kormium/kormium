@@ -25,5 +25,6 @@ final object io.github.kormium/MySqlDialect : io.github.kormium/Dialect { // io.
     final fun renderLimit(kotlin/UInt): kotlin/String // io.github.kormium/MySqlDialect.renderLimit|renderLimit(kotlin.UInt){}[0]
     final fun renderLimitOffset(kotlin/UInt, kotlin/UInt): kotlin/String // io.github.kormium/MySqlDialect.renderLimitOffset|renderLimitOffset(kotlin.UInt;kotlin.UInt){}[0]
     final fun renderOffset(kotlin/UInt): kotlin/String // io.github.kormium/MySqlDialect.renderOffset|renderOffset(kotlin.UInt){}[0]
+    final fun renderRowLock(io.github.kormium/RowLock): kotlin/String // io.github.kormium/MySqlDialect.renderRowLock|renderRowLock(io.github.kormium.RowLock){}[0]
     final fun renderUpsertSuffix(kotlin.collections/List<kotlin/String>, kotlin/String): kotlin/String // io.github.kormium/MySqlDialect.renderUpsertSuffix|renderUpsertSuffix(kotlin.collections.List<kotlin.String>;kotlin.String){}[0]
 }

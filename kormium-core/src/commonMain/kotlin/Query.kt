@@ -5,7 +5,9 @@ public data class Query(
     val whereExpression: Expression? = null,
     val limit: UInt = UInt.MAX_VALUE,
     val offset: UInt = 0u,
-    val orderBy: Map<Selectable<*>, AscDescOrder>? = null
+    val orderBy: Map<Selectable<*>, AscDescOrder>? = null,
+    /** Row-level lock for this read; see [RowLock]. Null (the default) is a plain read. */
+    val lock: RowLock? = null,
 ) {
     /**
      * Renders this query's clauses to SQL, registering any compared values as
@@ -16,7 +18,10 @@ public data class Query(
         val whereStr = whereExpression?.let { "WHERE ${it.toSql(builder)} " } ?: ""
         val orderByStr = orderBy?.let { "ORDER BY ${prepareOrderBy(it, builder)} " } ?: ""
         val limitOffsetStr = builder.dialect.renderLimitOffset(limit, offset)
-        return "$whereStr$orderByStr$limitOffsetStr"
+        // The locking clause is the statement's tail: it follows LIMIT/OFFSET on every backend
+        // that has one, and it is rendered by the dialect because the spelling differs.
+        val lockStr = lock?.let { builder.dialect.renderRowLock(it) } ?: ""
+        return "$whereStr$orderByStr$limitOffsetStr$lockStr"
     }
 
     /**

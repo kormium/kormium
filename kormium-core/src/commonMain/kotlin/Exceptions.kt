@@ -58,6 +58,14 @@ public class ConcurrencyConflictException(message: String, sqlState: String?, ca
 public class PoolExhaustedException(message: String) : KormiumException(message)
 
 /**
+ * A statement asked for something the backend's [Dialect] cannot render — e.g. a [RowLock] on
+ * SQLite. The typed DSL prevents most of these at compile time (see [RowLockingBackend]); this
+ * covers what a type cannot know, such as a MySQL server older than 8.0.1 for `SKIP LOCKED`, and
+ * the [KormiumDialectApi] escape hatches.
+ */
+public class UnsupportedByDialectException(message: String) : KormiumException(message)
+
+/**
  * A database row could not be mapped into an entity. The common case: a column the entity
  * declares non-null came back as SQL `NULL` (a schema mismatch or a bad row). The message names
  * the table and column so the offending row/schema is easy to find.
