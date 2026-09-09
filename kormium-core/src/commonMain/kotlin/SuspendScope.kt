@@ -110,8 +110,8 @@ public class SuspendScopeOf<G : Catalog, out B : Backend> internal constructor(
     }
 
     /** Block form of [find]; see [Scope.find]. */
-    public suspend fun <T : Entity> Table<G, T>.find(block: QueryBuilderOf<B>.() -> Unit): List<T> =
-        select(QueryBuilderOf<B>().apply(block).build(), exec)
+    public suspend fun <T : Entity> Table<G, T>.find(block: SelectQueryBuilderOf<B>.() -> Unit): List<T> =
+        select(SelectQueryBuilderOf<B>().apply(block).build(), exec)
     /** The first row matching [query] (typically a unique predicate), or null. Applies `LIMIT 1`. */
     public suspend fun <T : Entity> Table<G, T>.findOne(query: Query): T? {
         requireLockableHere(query)
@@ -119,8 +119,8 @@ public class SuspendScopeOf<G : Catalog, out B : Backend> internal constructor(
     }
 
     /** Block form of [findOne]: `Users.findOne { where { Users.id eq id } }`. */
-    public suspend fun <T : Entity> Table<G, T>.findOne(block: QueryBuilderOf<B>.() -> Unit): T? =
-        findOne(QueryBuilderOf<B>().apply(block).build())
+    public suspend fun <T : Entity> Table<G, T>.findOne(block: SelectQueryBuilderOf<B>.() -> Unit): T? =
+        findOne(SelectQueryBuilderOf<B>().apply(block).build())
     public suspend fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
     /** Updates rows matching [query] with the present fields of [entity]; returns the affected row count. */
     public suspend fun <T : Entity> Table<G, T>.update(entity: T, query: Query): Long {

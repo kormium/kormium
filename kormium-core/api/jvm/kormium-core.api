@@ -675,15 +675,13 @@ public final class io/github/kormium/Query {
 	public final fun toWhereSql (Lio/github/kormium/ParamBuilder;)Ljava/lang/String;
 }
 
-public final class io/github/kormium/QueryBuilderOf {
+public class io/github/kormium/QueryBuilderOf {
 	public fun <init> ()V
 	public final fun getLimit ()Ljava/lang/Integer;
 	public final fun getOffset ()Ljava/lang/Integer;
 	public final fun getOrderBy ()Lio/github/kormium/OrderByDsl;
-	public final fun getRowLock ()Lio/github/kormium/RowLock;
 	public final fun setLimit (Ljava/lang/Integer;)V
 	public final fun setOffset (Ljava/lang/Integer;)V
-	public final fun setRowLock (Lio/github/kormium/RowLock;)V
 	public final fun where (Lkotlin/jvm/functions/Function0;)V
 }
 
@@ -824,10 +822,10 @@ public final class io/github/kormium/RowLock {
 }
 
 public final class io/github/kormium/RowLockKt {
-	public static final fun forShare (Lio/github/kormium/QueryBuilderOf;Lio/github/kormium/LockWait;)V
-	public static synthetic fun forShare$default (Lio/github/kormium/QueryBuilderOf;Lio/github/kormium/LockWait;ILjava/lang/Object;)V
-	public static final fun forUpdate (Lio/github/kormium/QueryBuilderOf;Lio/github/kormium/LockWait;)V
-	public static synthetic fun forUpdate$default (Lio/github/kormium/QueryBuilderOf;Lio/github/kormium/LockWait;ILjava/lang/Object;)V
+	public static final fun forShare (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;)V
+	public static synthetic fun forShare$default (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;ILjava/lang/Object;)V
+	public static final fun forUpdate (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;)V
+	public static synthetic fun forUpdate$default (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;ILjava/lang/Object;)V
 }
 
 public abstract interface class io/github/kormium/RowLockingBackend : io/github/kormium/Backend {
@@ -882,6 +880,12 @@ public final class io/github/kormium/ScopeOf {
 	public static synthetic fun upsert$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/Entity;
 	public static synthetic fun upsert$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/Entity;
 	public static synthetic fun upsert$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/Entity;
+}
+
+public final class io/github/kormium/SelectQueryBuilderOf : io/github/kormium/QueryBuilderOf {
+	public fun <init> ()V
+	public final fun getRowLock ()Lio/github/kormium/RowLock;
+	public final fun setRowLock (Lio/github/kormium/RowLock;)V
 }
 
 public abstract interface class io/github/kormium/Selectable : io/github/kormium/Expression {

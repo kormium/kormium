@@ -23,9 +23,9 @@ public class RenderScopeOf<G : Catalog, out B : Backend> internal constructor(pu
 
     // ---- reads ----
     public fun <T : Entity> Table<G, T>.find(query: Query): RenderedSql = RenderedSql(selectSql(query, dialect, typeMapper))
-    public fun <T : Entity> Table<G, T>.find(block: QueryBuilderOf<B>.() -> Unit): RenderedSql = find(QueryBuilderOf<B>().apply(block).build())
+    public fun <T : Entity> Table<G, T>.find(block: SelectQueryBuilderOf<B>.() -> Unit): RenderedSql = find(SelectQueryBuilderOf<B>().apply(block).build())
     public fun <T : Entity> Table<G, T>.findOne(query: Query): RenderedSql = RenderedSql(selectSql(query.copy(limit = 1u), dialect, typeMapper))
-    public fun <T : Entity> Table<G, T>.findOne(block: QueryBuilderOf<B>.() -> Unit): RenderedSql = findOne(QueryBuilderOf<B>().apply(block).build())
+    public fun <T : Entity> Table<G, T>.findOne(block: SelectQueryBuilderOf<B>.() -> Unit): RenderedSql = findOne(SelectQueryBuilderOf<B>().apply(block).build())
     public fun <T : Entity> Table<G, T>.all(): RenderedSql = RenderedSql(selectAllSql(dialect) to emptyMap())
     public fun <T : Entity> Table<G, T>.count(query: Query = Query()): RenderedSql = RenderedSql(countSql(query, dialect, typeMapper))
     public fun <T : Entity> Table<G, T>.count(block: QueryBuilderOf<B>.() -> Unit): RenderedSql = count(QueryBuilderOf<B>().apply(block).build())

@@ -51,7 +51,7 @@ class RowLockTest {
 
     @Test
     fun rendersEveryLockFlavour() {
-        fun render(block: io.github.kormium.QueryBuilderOf<io.github.kormium.PostgresBackend>.() -> Unit) =
+        fun render(block: io.github.kormium.SelectQueryBuilderOf<io.github.kormium.PostgresBackend>.() -> Unit) =
             renderPostgresSql<JobCatalog, _> { Jobs.find(block) }.sql.substringAfter(""""jobs" """)
 
         assertEquals("FOR UPDATE", render { forUpdate() })

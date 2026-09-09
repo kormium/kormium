@@ -1,3 +1,27 @@
+public abstract interface class io/github/kormium/MySqlBackend : io/github/kormium/AnyBackend, io/github/kormium/RowLockingBackend {
+}
+
+public final class io/github/kormium/MySqlBackendKt {
+	public static final fun renderMySqlSql (Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun renderMySqlSql$default (Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class io/github/kormium/MySqlDatabase : io/github/kormium/database/Database {
+	public fun autocommit (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public fun transaction (Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/kormium/MySqlDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/MySqlDatabase$DefaultImpls {
+	public static fun autocommit (Lio/github/kormium/MySqlDatabase;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static fun getConfig (Lio/github/kormium/MySqlDatabase;)Lio/github/kormium/KormiumConfig;
+	public static fun getDialect (Lio/github/kormium/MySqlDatabase;)Lio/github/kormium/Dialect;
+	public static fun getWriteListeners (Lio/github/kormium/MySqlDatabase;)Lio/github/kormium/WriteListeners;
+	public static fun isClosed (Lio/github/kormium/MySqlDatabase;)Z
+	public static fun transaction (Lio/github/kormium/MySqlDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/kormium/MySqlDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
 public final class io/github/kormium/MySqlDialect : io/github/kormium/Dialect {
 	public static final field INSTANCE Lio/github/kormium/MySqlDialect;
 	public fun advisoryLockSql (J)Ljava/lang/String;
@@ -15,5 +39,21 @@ public final class io/github/kormium/MySqlDialect : io/github/kormium/Dialect {
 	public fun renderOffset-WZ4Q5Ns (I)Ljava/lang/String;
 	public fun renderRowLock (Lio/github/kormium/RowLock;)Ljava/lang/String;
 	public fun renderUpsertSuffix (Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public abstract interface class io/github/kormium/SuspendMySqlDatabase : io/github/kormium/database/SuspendDatabase {
+	public fun suspendAutocommit (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun suspendTransaction (Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun suspendTransaction$default (Lio/github/kormium/SuspendMySqlDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/SuspendMySqlDatabase$DefaultImpls {
+	public static fun getConfig (Lio/github/kormium/SuspendMySqlDatabase;)Lio/github/kormium/KormiumConfig;
+	public static fun getDialect (Lio/github/kormium/SuspendMySqlDatabase;)Lio/github/kormium/Dialect;
+	public static fun getWriteListeners (Lio/github/kormium/SuspendMySqlDatabase;)Lio/github/kormium/WriteListeners;
+	public static fun isClosed (Lio/github/kormium/SuspendMySqlDatabase;)Z
+	public static fun suspendAutocommit (Lio/github/kormium/SuspendMySqlDatabase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun suspendTransaction (Lio/github/kormium/SuspendMySqlDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun suspendTransaction$default (Lio/github/kormium/SuspendMySqlDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 

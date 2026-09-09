@@ -49,12 +49,12 @@ public data class RowLock(val share: Boolean = false, val wait: LockWait = LockW
  * ```
  */
 @OptIn(KormiumDialectApi::class)
-public fun QueryBuilderOf<RowLockingBackend>.forUpdate(wait: LockWait = LockWait.Wait) {
+public fun SelectQueryBuilderOf<RowLockingBackend>.forUpdate(wait: LockWait = LockWait.Wait) {
     rowLock = RowLock(share = false, wait = wait)
 }
 
 /** The shared counterpart of [forUpdate] — `SELECT ... FOR SHARE`. */
 @OptIn(KormiumDialectApi::class)
-public fun QueryBuilderOf<RowLockingBackend>.forShare(wait: LockWait = LockWait.Wait) {
+public fun SelectQueryBuilderOf<RowLockingBackend>.forShare(wait: LockWait = LockWait.Wait) {
     rowLock = RowLock(share = true, wait = wait)
 }

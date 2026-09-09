@@ -142,8 +142,8 @@ public class ScopeOf<G : Catalog, out B : Backend> internal constructor(
     }
 
     /** Block form of [find]: `Users.find { where { ... }; orderBy DESC col; limit = 50 }`. */
-    public fun <T : Entity> Table<G, T>.find(block: QueryBuilderOf<B>.() -> Unit): List<T> =
-        select(QueryBuilderOf<B>().apply(block).build(), exec)
+    public fun <T : Entity> Table<G, T>.find(block: SelectQueryBuilderOf<B>.() -> Unit): List<T> =
+        select(SelectQueryBuilderOf<B>().apply(block).build(), exec)
     /** The first row matching [query] (typically a unique predicate), or null. Applies `LIMIT 1`. */
     public fun <T : Entity> Table<G, T>.findOne(query: Query): T? {
         requireLockableHere(query)
@@ -151,8 +151,8 @@ public class ScopeOf<G : Catalog, out B : Backend> internal constructor(
     }
 
     /** Block form of [findOne]: `Users.findOne { where { Users.id eq id } }`. */
-    public fun <T : Entity> Table<G, T>.findOne(block: QueryBuilderOf<B>.() -> Unit): T? =
-        findOne(QueryBuilderOf<B>().apply(block).build())
+    public fun <T : Entity> Table<G, T>.findOne(block: SelectQueryBuilderOf<B>.() -> Unit): T? =
+        findOne(SelectQueryBuilderOf<B>().apply(block).build())
     public fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
     /** Updates rows matching [query] with the present fields of [entity]; returns the affected row count. */
     public fun <T : Entity> Table<G, T>.update(entity: T, query: Query): Long {

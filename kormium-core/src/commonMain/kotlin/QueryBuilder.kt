@@ -18,7 +18,7 @@ package io.github.kormium
  * no ordering, no limit/offset). [Query] stays available for reusable/prebuilt queries.
  */
 @KormiumDsl
-public class QueryBuilderOf<out B : Backend> {
+public open class QueryBuilderOf<out B : Backend> {
     private val conditions = mutableListOf<Expression>()
     private val orderings = LinkedHashMap<Selectable<*>, AscDescOrder>()
 
@@ -32,14 +32,6 @@ public class QueryBuilderOf<out B : Backend> {
     public var offset: Int? = null
 
     /**
-     * The row-level lock this query takes, if any — the seam a dialect module's gated DSL writes
-     * through. Application code sets it via [forUpdate] / [forShare], which only resolve when [B]
-     * is a [RowLockingBackend]; assigning here bypasses that check (see [KormiumDialectApi]).
-     */
-    @KormiumDialectApi
-    public var rowLock: RowLock? = null
-
-    /**
      * Adds a predicate. Multiple `where { ... }` calls combine with `AND`; put complex
      * boolean logic inside a single block using `and` / `or` / `not(...)`.
      */
@@ -47,7 +39,13 @@ public class QueryBuilderOf<out B : Backend> {
         conditions += block()
     }
 
-    @OptIn(KormiumDialectApi::class)
+    /**
+     * The lock this builder contributes to the [Query]. Always null here: `count` / `update` /
+     * `deleteWhere` render only the `WHERE` clause, so a lock set on them would be dropped without
+     * a trace. Only [SelectQueryBuilderOf] overrides it.
+     */
+    internal open fun lockOrNull(): RowLock? = null
+
     internal fun build(): Query {
         // Reject negative limit/offset: toUInt() would wrap (-1 -> 4294967295) and render a
         // huge LIMIT instead of failing fast on what is almost always bad user input.
@@ -65,9 +63,29 @@ public class QueryBuilderOf<out B : Backend> {
             limit = limit?.toUInt() ?: UInt.MAX_VALUE,
             offset = offset?.toUInt() ?: 0u,
             orderBy = orderings.ifEmpty { null },
-            lock = rowLock,
+            lock = lockOrNull(),
         )
     }
+}
+
+/**
+ * The builder behind `find` / `findOne` — a [QueryBuilderOf] that can additionally take a row
+ * lock. The split is deliberate: `count`, `update` and `deleteWhere` render only the `WHERE`
+ * clause, so a lock written there would vanish silently. Giving the read path its own type makes
+ * `Jobs.count { forUpdate() }` a compile error instead.
+ */
+@KormiumDsl
+public class SelectQueryBuilderOf<out B : Backend> : QueryBuilderOf<B>() {
+    /**
+     * The row-level lock this read takes, if any — the seam a dialect module's gated DSL writes
+     * through. Application code sets it via [forUpdate] / [forShare], which only resolve when [B]
+     * is a [RowLockingBackend]; assigning here bypasses that check (see [KormiumDialectApi]).
+     */
+    @KormiumDialectApi
+    public var rowLock: RowLock? = null
+
+    @OptIn(KormiumDialectApi::class)
+    override fun lockOrNull(): RowLock? = rowLock
 }
 
 /**
@@ -76,6 +94,9 @@ public class QueryBuilderOf<out B : Backend> {
  * builder carrying that backend's tag instead, which is what unlocks the gated DSL.
  */
 public typealias QueryBuilder = QueryBuilderOf<AnyBackend>
+
+/** The portable read builder; see [SelectQueryBuilderOf]. */
+public typealias SelectQueryBuilder = SelectQueryBuilderOf<AnyBackend>
 
 /**
  * Infix ordering for [QueryBuilder.orderBy]: `orderBy DESC column`, `orderBy ASC column`. The

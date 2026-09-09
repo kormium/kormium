@@ -55,6 +55,29 @@ public object MySqlDialect : Dialect by StandardDialect {
     override fun renderInsertOrIgnoreSuffix(conflictColumns: List<String>): String =
         "ON DUPLICATE KEY UPDATE ${conflictColumns.first()} = ${conflictColumns.first()}"
 
+    /**
+     * `FOR UPDATE` / `FOR SHARE` plus the contention modifier. **Version-sensitive, and no type
+     * can check it** — the server does:
+     *
+     *  - `FOR UPDATE` — every supported MySQL and MariaDB;
+     *  - `NOWAIT` — MySQL 8.0.1+, MariaDB 10.3+;
+     *  - `SKIP LOCKED` — MySQL 8.0.1+, MariaDB 10.6+;
+     *  - `FOR SHARE` — MySQL 8.0+ only. MariaDB has never accepted it (its shared-lock spelling is
+     *    the older `LOCK IN SHARE MODE`, which in turn takes no `NOWAIT` / `SKIP LOCKED`), so
+     *    [forShare] against MariaDB fails on the server.
+     *
+     * On an older server the statement comes back as a syntax error rather than silently running
+     * unlocked — which is the same trade the throwing [Dialect.renderRowLock] default makes.
+     */
+    override fun renderRowLock(lock: RowLock): String = buildString {
+        append(if (lock.share) "FOR SHARE" else "FOR UPDATE")
+        when (lock.wait) {
+            LockWait.NoWait -> append(" NOWAIT")
+            LockWait.SkipLocked -> append(" SKIP LOCKED")
+            LockWait.Wait -> {}
+        }
+    }
+
     // MySQL's LENGTH counts bytes; CHAR_LENGTH counts characters (what length() promises).
     override fun renderCharLength(arg: String): String = "CHAR_LENGTH($arg)"
 }
