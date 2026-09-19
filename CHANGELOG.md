@@ -7,6 +7,18 @@ All notable changes to Kormium are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **Row locking, gated by the backend's type.** `find { forUpdate(LockWait.SkipLocked) }` renders
+  `SELECT ... FOR UPDATE SKIP LOCKED` — the piece that makes a table usable as a work queue, and
+  the read-then-write half of a safe debit. `forUpdate` / `forShare` take `Wait` (block), `NoWait`
+  (fail) or `SkipLocked` (take the next free rows). They resolve **only** in a scope opened from a
+  `PostgresDatabase<G>` / `MySqlDatabase<G>` handle: on the portable `Database<G>`, and therefore
+  on SQLite, the call does not compile rather than silently returning an unlocked read — which
+  would hand the same rows to two workers. Locking outside `transaction { }` fails fast (the lock
+  would be released immediately), and `count` / `update` / `deleteWhere` cannot take one at all,
+  since they render the `WHERE` clause alone. What a type cannot check stays a server-side error:
+  MySQL needs 8.0.1 for `NOWAIT` / `SKIP LOCKED`, and MariaDB has no `FOR SHARE`. See
+  [ADR 0014](docs/adr/0014-typed-backend-capabilities.md) for why the capability is carried by a
+  phantom type parameter.
 - **Browser extensions actually load.** `loadLibrary` on the wa-sqlite engines (`kormium-sqlite-wasm`
   and `kormium-sqlite-js`) fetches the extension as an Emscripten side module, writes it into the
   virtual filesystem and has SQLite `dlopen` it — the mechanism proven in

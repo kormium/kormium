@@ -120,6 +120,11 @@ MySQL notes:
   key, 1048 NOT NULL, 3819 check) since MySQL reports them all under SQLSTATE 23000.
 - No transaction-scoped advisory lock (MySQL `GET_LOCK` is session-scoped), so `kormium-migrate`
   runs without one — prefer migrating from a single instance.
+- Row locking is **version-sensitive, and the type system cannot see it**: `forUpdate()` works
+  everywhere, but `NOWAIT` needs MySQL 8.0.1+ / MariaDB 10.3+, `SKIP LOCKED` needs MySQL 8.0.1+ /
+  MariaDB 10.6+, and `forShare()` is MySQL-only (MariaDB never accepted `FOR SHARE`). An older
+  server answers with a syntax error rather than running the read unlocked — see
+  [Row Locking](queries.md#row-locking-for-update--for-share).
 
 ## SQLite
 
@@ -287,6 +292,8 @@ hidden behind a generic failure. Each row is covered by edge-case tests
 | `insert(returning = true)` | Native `INSERT ... RETURNING` | Native `INSERT ... RETURNING` | Native `INSERT ... RETURNING` | No `RETURNING`; the insert runs, then the row is re-selected (`supportsReturning = false`) |
 | `upsert` (single & composite conflict) | `ON CONFLICT (...) DO UPDATE` | `ON CONFLICT (...) DO UPDATE` | `ON CONFLICT (...) DO UPDATE` | `ON DUPLICATE KEY UPDATE` (the conflict columns must back a key) |
 | `insertOrIgnore` | `ON CONFLICT (...) DO NOTHING` | `ON CONFLICT (...) DO NOTHING` | `ON CONFLICT (...) DO NOTHING` | `INSERT IGNORE` |
+| `find { forUpdate() }` / `forShare()` | `FOR UPDATE` / `FOR SHARE`, with `NOWAIT` / `SKIP LOCKED` | same | **Does not compile** — SQLite has no row locking, so the DSL does not resolve on a portable/SQLite handle | `FOR UPDATE` / `FOR SHARE`; `NOWAIT` needs MySQL 8.0.1+ / MariaDB 10.3+, `SKIP LOCKED` MySQL 8.0.1+ / MariaDB 10.6+, and MariaDB has no `FOR SHARE` at all |
+| A row lock outside a transaction | throws `IllegalStateException` (checked before any SQL) | same | n/a | same |
 | `savepoint { }` nesting/rollback | `SAVEPOINT` / `ROLLBACK TO SAVEPOINT` | same, over the reactive connection | `SAVEPOINT` / `ROLLBACK TO SAVEPOINT` | `SAVEPOINT` / `ROLLBACK TO SAVEPOINT` |
 | `savepoint` outside a transaction | throws `IllegalStateException` (checked before any SQL) | same | same | same |
 | Nullable left-join projection | unmatched right side is `null` (`Pair<A, B?>`); `row[col]` throws, `row.getOrNull(col)` is `null` | same | same | same |

@@ -450,6 +450,74 @@ Use raw SQL only when the SQL text is fully controlled by your application:
 Users.find(Query(RawExpression("""lower("name") = 'ada'""")))
 ```
 
+## Row Locking (`FOR UPDATE` / `FOR SHARE`)
+
+A locking read takes a row-level lock that is held until the transaction ends, so another
+transaction cannot change those rows underneath you. It is the piece that makes read-then-write
+safe, and — with `SKIP LOCKED` — the piece that turns a table into a work queue.
+
+```kotlin
+val db: PostgresDatabase<App> = createDatabase(...)   // note the handle type
+
+db.transaction {
+    val batch = Jobs.find {
+        where { Jobs.status eq JobStatus.ACTIVE }
+        orderBy ASC Jobs.nextRunAt
+        limit = 10
+        forUpdate(LockWait.SkipLocked)
+    }
+    // SELECT ... ORDER BY "next_run_at" LIMIT 10 FOR UPDATE SKIP LOCKED
+}
+```
+
+`forUpdate()` takes an exclusive lock, `forShare()` a shared one. The argument says what to do
+when a row is already locked by someone else:
+
+| | Behaviour | Use it when |
+|---|---|---|
+| `LockWait.Wait` (default) | block until the other transaction ends | you need **that** row — debiting a specific account |
+| `LockWait.SkipLocked` | ignore locked rows, take the next ones | **any** free row will do — a queue handing work to N workers |
+| `LockWait.NoWait` | fail immediately | an interactive edit, where "someone else is editing this" beats freezing |
+
+With `SKIP LOCKED`, `limit = 10` means *ten unlocked rows*, so each worker gets a full batch
+instead of fighting over the head of the queue.
+
+### Where it is available
+
+The DSL is gated by the **type of the database handle**, not checked at runtime. `forUpdate` and
+`forShare` only resolve inside a scope opened from a `PostgresDatabase<G>` or `MySqlDatabase<G>`;
+on the portable `Database<G>` — and therefore on SQLite — they do not compile:
+
+```kotlin
+val portable: Database<App> = db        // same driver, portable handle
+portable.transaction {
+    Jobs.find { forUpdate() }           // does not compile: unresolved reference
+}
+```
+
+So declare the handle as `PostgresDatabase<App>` / `MySqlDatabase<App>` when you want the locking
+DSL, and as `Database<App>` when you want the compiler to keep the code portable. Widening a
+Postgres handle to `Database<App>` is what a portable helper should take — everything except the
+locking call keeps working through it.
+
+Two things the type cannot promise, both on MySQL/MariaDB: `NOWAIT` and `SKIP LOCKED` need MySQL
+8.0.1+ / MariaDB 10.3+ and 10.6+, and MariaDB has no `FOR SHARE` at all. An older server answers
+with a syntax error rather than quietly running the read unlocked.
+
+### Rules the DSL enforces
+
+- **A lock needs a transaction.** In `autocommit { }` the lock would be released at the next
+  statement boundary and protect nothing, so the query fails fast with an explicit message. Use
+  `transaction { }` (or `suspendTransaction { }` — the suspend path is identical).
+- **Only reads can lock.** `forUpdate` exists on the `find` / `findOne` builder only. `count`,
+  `update` and `deleteWhere` render the `WHERE` clause alone, so a lock written there would be
+  dropped silently — it is a compile error instead.
+
+One caveat that is the database's, not Kormium's: on PostgreSQL, `ORDER BY` + `LIMIT` +
+`FOR UPDATE` **without** `SKIP LOCKED` can return rows that no longer match the ordering once the
+lock is finally acquired, because `LIMIT` is not re-evaluated after the wait. For queue-shaped
+work, `SKIP LOCKED` avoids the question entirely.
+
 ## Vector Search (pgvector)
 
 A [vector column](tables-and-entities.md#vector-columns-pgvector) computes a pgvector distance to a
@@ -519,8 +587,11 @@ Not modeled by the typed DSL today:
 - **Grouping in the `find { }` block.** `groupBy` / `having` / `distinct` live on the join /
   `Table.query()` path, not the entity-returning `find { }` builder.
 - **Statement-level extras.** No `ORDER BY` / `LIMIT` on `UPDATE` / `DELETE`, no `RETURNING`
-  on `UPDATE` / `DELETE`, no `LOCK` / `FOR UPDATE` clauses, and no DDL through the query DSL.
-  (`INSERT ... ON CONFLICT` *is* available — see `upsert` and `insertOrIgnore`.)
+  on `UPDATE` / `DELETE`, no table-level `LOCK` statement, and no DDL through the query DSL.
+  (`INSERT ... ON CONFLICT` *is* available — see `upsert` and `insertOrIgnore`; row-level
+  `FOR UPDATE` / `FOR SHARE` on reads is available on Postgres and MySQL — see
+  [Row Locking](#row-locking-for-update--for-share). Postgres-only lock strengths
+  `FOR NO KEY UPDATE` / `FOR KEY SHARE`, and `OF table` on a join, are not modeled.)
 
 The supported `WHERE` / `HAVING` predicates are exactly: `eq`, `neq`, `lt`, `ltEq`, `gt`,
 `gtEq`, `between` (an inclusive `lo..hi` range; an empty range matches nothing), `like`,
