@@ -143,7 +143,7 @@ public class ScopeOf<G : Catalog, out B : Backend> internal constructor(
 
     /** Block form of [find]: `Users.find { where { ... }; orderBy DESC col; limit = 50 }`. */
     public fun <T : Entity> Table<G, T>.find(block: SelectQueryBuilderOf<B>.() -> Unit): List<T> =
-        select(SelectQueryBuilderOf<B>().apply(block).build(), exec)
+        find(SelectQueryBuilderOf<B>().apply(block).build())
     /** The first row matching [query] (typically a unique predicate), or null. Applies `LIMIT 1`. */
     public fun <T : Entity> Table<G, T>.findOne(query: Query): T? {
         requireLockableHere(query)
