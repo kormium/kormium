@@ -3,7 +3,7 @@ public final class io/github/kormium/PgNotificationTransportKt {
 	public static synthetic fun postgresListenNotifyTransport$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/kormium/NotificationTransport;
 }
 
-public abstract interface class io/github/kormium/PostgresDriver : io/github/kormium/PostgresDatabase, io/github/kormium/SuspendPostgresDatabase, java/lang/AutoCloseable {
+public abstract interface class io/github/kormium/PostgresDriver : io/github/kormium/BackendDatabase, io/github/kormium/SuspendBackendDatabase, java/lang/AutoCloseable {
 	public abstract fun getConfig ()Lio/github/kormium/KormiumConfig;
 	public abstract fun getDialect ()Lio/github/kormium/Dialect;
 	public abstract fun getWriteListeners ()Lio/github/kormium/WriteListeners;

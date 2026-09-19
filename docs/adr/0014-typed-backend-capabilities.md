@@ -47,16 +47,24 @@ public typealias QueryBuilder = QueryBuilderOf<AnyBackend>
 ```
 
 ```kotlin
-// a dialect module: the tag, plus entry points that hand out a scope carrying it
-public interface PostgresBackend : AnyBackend, RowLockingBackend
-
-public interface PostgresDatabase<out G : Catalog> : Database<G> {
+// core: one handle type, generic in the tag — core still knows no concrete backend
+public interface BackendDatabase<out G : Catalog, B : Backend> : Database<G> {
     public fun <R> transaction(
         isolation: TransactionIsolation? = null,
         readOnly: Boolean = false,
-        block: ScopeOf<@UnsafeVariance G, PostgresBackend>.() -> R,
+        block: ScopeOf<@UnsafeVariance G, B>.() -> R,
     ): R = runTransaction(isolation, readOnly, block)
+    public fun <R> autocommit(block: ScopeOf<@UnsafeVariance G, B>.() -> R): R = runAutocommit(block)
 }
+
+// a dialect module contributes the tag and the rendering — nothing else
+public interface PostgresBackend : AnyBackend, RowLockingBackend
+
+// a driver opts in by naming its tag; that is the whole wiring per backend
+public interface PostgresDriver :
+    BackendDatabase<Nothing, PostgresBackend>,
+    SuspendBackendDatabase<Nothing, PostgresBackend>,
+    AutoCloseable
 ```
 
 Four properties follow, and each one was a requirement:
@@ -68,13 +76,14 @@ Four properties follow, and each one was a requirement:
 2. **The tag is proof, not a promise.** A user can write `object App : Catalog` and claim anything;
    nobody can make `PostgresDriver` be SQLite.
 3. **Opt-in by declaration.** `Database<App>` behaves exactly as before. Writing
-   `PostgresDatabase<App>` is what opens the extra syntax, and widening back to `Database<App>` is
+   `BackendDatabase<App, PostgresBackend>` is what opens the extra syntax, and widening back to
+   `Database<App>` is
    how a portable helper says "I must keep working on every backend".
 4. **Capabilities, not engines, gate the DSL.** `forUpdate` hangs off `RowLockingBackend`, which
    both `PostgresBackend` and `MySqlBackend` extend — so the DSL is declared once in core, and a
    dialect module contributes a tag plus `Dialect.renderRowLock`, not a copy of the DSL.
 
-The entry points are **members** of `PostgresDatabase` rather than extensions. A member wins
+The entry points are **members** of `BackendDatabase` rather than extensions. A member wins
 overload resolution against the core `Database<G>.transaction` extension, so the same call site
 gets the richer scope when the static type is known and the portable one otherwise. Their parameter
 lists must mirror the core extensions' exactly, or calls using named arguments break.
@@ -102,8 +111,8 @@ site failed with *"cannot be called in this context with an implicit receiver"*.
 builder instead makes the receiver the nearest one, which is what the marker wants.
 
 **A more specific receiver does not win if the lambda is contravariant.** Declaring the Postgres
-entry point as an *extension* (`PostgresDatabase<G>.transaction`) is ambiguous against the core
-extension: `PostgresDatabase<G>` is more specific as a receiver, but `Scope<G>.() -> R` is more
+entry point as an *extension* (`BackendDatabase<G, B>.transaction`) is ambiguous against the core
+extension: `BackendDatabase<G, B>` is more specific as a receiver, but `Scope<G>.() -> R` is more
 specific as a parameter (function receivers are contravariant), so neither candidate wins. Hence
 members.
 
@@ -114,14 +123,20 @@ members.
   samples — but `Scope`, `SuspendScope`, `QueryBuilder` and `RenderScope` no longer exist as JVM
   classes under those names. Consumers must recompile; a stale binary gets `NoClassDefFoundError`.
   Acceptable pre-1.0, and it is the reason to do this now rather than later.
-- **A raw driver handle loses catalog inference.** `PostgresDriver` is `PostgresDatabase<Nothing>`,
+- **A raw driver handle loses catalog inference.** `PostgresDriver` is
+  `BackendDatabase<Nothing, PostgresBackend>`,
   and the member fixes the catalog to the interface's own parameter instead of inferring it at the
   call site the way the core extension did. So `db.transaction { Users.find { … } }` needs the
-  handle pinned — `val db: PostgresDatabase<App> = createDatabase(…)`. Pinning is already the
+  handle pinned — `val db: BackendDatabase<App, PostgresBackend> = createDatabase(…)`. Pinning is
+  already the
   documented idiom, so the cost is one word, but it is a behaviour change.
-- **Each dialect mirrors four entry points** (`transaction`, `autocommit`, and the two suspend
-  ones), plus an offline-render helper. Small and mechanical, but it grows with the number of
-  backends, and `RenderScope` needs the same tag as the executing scopes.
+- **Per-backend wiring is one line.** The four entry points (`transaction`, `autocommit` and the
+  two suspend ones) live once in core, generic in the tag, so a backend joins by adding
+  `BackendDatabase<Nothing, XBackend>` to its driver's supertypes. All of them do: the JDBC/native
+  Postgres and MySQL drivers, the r2dbc pool (one class serving both engines, so it takes the tag
+  as a class parameter — `R2dbcDatabase<B : Backend>` — and its two factories fix it), and the
+  Node engines. A dialect module contributes only its tag plus an offline-render helper, and
+  `RenderScope` carries the same tag as the executing scopes.
 - **The portable core stays portable.** Nothing about the default path changed: `Database<G>`
   renders exactly the SQL it rendered before.
 - **The capability list is now the extension point.** Adding `DISTINCT ON`, `ILIKE` or MySQL hints
@@ -147,6 +162,12 @@ members.
   developed against.
 
 ## Notes
+
+An earlier draft gave each dialect module its own `PostgresDatabase<G>` / `MySqlDatabase<G>`
+interface. Collapsing them into the generic `BackendDatabase<G, B>` removed four near-identical
+interfaces, made the r2dbc and Node wiring trivial — and resolved a name collision, since
+`io.github.kormium.mysql.node.MySqlDatabase` is already a concrete driver class.
+
 
 `Dialect.renderRowLock` defaulting to a throw is deliberate and differs from
 `supportsTransactionIsolation`, which silently ignores an unsupported level. That is safe because

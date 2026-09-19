@@ -6,7 +6,7 @@
 // - Show declarations: true
 
 // Library unique name: <io.github.kormium:kormium-postgres>
-abstract interface io.github.kormium/PostgresDriver : io.github.kormium/PostgresDatabase<kotlin/Nothing>, io.github.kormium/SuspendPostgresDatabase<kotlin/Nothing>, kotlin/AutoCloseable { // io.github.kormium/PostgresDriver|null[0]
+abstract interface io.github.kormium/PostgresDriver : io.github.kormium/BackendDatabase<kotlin/Nothing, io.github.kormium/PostgresBackend>, io.github.kormium/SuspendBackendDatabase<kotlin/Nothing, io.github.kormium/PostgresBackend>, kotlin/AutoCloseable { // io.github.kormium/PostgresDriver|null[0]
     abstract val config // io.github.kormium/PostgresDriver.config|{}config[0]
         abstract fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium/PostgresDriver.config.<get-config>|<get-config>(){}[0]
     abstract val dialect // io.github.kormium/PostgresDriver.dialect|{}dialect[0]

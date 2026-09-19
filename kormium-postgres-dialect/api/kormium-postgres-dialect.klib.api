@@ -18,16 +18,6 @@ final enum class io.github.kormium/VectorMetric : kotlin/Enum<io.github.kormium/
     final fun values(): kotlin/Array<io.github.kormium/VectorMetric> // io.github.kormium/VectorMetric.values|values#static(){}[0]
 }
 
-abstract interface <#A: out io.github.kormium/Catalog> io.github.kormium/PostgresDatabase : io.github.kormium.database/Database<#A> { // io.github.kormium/PostgresDatabase|null[0]
-    open fun <#A1: kotlin/Any?> autocommit(kotlin/Function1<io.github.kormium/ScopeOf<#A, io.github.kormium/PostgresBackend>, #A1>): #A1 // io.github.kormium/PostgresDatabase.autocommit|autocommit(kotlin.Function1<io.github.kormium.ScopeOf<1:0,io.github.kormium.PostgresBackend>,0:0>){0§<kotlin.Any?>}[0]
-    open fun <#A1: kotlin/Any?> transaction(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin/Function1<io.github.kormium/ScopeOf<#A, io.github.kormium/PostgresBackend>, #A1>): #A1 // io.github.kormium/PostgresDatabase.transaction|transaction(io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.Function1<io.github.kormium.ScopeOf<1:0,io.github.kormium.PostgresBackend>,0:0>){0§<kotlin.Any?>}[0]
-}
-
-abstract interface <#A: out io.github.kormium/Catalog> io.github.kormium/SuspendPostgresDatabase : io.github.kormium.database/SuspendDatabase<#A> { // io.github.kormium/SuspendPostgresDatabase|null[0]
-    open suspend fun <#A1: kotlin/Any?> suspendAutocommit(kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScopeOf<#A, io.github.kormium/PostgresBackend>, #A1>): #A1 // io.github.kormium/SuspendPostgresDatabase.suspendAutocommit|suspendAutocommit(kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScopeOf<1:0,io.github.kormium.PostgresBackend>,0:0>){0§<kotlin.Any?>}[0]
-    open suspend fun <#A1: kotlin/Any?> suspendTransaction(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScopeOf<#A, io.github.kormium/PostgresBackend>, #A1>): #A1 // io.github.kormium/SuspendPostgresDatabase.suspendTransaction|suspendTransaction(io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScopeOf<1:0,io.github.kormium.PostgresBackend>,0:0>){0§<kotlin.Any?>}[0]
-}
-
 abstract interface io.github.kormium/PostgresBackend : io.github.kormium/AnyBackend, io.github.kormium/RowLockingBackend // io.github.kormium/PostgresBackend|null[0]
 
 final class io.github.kormium/Vector { // io.github.kormium/Vector|null[0]

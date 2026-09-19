@@ -24,6 +24,22 @@ public final class io/github/kormium/AscDescOrder : java/lang/Enum {
 public abstract interface class io/github/kormium/Backend {
 }
 
+public abstract interface class io/github/kormium/BackendDatabase : io/github/kormium/database/Database {
+	public fun autocommit (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public fun transaction (Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/kormium/BackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/BackendDatabase$DefaultImpls {
+	public static fun autocommit (Lio/github/kormium/BackendDatabase;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static fun getConfig (Lio/github/kormium/BackendDatabase;)Lio/github/kormium/KormiumConfig;
+	public static fun getDialect (Lio/github/kormium/BackendDatabase;)Lio/github/kormium/Dialect;
+	public static fun getWriteListeners (Lio/github/kormium/BackendDatabase;)Lio/github/kormium/WriteListeners;
+	public static fun isClosed (Lio/github/kormium/BackendDatabase;)Z
+	public static fun transaction (Lio/github/kormium/BackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/kormium/BackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
 public final class io/github/kormium/BatchInsertMode : java/lang/Enum {
 	public static final field GroupByAssignedFields Lio/github/kormium/BatchInsertMode;
 	public static final field Strict Lio/github/kormium/BatchInsertMode;
@@ -971,6 +987,22 @@ public abstract interface class io/github/kormium/StringExpr : io/github/kormium
 public final class io/github/kormium/StringExpr$DefaultImpls {
 	public static fun getColumnType (Lio/github/kormium/StringExpr;)Lio/github/kormium/ColumnType;
 	public static fun read (Lio/github/kormium/StringExpr;Lio/github/kormium/resultset/ResultSet;ILio/github/kormium/TypeMapper;)Ljava/lang/String;
+}
+
+public abstract interface class io/github/kormium/SuspendBackendDatabase : io/github/kormium/database/SuspendDatabase {
+	public fun suspendAutocommit (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun suspendTransaction (Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun suspendTransaction$default (Lio/github/kormium/SuspendBackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/SuspendBackendDatabase$DefaultImpls {
+	public static fun getConfig (Lio/github/kormium/SuspendBackendDatabase;)Lio/github/kormium/KormiumConfig;
+	public static fun getDialect (Lio/github/kormium/SuspendBackendDatabase;)Lio/github/kormium/Dialect;
+	public static fun getWriteListeners (Lio/github/kormium/SuspendBackendDatabase;)Lio/github/kormium/WriteListeners;
+	public static fun isClosed (Lio/github/kormium/SuspendBackendDatabase;)Z
+	public static fun suspendAutocommit (Lio/github/kormium/SuspendBackendDatabase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun suspendTransaction (Lio/github/kormium/SuspendBackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun suspendTransaction$default (Lio/github/kormium/SuspendBackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/github/kormium/SuspendScopeKt {

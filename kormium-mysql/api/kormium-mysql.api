@@ -1,4 +1,4 @@
-public abstract interface class io/github/kormium/MySqlDriver : io/github/kormium/MySqlDatabase, io/github/kormium/SuspendMySqlDatabase, java/lang/AutoCloseable {
+public abstract interface class io/github/kormium/MySqlDriver : io/github/kormium/BackendDatabase, io/github/kormium/SuspendBackendDatabase, java/lang/AutoCloseable {
 	public abstract fun getConfig ()Lio/github/kormium/KormiumConfig;
 	public abstract fun getDialect ()Lio/github/kormium/Dialect;
 	public abstract fun getWriteListeners ()Lio/github/kormium/WriteListeners;

@@ -457,7 +457,7 @@ transaction cannot change those rows underneath you. It is the piece that makes 
 safe, and — with `SKIP LOCKED` — the piece that turns a table into a work queue.
 
 ```kotlin
-val db: PostgresDatabase<App> = createDatabase(...)   // note the handle type
+val db: BackendDatabase<App, PostgresBackend> = createDatabase(...)   // note the handle type
 
 db.transaction {
     val batch = Jobs.find {
@@ -485,8 +485,10 @@ instead of fighting over the head of the queue.
 ### Where it is available
 
 The DSL is gated by the **type of the database handle**, not checked at runtime. `forUpdate` and
-`forShare` only resolve inside a scope opened from a `PostgresDatabase<G>` or `MySqlDatabase<G>`;
-on the portable `Database<G>` — and therefore on SQLite — they do not compile:
+`forShare` only resolve inside a scope opened from a `BackendDatabase<G, PostgresBackend>` or
+`BackendDatabase<G, MySqlBackend>` handle — or the `SuspendBackendDatabase` twin, which is what the
+r2dbc and Node engines are. On the portable `Database<G>` — and therefore on SQLite — they do not
+compile:
 
 ```kotlin
 val portable: Database<App> = db        // same driver, portable handle
@@ -495,8 +497,8 @@ portable.transaction {
 }
 ```
 
-So declare the handle as `PostgresDatabase<App>` / `MySqlDatabase<App>` when you want the locking
-DSL, and as `Database<App>` when you want the compiler to keep the code portable. Widening a
+So declare the handle as `BackendDatabase<App, PostgresBackend>` when you want the locking DSL, and
+as `Database<App>` when you want the compiler to keep the code portable. Widening a
 Postgres handle to `Database<App>` is what a portable helper should take — everything except the
 locking call keeps working through it.
 

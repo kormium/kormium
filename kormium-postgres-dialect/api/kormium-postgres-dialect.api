@@ -6,22 +6,6 @@ public final class io/github/kormium/PostgresBackendKt {
 	public static synthetic fun renderPostgresSql$default (Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
-public abstract interface class io/github/kormium/PostgresDatabase : io/github/kormium/database/Database {
-	public fun autocommit (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
-	public fun transaction (Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
-	public static synthetic fun transaction$default (Lio/github/kormium/PostgresDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
-}
-
-public final class io/github/kormium/PostgresDatabase$DefaultImpls {
-	public static fun autocommit (Lio/github/kormium/PostgresDatabase;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
-	public static fun getConfig (Lio/github/kormium/PostgresDatabase;)Lio/github/kormium/KormiumConfig;
-	public static fun getDialect (Lio/github/kormium/PostgresDatabase;)Lio/github/kormium/Dialect;
-	public static fun getWriteListeners (Lio/github/kormium/PostgresDatabase;)Lio/github/kormium/WriteListeners;
-	public static fun isClosed (Lio/github/kormium/PostgresDatabase;)Z
-	public static fun transaction (Lio/github/kormium/PostgresDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
-	public static synthetic fun transaction$default (Lio/github/kormium/PostgresDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
-}
-
 public final class io/github/kormium/PostgresDialect : io/github/kormium/Dialect {
 	public static final field INSTANCE Lio/github/kormium/PostgresDialect;
 	public fun advisoryLockSql (J)Ljava/lang/String;
@@ -39,22 +23,6 @@ public final class io/github/kormium/PostgresDialect : io/github/kormium/Dialect
 	public fun renderOffset-WZ4Q5Ns (I)Ljava/lang/String;
 	public fun renderRowLock (Lio/github/kormium/RowLock;)Ljava/lang/String;
 	public fun renderUpsertSuffix (Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
-}
-
-public abstract interface class io/github/kormium/SuspendPostgresDatabase : io/github/kormium/database/SuspendDatabase {
-	public fun suspendAutocommit (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun suspendTransaction (Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun suspendTransaction$default (Lio/github/kormium/SuspendPostgresDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-}
-
-public final class io/github/kormium/SuspendPostgresDatabase$DefaultImpls {
-	public static fun getConfig (Lio/github/kormium/SuspendPostgresDatabase;)Lio/github/kormium/KormiumConfig;
-	public static fun getDialect (Lio/github/kormium/SuspendPostgresDatabase;)Lio/github/kormium/Dialect;
-	public static fun getWriteListeners (Lio/github/kormium/SuspendPostgresDatabase;)Lio/github/kormium/WriteListeners;
-	public static fun isClosed (Lio/github/kormium/SuspendPostgresDatabase;)Z
-	public static fun suspendAutocommit (Lio/github/kormium/SuspendPostgresDatabase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static fun suspendTransaction (Lio/github/kormium/SuspendPostgresDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun suspendTransaction$default (Lio/github/kormium/SuspendPostgresDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/github/kormium/Vector {

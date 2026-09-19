@@ -2,7 +2,8 @@ import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity
 import io.github.kormium.LockWait
-import io.github.kormium.PostgresDatabase
+import io.github.kormium.BackendDatabase
+import io.github.kormium.PostgresBackend
 import io.github.kormium.Table
 import io.github.kormium.database.Database
 import io.github.kormium.eq
@@ -24,7 +25,7 @@ private object JobsTable : Table<QueueCatalog, JobRow>("jobs", ::JobRow) {
 /**
  * Compile-time behaviour is the assertion here: this file passing the compiler pins that the
  * locking DSL is reachable through a Postgres-typed handle — i.e. that the `transaction` **member**
- * on [PostgresDatabase] wins overload resolution against the core `Database<G>.transaction`
+ * on [BackendDatabase] wins overload resolution against the core `Database<G>.transaction`
  * extension — and that a handle widened to the portable type keeps working for everything else.
  */
 @Suppress("unused")
@@ -39,7 +40,7 @@ class RowLockingGatingTest {
      * way the core extension does, so `JobsTable.find` would not resolve. Pinning the driver to a
      * catalog is the documented idiom anyway (see docs/quick-start.md).
      */
-    private fun claimBatch(db: PostgresDatabase<QueueCatalog>): List<JobRow> = db.transaction {
+    private fun claimBatch(db: BackendDatabase<QueueCatalog, PostgresBackend>): List<JobRow> = db.transaction {
         JobsTable.find {
             where { JobsTable.status eq "ACTIVE" }
             limit = 10
@@ -47,7 +48,7 @@ class RowLockingGatingTest {
         }
     }
 
-    private fun lockOneRow(db: PostgresDatabase<QueueCatalog>): JobRow? = db.transaction {
+    private fun lockOneRow(db: BackendDatabase<QueueCatalog, PostgresBackend>): JobRow? = db.transaction {
         JobsTable.findOne { where { JobsTable.id eq 1 }; forUpdate() }
     }
 

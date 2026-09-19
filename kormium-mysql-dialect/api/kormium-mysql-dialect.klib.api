@@ -6,16 +6,6 @@
 // - Show declarations: true
 
 // Library unique name: <io.github.kormium:kormium-mysql-dialect>
-abstract interface <#A: out io.github.kormium/Catalog> io.github.kormium/MySqlDatabase : io.github.kormium.database/Database<#A> { // io.github.kormium/MySqlDatabase|null[0]
-    open fun <#A1: kotlin/Any?> autocommit(kotlin/Function1<io.github.kormium/ScopeOf<#A, io.github.kormium/MySqlBackend>, #A1>): #A1 // io.github.kormium/MySqlDatabase.autocommit|autocommit(kotlin.Function1<io.github.kormium.ScopeOf<1:0,io.github.kormium.MySqlBackend>,0:0>){0§<kotlin.Any?>}[0]
-    open fun <#A1: kotlin/Any?> transaction(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin/Function1<io.github.kormium/ScopeOf<#A, io.github.kormium/MySqlBackend>, #A1>): #A1 // io.github.kormium/MySqlDatabase.transaction|transaction(io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.Function1<io.github.kormium.ScopeOf<1:0,io.github.kormium.MySqlBackend>,0:0>){0§<kotlin.Any?>}[0]
-}
-
-abstract interface <#A: out io.github.kormium/Catalog> io.github.kormium/SuspendMySqlDatabase : io.github.kormium.database/SuspendDatabase<#A> { // io.github.kormium/SuspendMySqlDatabase|null[0]
-    open suspend fun <#A1: kotlin/Any?> suspendAutocommit(kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScopeOf<#A, io.github.kormium/MySqlBackend>, #A1>): #A1 // io.github.kormium/SuspendMySqlDatabase.suspendAutocommit|suspendAutocommit(kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScopeOf<1:0,io.github.kormium.MySqlBackend>,0:0>){0§<kotlin.Any?>}[0]
-    open suspend fun <#A1: kotlin/Any?> suspendTransaction(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScopeOf<#A, io.github.kormium/MySqlBackend>, #A1>): #A1 // io.github.kormium/SuspendMySqlDatabase.suspendTransaction|suspendTransaction(io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScopeOf<1:0,io.github.kormium.MySqlBackend>,0:0>){0§<kotlin.Any?>}[0]
-}
-
 abstract interface io.github.kormium/MySqlBackend : io.github.kormium/AnyBackend, io.github.kormium/RowLockingBackend // io.github.kormium/MySqlBackend|null[0]
 
 final object io.github.kormium/MySqlDialect : io.github.kormium/Dialect { // io.github.kormium/MySqlDialect|null[0]

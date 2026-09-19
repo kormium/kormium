@@ -11,7 +11,8 @@ All notable changes to Kormium are documented here. The format is based on
   `SELECT ... FOR UPDATE SKIP LOCKED` — the piece that makes a table usable as a work queue, and
   the read-then-write half of a safe debit. `forUpdate` / `forShare` take `Wait` (block), `NoWait`
   (fail) or `SkipLocked` (take the next free rows). They resolve **only** in a scope opened from a
-  `PostgresDatabase<G>` / `MySqlDatabase<G>` handle: on the portable `Database<G>`, and therefore
+  `BackendDatabase<G, PostgresBackend>` / `<G, MySqlBackend>` handle — every backend that can lock
+  carries the tag, including r2dbc and the Node engines: on the portable `Database<G>`, and therefore
   on SQLite, the call does not compile rather than silently returning an unlocked read — which
   would hand the same rows to two workers. Locking outside `transaction { }` fails fast (the lock
   would be released immediately), and `count` / `update` / `deleteWhere` cannot take one at all,

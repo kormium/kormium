@@ -26,7 +26,7 @@ kotlin {
             dependencies {
                 api(project(":kormium-core"))
                 // Reuse the shared, pure PostgresDialect — see ADR 0001.
-                implementation(project(":kormium-postgres-dialect"))
+                api(project(":kormium-postgres-dialect"))
                 // Shared Wasm driver layer: named-param parser, text ResultSet, binding helper.
                 implementation(project(":kormium-wasm-driver"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")

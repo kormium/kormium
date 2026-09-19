@@ -1,9 +1,12 @@
 package io.github.kormium.r2dbc
 
+import io.github.kormium.Backend
 import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.Dialect
 import io.github.kormium.KormiumConfig
+import io.github.kormium.PostgresBackend
 import io.github.kormium.PostgresDialect
+import io.github.kormium.SuspendBackendDatabase
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
 import io.github.kormium.TypeMapper
@@ -29,8 +32,15 @@ import kotlinx.coroutines.withContext
  *
  * The phantom catalog tag is [Nothing], so by covariance it fits any
  * `SuspendDatabase<G>`; pin the tag at the call site (`val db: SuspendDatabase<MyCatalog>`).
+ *
+ * [B] is the second phantom tag: which backend this pool actually talks to. One class serves both
+ * Postgres and MySQL — they differ only in the dialect, bind marker and exception translator
+ * passed here — so the backend cannot be read off the class, and the factories supply it instead
+ * ([createR2dbcDatabase] → [PostgresBackend], [createMySqlR2dbcDatabase] → [MySqlBackend]). It is
+ * what lets `val db: SuspendBackendDatabase<App, PostgresBackend>` reach backend-specific DSL such
+ * as [io.github.kormium.forUpdate]; a handle pinned as plain `SuspendDatabase<App>` stays portable.
  */
-public class R2dbcDatabase internal constructor(
+public class R2dbcDatabase<B : Backend> internal constructor(
     private val pool: ConnectionPool,
     override val dialect: Dialect,
     private val typeMapper: TypeMapper,
@@ -40,7 +50,7 @@ public class R2dbcDatabase internal constructor(
     // Backend-specific exception translation; defaults to the SQLSTATE mapping (Postgres).
     private val translate: R2dbcExceptionTranslator = StandardR2dbcExceptionTranslator,
     override val config: KormiumConfig = KormiumConfig(),
-) : SuspendDatabase<Nothing> {
+) : SuspendBackendDatabase<Nothing, B> {
 
     // Supports change observation (kormium-observe): writes through this database notify here.
     override val writeListeners: WriteListeners = WriteListeners()
@@ -118,7 +128,7 @@ public fun createR2dbcDatabase(
     password: String,
     poolSize: Int = 10,
     config: KormiumConfig = KormiumConfig(),
-): R2dbcDatabase {
+): R2dbcDatabase<PostgresBackend> {
     val connectionFactory = PostgresqlConnectionFactory(
         PostgresqlConnectionConfiguration.builder()
             .host(host)
@@ -134,7 +144,7 @@ public fun createR2dbcDatabase(
     val poolConfiguration = ConnectionPoolConfiguration.builder(connectionFactory)
         .maxSize(poolSize)
         .build()
-    return R2dbcDatabase(
+    return R2dbcDatabase<PostgresBackend>(
         ConnectionPool(poolConfiguration),
         PostgresDialect,
         PostgresR2dbcTypeMapper,

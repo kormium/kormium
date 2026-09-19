@@ -2,8 +2,10 @@ package io.github.kormium.mysql.node
 
 import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.KormiumConfig
+import io.github.kormium.MySqlBackend
 import io.github.kormium.MySqlDialect
 import io.github.kormium.StandardTypeMapper
+import io.github.kormium.SuspendBackendDatabase
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
 import io.github.kormium.WriteListeners
@@ -20,7 +22,7 @@ import kotlinx.coroutines.withContext
 public class MySqlDatabase internal constructor(
     private val pool: MyPool,
     override val config: KormiumConfig,
-) : SuspendDatabase<Nothing> {
+) : SuspendBackendDatabase<Nothing, MySqlBackend> {
 
     override val writeListeners: WriteListeners = WriteListeners()
     override val dialect: MySqlDialect = MySqlDialect

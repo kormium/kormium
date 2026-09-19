@@ -381,7 +381,7 @@ retrying {
 coordination. The lock lives until the transaction ends, so claim and mark in the same one:
 
 ```kotlin
-val db: PostgresDatabase<App> = createDatabase(...)   // not Database<App>: the type opens the DSL
+val db: BackendDatabase<App, PostgresBackend> = createDatabase(...)   // not Database<App>: the type opens the DSL
 
 fun claimBatch(): List<Job> = db.transaction {
     val batch = Jobs.find {
@@ -440,7 +440,8 @@ is validated on write. See [docs/queries.md](docs/queries.md#vector-search-pgvec
 - A `Table<G, _>` can only be used in a `Database<G>` scope; mixing catalogs is a compile error
   ("receiver type mismatch" naming `Table<ThatCatalog, _>`).
 - Backend-specific syntax is gated by the **handle type**. `forUpdate` / `forShare` resolve only in a
-  scope opened from `PostgresDatabase<G>` / `MySqlDatabase<G>`; through the portable `Database<G>`
+  scope opened from a `BackendDatabase<G, PostgresBackend>` / `<G, MySqlBackend>` handle (or its
+  `SuspendBackendDatabase` twin); through the portable `Database<G>`
   (and on SQLite) they are an unresolved reference, not a runtime failure. Declare the handle as the
   backend type when you want them, as `Database<G>` when you want portability enforced.
 - One row by primary key (or any unique column): `findOne { where { col eq v } }` → `T?` (`LIMIT 1`).
