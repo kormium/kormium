@@ -1,8 +1,16 @@
-public abstract interface class io/github/kormium/MySqlDriver : io/github/kormium/database/Database, io/github/kormium/database/SuspendDatabase, java/lang/AutoCloseable {
+public abstract interface class io/github/kormium/MySqlDriver : io/github/kormium/BackendDatabase, io/github/kormium/SuspendBackendDatabase, java/lang/AutoCloseable {
 	public abstract fun getConfig ()Lio/github/kormium/KormiumConfig;
 	public abstract fun getDialect ()Lio/github/kormium/Dialect;
 	public abstract fun getWriteListeners ()Lio/github/kormium/WriteListeners;
 	public abstract fun isClosed ()Z
+}
+
+public final class io/github/kormium/MySqlDriver$DefaultImpls {
+	public static fun autocommit (Lio/github/kormium/MySqlDriver;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static fun renderSql (Lio/github/kormium/MySqlDriver;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static fun suspendAutocommit (Lio/github/kormium/MySqlDriver;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun suspendTransaction (Lio/github/kormium/MySqlDriver;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun transaction (Lio/github/kormium/MySqlDriver;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
 public final class io/github/kormium/MySqlErrorsKt {

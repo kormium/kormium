@@ -15,7 +15,7 @@ import kotlin.contracts.contract
  * the same pinned connection.
  */
 @KormiumDsl
-public class SuspendScope<G : Catalog> internal constructor(
+public class SuspendScopeOf<G : Catalog, out B : Backend> internal constructor(
     private val exec: SuspendSqlExecutor,
     /** The owning database's configuration (e.g. the default [BatchInsertMode]). */
     internal val config: KormiumConfig = KormiumConfig(),
@@ -93,20 +93,34 @@ public class SuspendScope<G : Catalog> internal constructor(
     public suspend fun <T : Entity> Table<G, T>.count(query: Query = Query()): Long = count(query, exec)
 
     /** Block form of [count]; see [Scope.count]. */
-    public suspend fun <T : Entity> Table<G, T>.count(block: QueryBuilder.() -> Unit): Long =
-        count(QueryBuilder().apply(block).build(), exec)
+    public suspend fun <T : Entity> Table<G, T>.count(block: QueryBuilderOf<B>.() -> Unit): Long =
+        count(QueryBuilderOf<B>().apply(block).build(), exec)
 
-    public suspend fun <T : Entity> Table<G, T>.find(query: Query): List<T> = select(query, exec)
+    public suspend fun <T : Entity> Table<G, T>.find(query: Query): List<T> {
+        requireLockableHere(query)
+        return select(query, exec)
+    }
+
+    // See Scope.requireLockableHere: a lock outside a transaction protects nothing.
+    private fun requireLockableHere(query: Query) {
+        check(query.lock == null || transactional) {
+            "${query.lock} requires suspendTransaction { }: in autocommit the lock is released " +
+                "immediately, so it protects nothing"
+        }
+    }
 
     /** Block form of [find]; see [Scope.find]. */
-    public suspend fun <T : Entity> Table<G, T>.find(block: QueryBuilder.() -> Unit): List<T> =
-        select(QueryBuilder().apply(block).build(), exec)
+    public suspend fun <T : Entity> Table<G, T>.find(block: SelectQueryBuilderOf<B>.() -> Unit): List<T> =
+        find(SelectQueryBuilderOf<B>().apply(block).build())
     /** The first row matching [query] (typically a unique predicate), or null. Applies `LIMIT 1`. */
-    public suspend fun <T : Entity> Table<G, T>.findOne(query: Query): T? = select(query.copy(limit = 1u), exec).firstOrNull()
+    public suspend fun <T : Entity> Table<G, T>.findOne(query: Query): T? {
+        requireLockableHere(query)
+        return select(query.copy(limit = 1u), exec).firstOrNull()
+    }
 
     /** Block form of [findOne]: `Users.findOne { where { Users.id eq id } }`. */
-    public suspend fun <T : Entity> Table<G, T>.findOne(block: QueryBuilder.() -> Unit): T? =
-        findOne(QueryBuilder().apply(block).build())
+    public suspend fun <T : Entity> Table<G, T>.findOne(block: SelectQueryBuilderOf<B>.() -> Unit): T? =
+        findOne(SelectQueryBuilderOf<B>().apply(block).build())
     public suspend fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
     /** Updates rows matching [query] with the present fields of [entity]; returns the affected row count. */
     public suspend fun <T : Entity> Table<G, T>.update(entity: T, query: Query): Long {
@@ -115,9 +129,9 @@ public class SuspendScope<G : Catalog> internal constructor(
     }
 
     /** Block form of [update]; see [Scope.update]. */
-    public suspend fun <T : Entity> Table<G, T>.update(entity: T, block: QueryBuilder.() -> Unit): Long {
+    public suspend fun <T : Entity> Table<G, T>.update(entity: T, block: QueryBuilderOf<B>.() -> Unit): Long {
         markWritten()
-        return updateRows(QueryBuilder().apply(block).build(), entity, exec)
+        return updateRows(QueryBuilderOf<B>().apply(block).build(), entity, exec)
     }
 
     /** Expression form of [update]: `Posts.views set (Posts.views + 1)`; see [Scope.update]. */
@@ -134,9 +148,9 @@ public class SuspendScope<G : Catalog> internal constructor(
     }
 
     /** Block form of [deleteWhere]; see [Scope.deleteWhere]. */
-    public suspend fun <T : Entity> Table<G, T>.deleteWhere(block: QueryBuilder.() -> Unit): Long {
+    public suspend fun <T : Entity> Table<G, T>.deleteWhere(block: QueryBuilderOf<B>.() -> Unit): Long {
         markWritten()
-        return deleteRows(QueryBuilder().apply(block).build(), exec)
+        return deleteRows(QueryBuilderOf<B>().apply(block).build(), exec)
     }
 
     @DelicateKormiumApi
@@ -216,7 +230,7 @@ public class SuspendScope<G : Catalog> internal constructor(
      * error on PostgreSQL and backend-dependent elsewhere).
      */
     @OptIn(ExperimentalContracts::class)
-    public suspend fun <R> savepoint(block: suspend SuspendScope<G>.() -> R): R {
+    public suspend fun <R> savepoint(block: suspend SuspendScopeOf<G, B>.() -> R): R {
         contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         check(transactional) { "savepoint { } requires a transaction; use suspendTransaction { }, not suspendAutocommit { }" }
         val name = "kormium_sp_${savepointCounter++}"
@@ -248,7 +262,7 @@ public suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(
 ): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
-    val result = useConnection(transactional = true, isolation = isolation, readOnly = readOnly) { SuspendScope<G>(it.observed(config), config, dirty, transactional = true).block() }
+    val result = useConnection(transactional = true, isolation = isolation, readOnly = readOnly) { SuspendScopeOf<G, AnyBackend>(it.observed(config), config, dirty, transactional = true).block() }
     writeListeners.fire(dirty)
     writeListeners.publishCommit(dirty)
     return result
@@ -262,7 +276,38 @@ public suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendTransaction(
 public suspend fun <G : Catalog, R> SuspendDatabase<G>.suspendAutocommit(block: suspend SuspendScope<G>.() -> R): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
-    val result = useConnection(transactional = false) { SuspendScope<G>(it.observed(config), config, dirty, transactional = false).block() }
+    val result = useConnection(transactional = false) { SuspendScopeOf<G, AnyBackend>(it.observed(config), config, dirty, transactional = false).block() }
+    writeListeners.fire(dirty)
+    writeListeners.publishCommit(dirty)
+    return result
+}
+
+/** The portable suspend scope; see [Scope] for the blocking counterpart. */
+public typealias SuspendScope<G> = SuspendScopeOf<G, AnyBackend>
+
+/** [suspendTransaction] for a backend-tagged scope — the dialect-module seam; see [runTransaction]. */
+@KormiumDialectApi
+@OptIn(ExperimentalContracts::class)
+public suspend fun <G : Catalog, B : Backend, R> SuspendDatabase<G>.runSuspendTransaction(
+    isolation: TransactionIsolation? = null,
+    readOnly: Boolean = false,
+    block: suspend SuspendScopeOf<G, B>.() -> R,
+): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+    val dirty = mutableSetOf<String>()
+    val result = useConnection(transactional = true, isolation = isolation, readOnly = readOnly) { SuspendScopeOf<G, B>(it.observed(config), config, dirty, transactional = true).block() }
+    writeListeners.fire(dirty)
+    writeListeners.publishCommit(dirty)
+    return result
+}
+
+/** [suspendAutocommit] for a backend-tagged scope; see [runSuspendTransaction]. */
+@KormiumDialectApi
+@OptIn(ExperimentalContracts::class)
+public suspend fun <G : Catalog, B : Backend, R> SuspendDatabase<G>.runSuspendAutocommit(block: suspend SuspendScopeOf<G, B>.() -> R): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+    val dirty = mutableSetOf<String>()
+    val result = useConnection(transactional = false) { SuspendScopeOf<G, B>(it.observed(config), config, dirty, transactional = false).block() }
     writeListeners.fire(dirty)
     writeListeners.publishCommit(dirty)
     return result

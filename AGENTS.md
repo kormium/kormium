@@ -376,6 +376,34 @@ retrying {
 }
 ```
 
+**Work queue — hand each worker its own rows (Postgres / MySQL).** A locking read with
+`SKIP LOCKED` skips rows another worker already holds, so N workers claim disjoint batches with no
+coordination. The lock lives until the transaction ends, so claim and mark in the same one:
+
+```kotlin
+val db: BackendDatabase<App, PostgresBackend> = createDatabase(...)   // not Database<App>: the type opens the DSL
+
+fun claimBatch(): List<Job> = db.transaction {
+    val batch = Jobs.find {
+        where { Jobs.status eq "ACTIVE" }
+        orderBy ASC Jobs.nextRunAt
+        limit = 10
+        forUpdate(LockWait.SkipLocked)   // Wait (default) / NoWait / SkipLocked
+    }
+    batch.forEach { job ->
+        Jobs.update(Job().apply { status = "RUNNING" }) { where { Jobs.id eq job.id } }
+    }
+    batch
+}
+```
+
+`forUpdate` needs `transaction { }` (in autocommit the lock is released immediately — Kormium
+fails fast), and exists on `find` / `findOne` only. `LockWait.NoWait` raises
+`LockNotAvailableException` (not `ConcurrencyConflictException`: only the statement failed, the
+transaction is still open). See
+[docs/queries.md](docs/queries.md#row-locking-for-update--for-share) for `NOWAIT`, `forShare`, and
+the MySQL/MariaDB version caveats.
+
 **Vector / semantic search (pgvector, Postgres).** Store an embedding in a `Column.Vector` and
 rank by a distance operator — nearest-neighbour search is a plain ascending `orderBy` (for every
 metric, smaller = more similar). Kormium does not own DDL, so enable the extension and declare the
@@ -413,6 +441,11 @@ is validated on write. See [docs/queries.md](docs/queries.md#vector-search-pgvec
   resolve to a Kotlin stdlib function (`kotlin.collections.find`) or `where` is "unresolved".
 - A `Table<G, _>` can only be used in a `Database<G>` scope; mixing catalogs is a compile error
   ("receiver type mismatch" naming `Table<ThatCatalog, _>`).
+- Backend-specific syntax is gated by the **handle type**. `forUpdate` / `forShare` resolve only in a
+  scope opened from a `BackendDatabase<G, PostgresBackend>` / `<G, MySqlBackend>` handle (or its
+  `SuspendBackendDatabase` twin); through the portable `Database<G>`
+  (and on SQLite) they are an unresolved reference, not a runtime failure. Declare the handle as the
+  backend type when you want them, as `Database<G>` when you want portability enforced.
 - One row by primary key (or any unique column): `findOne { where { col eq v } }` → `T?` (`LIMIT 1`).
   There is no `findById` — naming the column keeps the id **type-checked**.
 - Value comparisons are typed: `Users.age eq "18"` won't compile (pass `18`; the error names the
@@ -428,7 +461,7 @@ is validated on write. See [docs/queries.md](docs/queries.md#vector-search-pgvec
   compare against a `RawExpression`), `UNION`, CTEs, window functions, `RIGHT`/`FULL`/
   `CROSS`/self-joins, `ILIKE` operator (use `lower()`), regex, simple `CASE expr WHEN` (searched
   `case { }` is supported), scalar functions beyond `lower`/`upper`/`trim`/`ltrim`/`rtrim`/`length`,
-  `RETURNING` on `UPDATE`/`DELETE`, `FOR UPDATE`. Drop to `RawExpression` or `execute(...)` for
+  `RETURNING` on `UPDATE`/`DELETE`. Drop to `RawExpression` or `execute(...)` for
   those — both require `@OptIn(DelicateKormiumApi::class)`, and `execute`/`executeUpdate` require
   `params`/`invalidates` explicitly (`emptyMap()`/`emptyList()` when there's nothing to pass).
 

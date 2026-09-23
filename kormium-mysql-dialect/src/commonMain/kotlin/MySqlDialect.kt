@@ -55,6 +55,42 @@ public object MySqlDialect : Dialect by StandardDialect {
     override fun renderInsertOrIgnoreSuffix(conflictColumns: List<String>): String =
         "ON DUPLICATE KEY UPDATE ${conflictColumns.first()} = ${conflictColumns.first()}"
 
+    /**
+     * `FOR UPDATE` / `FOR SHARE` plus the contention modifier. **Version-sensitive, and no type
+     * can check it** — the server does:
+     *
+     *  - `FOR UPDATE` — every supported MySQL and MariaDB;
+     *  - `NOWAIT` — MySQL 8.0.1+, MariaDB 10.3+;
+     *  - `SKIP LOCKED` — MySQL 8.0.1+, MariaDB 10.6+;
+     *  - `FOR SHARE` — MySQL 8.0+ only. MariaDB has never accepted it (its shared-lock spelling is
+     *    the older `LOCK IN SHARE MODE`, which in turn takes no `NOWAIT` / `SKIP LOCKED`), so
+     *    [forShare] against MariaDB fails on the server.
+     *  - `FOR NO KEY UPDATE` / `FOR KEY SHARE` — no equivalent at all; refused here rather than
+     *    downgraded to a stronger lock that excludes more than the caller asked for.
+     *
+     * On an older server the statement comes back as a syntax error rather than silently running
+     * unlocked — which is the same trade the throwing [Dialect.renderRowLock] default makes.
+     */
+    override fun renderRowLock(lock: RowLock): String {
+        // Resolved before buildString: inside that lambda `this` is the StringBuilder, so an
+        // interpolated dialect name would come out empty.
+        val strength = when (lock.strength) {
+            LockStrength.Update -> "FOR UPDATE"
+            LockStrength.Share -> "FOR SHARE"
+            // No MySQL/MariaDB equivalent. Rendering the nearest stronger lock would change what
+            // the statement excludes, so refuse instead of guessing.
+            LockStrength.NoKeyUpdate, LockStrength.KeyShare -> throw UnsupportedByDialectException(
+                "MySqlDialect cannot render $lock: FOR NO KEY UPDATE / FOR KEY SHARE are " +
+                    "PostgreSQL-only (reachable through the Postgres DSL entries)",
+            )
+        }
+        return strength + when (lock.wait) {
+            LockWait.NoWait -> " NOWAIT"
+            LockWait.SkipLocked -> " SKIP LOCKED"
+            LockWait.Wait -> ""
+        }
+    }
+
     // MySQL's LENGTH counts bytes; CHAR_LENGTH counts characters (what length() promises).
     override fun renderCharLength(arg: String): String = "CHAR_LENGTH($arg)"
 }

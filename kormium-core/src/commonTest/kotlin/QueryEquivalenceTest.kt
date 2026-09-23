@@ -1,6 +1,9 @@
 import io.github.kormium.AscDescOrder
 import io.github.kormium.ParamBuilder
+import io.github.kormium.LockStrength
+import io.github.kormium.LockWait
 import io.github.kormium.Query
+import io.github.kormium.RowLock
 import io.github.kormium.QueryBuilder
 import io.github.kormium.StandardDialect
 import io.github.kormium.StandardTypeMapper
@@ -96,4 +99,15 @@ class QueryEquivalenceTest {
         // The block form wraps each predicate in parentheses for precedence safety.
         assertTrue("(" in rendered(asBlock).first)
     }
+
+    @Test
+    fun toStringOfALockingQueryDoesNotThrow() {
+        // toString() renders through StandardDialect, which cannot render a lock and would throw —
+        // breaking logging, assertion messages and debuggers, and possibly firing while another
+        // exception's message is being built. The lock is appended from its own toString() instead.
+        val q = Query(whereExpression = null, lock = RowLock(LockStrength.Share, LockWait.SkipLocked))
+        assertEquals("FOR SHARE SKIP LOCKED", q.toString())
+        assertEquals("", Query().toString())
+    }
+
 }

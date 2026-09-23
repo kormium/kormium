@@ -1,11 +1,12 @@
 package io.github.kormium.r2dbc
 
+import io.asyncer.r2dbc.mysql.MySqlConnectionConfiguration
+import io.asyncer.r2dbc.mysql.MySqlConnectionFactory
 import io.github.kormium.KormiumConfig
+import io.github.kormium.MySqlBackend
 import io.github.kormium.MySqlDialect
 import io.github.kormium.MySqlJvmTypeMapper
 import io.github.kormium.mysqlVendorException
-import io.asyncer.r2dbc.mysql.MySqlConnectionConfiguration
-import io.asyncer.r2dbc.mysql.MySqlConnectionFactory
 import io.r2dbc.pool.ConnectionPool
 import io.r2dbc.pool.ConnectionPoolConfiguration
 
@@ -30,7 +31,7 @@ public fun createMySqlR2dbcDatabase(
     password: String,
     poolSize: Int = 10,
     config: KormiumConfig = KormiumConfig(),
-): R2dbcDatabase {
+): R2dbcDatabase<MySqlBackend> {
     val connectionFactory = MySqlConnectionFactory.from(
         MySqlConnectionConfiguration.builder()
             .host(host)
@@ -45,7 +46,7 @@ public fun createMySqlR2dbcDatabase(
     val poolConfiguration = ConnectionPoolConfiguration.builder(connectionFactory)
         .maxSize(poolSize)
         .build()
-    return R2dbcDatabase(
+    return R2dbcDatabase<MySqlBackend>(
         ConnectionPool(poolConfiguration),
         MySqlDialect,
         MySqlJvmTypeMapper,

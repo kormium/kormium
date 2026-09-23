@@ -6,7 +6,7 @@
 // - Show declarations: true
 
 // Library unique name: <io.github.kormium:kormium-mysql-node>
-final class io.github.kormium.mysql.node/MySqlDatabase : io.github.kormium.database/SuspendDatabase<kotlin/Nothing> { // io.github.kormium.mysql.node/MySqlDatabase|null[0]
+final class io.github.kormium.mysql.node/MySqlDatabase : io.github.kormium/SuspendBackendDatabase<kotlin/Nothing, io.github.kormium/MySqlBackend> { // io.github.kormium.mysql.node/MySqlDatabase|null[0]
     final val config // io.github.kormium.mysql.node/MySqlDatabase.config|{}config[0]
         final fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium.mysql.node/MySqlDatabase.config.<get-config>|<get-config>(){}[0]
     final val dialect // io.github.kormium.mysql.node/MySqlDatabase.dialect|{}dialect[0]

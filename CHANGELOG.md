@@ -4,6 +4,48 @@ All notable changes to Kormium are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **`LockNotAvailableException`** for a lock that could not be acquired — a refused
+  `LockWait.NoWait`, or a server-side lock timeout. It is mapped from PostgreSQL's SQLSTATE `55P03`
+  and from MySQL's vendor codes 3572 / 1205, which hide under SQLSTATE `HY000` where only the
+  vendor code can identify them. Distinct from `ConcurrencyConflictException` on purpose: that one
+  means the transaction was aborted and can be retried as a unit, while here only the statement
+  failed and the transaction is still open.
+- **Row locking, gated by the backend's type.** `find { forUpdate(LockWait.SkipLocked) }` renders
+  `SELECT ... FOR UPDATE SKIP LOCKED` — the piece that makes a table usable as a work queue, and
+  the read-then-write half of a safe debit. `forUpdate` / `forShare` take `Wait` (block), `NoWait`
+  (fail) or `SkipLocked` (take the next free rows). They resolve **only** in a scope opened from a
+  `BackendDatabase<G, PostgresBackend>` / `<G, MySqlBackend>` handle — every backend that can lock
+  carries the tag, including r2dbc and the Node engines: on the portable `Database<G>`, and therefore
+  on SQLite, the call does not compile rather than silently returning an unlocked read — which
+  would hand the same rows to two workers. Postgres adds its two weaker strengths,
+  `forNoKeyUpdate()` / `forKeyShare()`, gated on the Postgres tag rather than the portable one.
+  Locking outside `transaction { }` fails fast (the lock would be released immediately), and
+  `count` / `update` / `deleteWhere` cannot take one at all, since they render the `WHERE` clause
+  alone — a compile error through the DSL, and an `IllegalArgumentException` for a prebuilt `Query`
+  value, which is the one form the type gate cannot see. What a type cannot check stays a server-side error:
+  MySQL needs 8.0.1 for `NOWAIT` / `SKIP LOCKED`, and MariaDB has no `FOR SHARE`. See
+  [ADR 0014](docs/adr/0014-typed-backend-capabilities.md) for why the capability is carried by a
+  phantom type parameter.
+
+### Changed
+- **`Scope`, `SuspendScope`, `QueryBuilder` and `RenderScope` are now typealiases.** Each gained a
+  phantom backend parameter (`ScopeOf<G, B>`, …) so backend-specific syntax can be gated at compile
+  time, and the old names alias the portable instantiation — every existing source reference keeps
+  compiling. The JVM classes are renamed, though, so this is **binary-incompatible**: recompile
+  against the new version rather than dropping the jar in, or a stale consumer binary fails with
+  `NoClassDefFoundError`.
+- **A driver handle must be pinned to use a backend's own entry points.** The `transaction` /
+  `autocommit` / `renderSql` members on `BackendDatabase` fix the catalog to the handle's own type
+  parameter instead of inferring it per call, so `createDatabase(...).transaction { Users.find { … } }`
+  on an unpinned driver no longer resolves the table. Declare the handle as
+  `Database<App>` (portable) or `BackendDatabase<App, PostgresBackend>` (backend-specific) — pinning
+  is what the docs and samples already do. As interface members they also cannot carry the
+  `callsInPlace` contract the top-level extensions declare, so assigning an outer `val` from inside
+  such a block no longer compiles; return the value out of the block.
+
 ## [0.14.0] — Browser extension loading
 
 ### Added

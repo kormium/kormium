@@ -82,6 +82,24 @@ public interface Dialect {
         "ON CONFLICT (${conflictColumns.joinToString(", ")}) DO NOTHING"
 
     /**
+     * The locking tail of a `SELECT`, appended after `LIMIT`/`OFFSET` — `FOR UPDATE SKIP LOCKED`
+     * and friends. The default **throws**: a backend that cannot lock rows must fail loudly rather
+     * than silently return an unlocked result, which would hand the same rows to two workers.
+     *
+     * Application code cannot normally reach this default — [forUpdate] / [forShare] only resolve
+     * on a scope tagged [RowLockingBackend] — so it fires for what the type system cannot know:
+     * a version gap (MySQL renders `SKIP LOCKED` only from 8.0.1) or a [KormiumDialectApi] bypass.
+     */
+    public fun renderRowLock(lock: RowLock): String =
+        // No dialect name here on purpose: every concrete dialect is `X : Dialect by
+        // StandardDialect`, so this default runs with `this` bound to the delegate — naming it
+        // would point at StandardDialect even when the caller used SqliteDialect. A dialect that
+        // can lock but not in the way asked (MySQL and FOR KEY SHARE) names itself in its override.
+        throw UnsupportedByDialectException(
+            "this backend does not support row locking, so $lock cannot be rendered",
+        )
+
+    /**
      * The function that counts **characters** of a string. Standard `LENGTH(...)` counts characters
      * on PostgreSQL and SQLite, but **bytes** on MySQL — so MySQL overrides this with `CHAR_LENGTH`
      * to keep `length()` portable (a multibyte string counts the same everywhere).

@@ -19,16 +19,16 @@ public class RenderedSql(public val sql: String, public val params: Map<String, 
  * call-site syntax (`Users.find { where { } }`), a different return type. Obtain one via the
  * top-level [renderSql] (offline, explicit dialect) or [Database.renderSql] (the backend's dialect).
  */
-public class RenderScope<G : Catalog> internal constructor(public val dialect: Dialect, public val typeMapper: TypeMapper) {
+public class RenderScopeOf<G : Catalog, out B : Backend> internal constructor(public val dialect: Dialect, public val typeMapper: TypeMapper) {
 
     // ---- reads ----
     public fun <T : Entity> Table<G, T>.find(query: Query): RenderedSql = RenderedSql(selectSql(query, dialect, typeMapper))
-    public fun <T : Entity> Table<G, T>.find(block: QueryBuilder.() -> Unit): RenderedSql = find(QueryBuilder().apply(block).build())
+    public fun <T : Entity> Table<G, T>.find(block: SelectQueryBuilderOf<B>.() -> Unit): RenderedSql = find(SelectQueryBuilderOf<B>().apply(block).build())
     public fun <T : Entity> Table<G, T>.findOne(query: Query): RenderedSql = RenderedSql(selectSql(query.copy(limit = 1u), dialect, typeMapper))
-    public fun <T : Entity> Table<G, T>.findOne(block: QueryBuilder.() -> Unit): RenderedSql = findOne(QueryBuilder().apply(block).build())
+    public fun <T : Entity> Table<G, T>.findOne(block: SelectQueryBuilderOf<B>.() -> Unit): RenderedSql = findOne(SelectQueryBuilderOf<B>().apply(block).build())
     public fun <T : Entity> Table<G, T>.all(): RenderedSql = RenderedSql(selectAllSql(dialect) to emptyMap())
     public fun <T : Entity> Table<G, T>.count(query: Query = Query()): RenderedSql = RenderedSql(countSql(query, dialect, typeMapper))
-    public fun <T : Entity> Table<G, T>.count(block: QueryBuilder.() -> Unit): RenderedSql = count(QueryBuilder().apply(block).build())
+    public fun <T : Entity> Table<G, T>.count(block: QueryBuilderOf<B>.() -> Unit): RenderedSql = count(QueryBuilderOf<B>().apply(block).build())
 
     // ---- writes ----
     public fun <T : Entity> Table<G, T>.insert(entity: T, returning: Boolean = false): RenderedSql =
@@ -77,8 +77,8 @@ public class RenderScope<G : Catalog> internal constructor(public val dialect: D
     public fun <T : Entity> Table<G, T>.update(entity: T, query: Query): RenderedSql =
         RenderedSql(updateSql(query, entity, dialect, typeMapper))
 
-    public fun <T : Entity> Table<G, T>.update(entity: T, block: QueryBuilder.() -> Unit): RenderedSql =
-        update(entity, QueryBuilder().apply(block).build())
+    public fun <T : Entity> Table<G, T>.update(entity: T, block: QueryBuilderOf<B>.() -> Unit): RenderedSql =
+        update(entity, QueryBuilderOf<B>().apply(block).build())
 
     public fun <T : Entity> Table<G, T>.update(block: UpdateBuilder.() -> Unit): RenderedSql {
         val builder = UpdateBuilder().apply(block)
@@ -86,8 +86,8 @@ public class RenderScope<G : Catalog> internal constructor(public val dialect: D
     }
 
     public fun <T : Entity> Table<G, T>.deleteWhere(query: Query): RenderedSql = RenderedSql(deleteSql(query, dialect, typeMapper))
-    public fun <T : Entity> Table<G, T>.deleteWhere(block: QueryBuilder.() -> Unit): RenderedSql =
-        deleteWhere(QueryBuilder().apply(block).build())
+    public fun <T : Entity> Table<G, T>.deleteWhere(block: QueryBuilderOf<B>.() -> Unit): RenderedSql =
+        deleteWhere(QueryBuilderOf<B>().apply(block).build())
 
     // ---- joins (SQL-producing form only; result-mapping variants render the same SQL) ----
     public fun Join<G>.select(vararg fields: Selectable<*>): RenderedSql =
@@ -115,9 +115,23 @@ public fun <G : Catalog, R> renderSql(
     catalog: G,
     dialect: Dialect = StandardDialect,
     typeMapper: TypeMapper = StandardTypeMapper,
-    block: RenderScope<G>.() -> R,
-): R = RenderScope<G>(dialect, typeMapper).block()
+    block: RenderScopeOf<G, AnyBackend>.() -> R,
+): R = RenderScopeOf<G, AnyBackend>(dialect, typeMapper).block()
 
 /** Renders queries using this database's own [Dialect], so the preview matches the real backend. */
-public fun <G : Catalog, R> Database<G>.renderSql(block: RenderScope<G>.() -> R): R =
-    RenderScope<G>(dialect, StandardTypeMapper).block()
+public fun <G : Catalog, R> Database<G>.renderSql(block: RenderScopeOf<G, AnyBackend>.() -> R): R =
+    RenderScopeOf<G, AnyBackend>(dialect, StandardTypeMapper).block()
+
+/** The portable render scope; see [Scope]. */
+public typealias RenderScope<G> = RenderScopeOf<G, AnyBackend>
+
+/**
+ * [renderSql] for a backend-tagged scope — lets a dialect module (and its tests) render the
+ * backend-specific DSL offline, with no connection; see [runTransaction].
+ */
+@KormiumDialectApi
+public fun <G : Catalog, B : Backend, R> renderSqlWith(
+    dialect: Dialect,
+    typeMapper: TypeMapper = StandardTypeMapper,
+    block: RenderScopeOf<G, B>.() -> R,
+): R = RenderScopeOf<G, B>(dialect, typeMapper).block()

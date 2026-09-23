@@ -18,6 +18,8 @@ final enum class io.github.kormium/VectorMetric : kotlin/Enum<io.github.kormium/
     final fun values(): kotlin/Array<io.github.kormium/VectorMetric> // io.github.kormium/VectorMetric.values|values#static(){}[0]
 }
 
+abstract interface io.github.kormium/PostgresBackend : io.github.kormium/AnyBackend, io.github.kormium/RowLockingBackend // io.github.kormium/PostgresBackend|null[0]
+
 final class io.github.kormium/Vector { // io.github.kormium/Vector|null[0]
     constructor <init>(kotlin.collections/List<kotlin/Float>) // io.github.kormium/Vector.<init>|<init>(kotlin.collections.List<kotlin.Float>){}[0]
     constructor <init>(kotlin/FloatArray) // io.github.kormium/Vector.<init>|<init>(kotlin.FloatArray){}[0]
@@ -69,6 +71,7 @@ final object io.github.kormium/PostgresDialect : io.github.kormium/Dialect { // 
     final fun renderLimit(kotlin/UInt): kotlin/String // io.github.kormium/PostgresDialect.renderLimit|renderLimit(kotlin.UInt){}[0]
     final fun renderLimitOffset(kotlin/UInt, kotlin/UInt): kotlin/String // io.github.kormium/PostgresDialect.renderLimitOffset|renderLimitOffset(kotlin.UInt;kotlin.UInt){}[0]
     final fun renderOffset(kotlin/UInt): kotlin/String // io.github.kormium/PostgresDialect.renderOffset|renderOffset(kotlin.UInt){}[0]
+    final fun renderRowLock(io.github.kormium/RowLock): kotlin/String // io.github.kormium/PostgresDialect.renderRowLock|renderRowLock(io.github.kormium.RowLock){}[0]
     final fun renderUpsertSuffix(kotlin.collections/List<kotlin/String>, kotlin/String): kotlin/String // io.github.kormium/PostgresDialect.renderUpsertSuffix|renderUpsertSuffix(kotlin.collections.List<kotlin.String>;kotlin.String){}[0]
 }
 
@@ -81,3 +84,6 @@ final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormiu
 final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/euclideanDistance(io.github.kormium/Vector): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/euclideanDistance|euclideanDistance@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Vector){}[0]
 final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/innerProduct(io.github.kormium/Operand<io.github.kormium/Vector>): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/innerProduct|innerProduct@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Operand<io.github.kormium.Vector>){}[0]
 final fun (io.github.kormium/Operand<io.github.kormium/Vector>).io.github.kormium/innerProduct(io.github.kormium/Vector): io.github.kormium/NumericExpr<kotlin/Double> // io.github.kormium/innerProduct|innerProduct@io.github.kormium.Operand<io.github.kormium.Vector>(io.github.kormium.Vector){}[0]
+final fun (io.github.kormium/SelectQueryBuilderOf<io.github.kormium/PostgresBackend>).io.github.kormium/forKeyShare(io.github.kormium/LockWait = ...) // io.github.kormium/forKeyShare|forKeyShare@io.github.kormium.SelectQueryBuilderOf<io.github.kormium.PostgresBackend>(io.github.kormium.LockWait){}[0]
+final fun (io.github.kormium/SelectQueryBuilderOf<io.github.kormium/PostgresBackend>).io.github.kormium/forNoKeyUpdate(io.github.kormium/LockWait = ...) // io.github.kormium/forNoKeyUpdate|forNoKeyUpdate@io.github.kormium.SelectQueryBuilderOf<io.github.kormium.PostgresBackend>(io.github.kormium.LockWait){}[0]
+final fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> io.github.kormium/renderPostgresSql(io.github.kormium/TypeMapper = ..., kotlin/Function1<io.github.kormium/RenderScopeOf<#A, io.github.kormium/PostgresBackend>, #B>): #B // io.github.kormium/renderPostgresSql|renderPostgresSql(io.github.kormium.TypeMapper;kotlin.Function1<io.github.kormium.RenderScopeOf<0:0,io.github.kormium.PostgresBackend>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]

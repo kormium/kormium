@@ -10,12 +10,36 @@ public final class io/github/kormium/AggregateKt {
 	public static final fun sumShort (Lio/github/kormium/Column;)Lio/github/kormium/Operand;
 }
 
+public abstract interface class io/github/kormium/AnyBackend : io/github/kormium/Backend {
+}
+
 public final class io/github/kormium/AscDescOrder : java/lang/Enum {
 	public static final field ASC Lio/github/kormium/AscDescOrder;
 	public static final field DESC Lio/github/kormium/AscDescOrder;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/github/kormium/AscDescOrder;
 	public static fun values ()[Lio/github/kormium/AscDescOrder;
+}
+
+public abstract interface class io/github/kormium/Backend {
+}
+
+public abstract interface class io/github/kormium/BackendDatabase : io/github/kormium/database/Database {
+	public fun autocommit (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public fun renderSql (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public fun transaction (Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/kormium/BackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/BackendDatabase$DefaultImpls {
+	public static fun autocommit (Lio/github/kormium/BackendDatabase;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static fun getConfig (Lio/github/kormium/BackendDatabase;)Lio/github/kormium/KormiumConfig;
+	public static fun getDialect (Lio/github/kormium/BackendDatabase;)Lio/github/kormium/Dialect;
+	public static fun getWriteListeners (Lio/github/kormium/BackendDatabase;)Lio/github/kormium/WriteListeners;
+	public static fun isClosed (Lio/github/kormium/BackendDatabase;)Z
+	public static fun renderSql (Lio/github/kormium/BackendDatabase;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static fun transaction (Lio/github/kormium/BackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/kormium/BackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/github/kormium/BatchInsertMode : java/lang/Enum {
@@ -272,6 +296,7 @@ public abstract interface class io/github/kormium/Dialect {
 	public abstract fun renderLimit-WZ4Q5Ns (I)Ljava/lang/String;
 	public fun renderLimitOffset-feOb9K0 (II)Ljava/lang/String;
 	public abstract fun renderOffset-WZ4Q5Ns (I)Ljava/lang/String;
+	public fun renderRowLock (Lio/github/kormium/RowLock;)Ljava/lang/String;
 	public fun renderUpsertSuffix (Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
 }
 
@@ -285,6 +310,7 @@ public final class io/github/kormium/Dialect$DefaultImpls {
 	public static fun renderInsertDefaultValues (Lio/github/kormium/Dialect;Ljava/lang/String;)Ljava/lang/String;
 	public static fun renderInsertOrIgnoreSuffix (Lio/github/kormium/Dialect;Ljava/util/List;)Ljava/lang/String;
 	public static fun renderLimitOffset-feOb9K0 (Lio/github/kormium/Dialect;II)Ljava/lang/String;
+	public static fun renderRowLock (Lio/github/kormium/Dialect;Lio/github/kormium/RowLock;)Ljava/lang/String;
 	public static fun renderUpsertSuffix (Lio/github/kormium/Dialect;Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
 }
 
@@ -505,6 +531,9 @@ public final class io/github/kormium/KormiumConfigBuilder {
 	public final fun setBatchInsertMode (Lio/github/kormium/BatchInsertMode;)V
 }
 
+public abstract interface annotation class io/github/kormium/KormiumDialectApi : java/lang/annotation/Annotation {
+}
+
 public abstract interface annotation class io/github/kormium/KormiumDsl : java/lang/annotation/Annotation {
 }
 
@@ -554,6 +583,30 @@ public final class io/github/kormium/LocalTimeColumnType : io/github/kormium/Col
 	public fun read (Lio/github/kormium/resultset/ResultSet;I)Lkotlinx/datetime/LocalTime;
 	public synthetic fun toParam (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun toParam (Lkotlinx/datetime/LocalTime;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/LockNotAvailableException : io/github/kormium/QueryException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/github/kormium/LockStrength : java/lang/Enum {
+	public static final field KeyShare Lio/github/kormium/LockStrength;
+	public static final field NoKeyUpdate Lio/github/kormium/LockStrength;
+	public static final field Share Lio/github/kormium/LockStrength;
+	public static final field Update Lio/github/kormium/LockStrength;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/kormium/LockStrength;
+	public static fun values ()[Lio/github/kormium/LockStrength;
+}
+
+public final class io/github/kormium/LockWait : java/lang/Enum {
+	public static final field NoWait Lio/github/kormium/LockWait;
+	public static final field SkipLocked Lio/github/kormium/LockWait;
+	public static final field Wait Lio/github/kormium/LockWait;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/kormium/LockWait;
+	public static fun values ()[Lio/github/kormium/LockWait;
 }
 
 public final class io/github/kormium/LongColumnType : io/github/kormium/ColumnType {
@@ -634,16 +687,18 @@ public final class io/github/kormium/PoolExhaustedException : io/github/kormium/
 }
 
 public final class io/github/kormium/Query {
-	public synthetic fun <init> (Lio/github/kormium/Expression;IILjava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Lio/github/kormium/Expression;IILjava/util/Map;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/github/kormium/Expression;IILjava/util/Map;Lio/github/kormium/RowLock;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/github/kormium/Expression;IILjava/util/Map;Lio/github/kormium/RowLock;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lio/github/kormium/Expression;
 	public final fun component2-pVg5ArA ()I
 	public final fun component3-pVg5ArA ()I
 	public final fun component4 ()Ljava/util/Map;
-	public final fun copy-gd2BlFg (Lio/github/kormium/Expression;IILjava/util/Map;)Lio/github/kormium/Query;
-	public static synthetic fun copy-gd2BlFg$default (Lio/github/kormium/Query;Lio/github/kormium/Expression;IILjava/util/Map;ILjava/lang/Object;)Lio/github/kormium/Query;
+	public final fun component5 ()Lio/github/kormium/RowLock;
+	public final fun copy-qNPu7Do (Lio/github/kormium/Expression;IILjava/util/Map;Lio/github/kormium/RowLock;)Lio/github/kormium/Query;
+	public static synthetic fun copy-qNPu7Do$default (Lio/github/kormium/Query;Lio/github/kormium/Expression;IILjava/util/Map;Lio/github/kormium/RowLock;ILjava/lang/Object;)Lio/github/kormium/Query;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getLimit-pVg5ArA ()I
+	public final fun getLock ()Lio/github/kormium/RowLock;
 	public final fun getOffset-pVg5ArA ()I
 	public final fun getOrderBy ()Ljava/util/Map;
 	public final fun getWhereExpression ()Lio/github/kormium/Expression;
@@ -653,7 +708,7 @@ public final class io/github/kormium/Query {
 	public final fun toWhereSql (Lio/github/kormium/ParamBuilder;)Ljava/lang/String;
 }
 
-public final class io/github/kormium/QueryBuilder {
+public class io/github/kormium/QueryBuilderOf {
 	public fun <init> ()V
 	public final fun getLimit ()Ljava/lang/Integer;
 	public final fun getOffset ()Ljava/lang/Integer;
@@ -724,11 +779,11 @@ public abstract interface class io/github/kormium/Registration {
 	public abstract fun remove ()V
 }
 
-public final class io/github/kormium/RenderScope {
+public final class io/github/kormium/RenderScopeOf {
 	public final fun all (Lio/github/kormium/Table;)Lio/github/kormium/RenderedSql;
 	public final fun count (Lio/github/kormium/Table;Lio/github/kormium/Query;)Lio/github/kormium/RenderedSql;
 	public final fun count (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;)Lio/github/kormium/RenderedSql;
-	public static synthetic fun count$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Query;ILjava/lang/Object;)Lio/github/kormium/RenderedSql;
+	public static synthetic fun count$default (Lio/github/kormium/RenderScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Query;ILjava/lang/Object;)Lio/github/kormium/RenderedSql;
 	public final fun deleteWhere (Lio/github/kormium/Table;Lio/github/kormium/Query;)Lio/github/kormium/RenderedSql;
 	public final fun deleteWhere (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;)Lio/github/kormium/RenderedSql;
 	public final fun find (Lio/github/kormium/Table;Lio/github/kormium/Query;)Lio/github/kormium/RenderedSql;
@@ -738,9 +793,9 @@ public final class io/github/kormium/RenderScope {
 	public final fun getDialect ()Lio/github/kormium/Dialect;
 	public final fun getTypeMapper ()Lio/github/kormium/TypeMapper;
 	public final fun insert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Z)Lio/github/kormium/RenderedSql;
-	public static synthetic fun insert$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/RenderedSql;
+	public static synthetic fun insert$default (Lio/github/kormium/RenderScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/RenderedSql;
 	public final fun insertAll (Lio/github/kormium/Table;Ljava/util/List;ZLio/github/kormium/BatchInsertMode;)Ljava/util/List;
-	public static synthetic fun insertAll$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Ljava/util/List;ZLio/github/kormium/BatchInsertMode;ILjava/lang/Object;)Ljava/util/List;
+	public static synthetic fun insertAll$default (Lio/github/kormium/RenderScopeOf;Lio/github/kormium/Table;Ljava/util/List;ZLio/github/kormium/BatchInsertMode;ILjava/lang/Object;)Ljava/util/List;
 	public final fun insertOrIgnore (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;)Lio/github/kormium/RenderedSql;
 	public final fun insertOrIgnore (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;)Lio/github/kormium/RenderedSql;
 	public final fun select (Lio/github/kormium/Join;[Lio/github/kormium/Selectable;)Lio/github/kormium/RenderedSql;
@@ -753,16 +808,18 @@ public final class io/github/kormium/RenderScope {
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;)Lio/github/kormium/RenderedSql;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;Z)Lio/github/kormium/RenderedSql;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;)Lio/github/kormium/RenderedSql;
-	public static synthetic fun upsert$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/RenderedSql;
-	public static synthetic fun upsert$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/RenderedSql;
-	public static synthetic fun upsert$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/RenderedSql;
-	public static synthetic fun upsert$default (Lio/github/kormium/RenderScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/RenderedSql;
+	public static synthetic fun upsert$default (Lio/github/kormium/RenderScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/RenderedSql;
+	public static synthetic fun upsert$default (Lio/github/kormium/RenderScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/RenderedSql;
+	public static synthetic fun upsert$default (Lio/github/kormium/RenderScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/RenderedSql;
+	public static synthetic fun upsert$default (Lio/github/kormium/RenderScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/RenderedSql;
 }
 
 public final class io/github/kormium/RenderSqlKt {
 	public static final fun renderSql (Lio/github/kormium/Catalog;Lio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static final fun renderSql (Lio/github/kormium/database/Database;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 	public static synthetic fun renderSql$default (Lio/github/kormium/Catalog;Lio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun renderSqlWith (Lio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun renderSqlWith$default (Lio/github/kormium/Dialect;Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public final class io/github/kormium/RenderedSql {
@@ -782,11 +839,45 @@ public final class io/github/kormium/ResultRow {
 	public final fun getOrNull (Lio/github/kormium/Selectable;)Ljava/lang/Object;
 }
 
-public final class io/github/kormium/Scope {
+public final class io/github/kormium/RowLock {
+	public fun <init> ()V
+	public fun <init> (Lio/github/kormium/LockStrength;Lio/github/kormium/LockWait;)V
+	public synthetic fun <init> (Lio/github/kormium/LockStrength;Lio/github/kormium/LockWait;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/kormium/LockStrength;
+	public final fun component2 ()Lio/github/kormium/LockWait;
+	public final fun copy (Lio/github/kormium/LockStrength;Lio/github/kormium/LockWait;)Lio/github/kormium/RowLock;
+	public static synthetic fun copy$default (Lio/github/kormium/RowLock;Lio/github/kormium/LockStrength;Lio/github/kormium/LockWait;ILjava/lang/Object;)Lio/github/kormium/RowLock;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getStrength ()Lio/github/kormium/LockStrength;
+	public final fun getWait ()Lio/github/kormium/LockWait;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/github/kormium/RowLockKt {
+	public static final fun forShare (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;)V
+	public static synthetic fun forShare$default (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;ILjava/lang/Object;)V
+	public static final fun forUpdate (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;)V
+	public static synthetic fun forUpdate$default (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;ILjava/lang/Object;)V
+}
+
+public abstract interface class io/github/kormium/RowLockingBackend : io/github/kormium/Backend {
+}
+
+public final class io/github/kormium/ScopeKt {
+	public static final fun autocommit (Lio/github/kormium/database/Database;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static final fun runAutocommit (Lio/github/kormium/database/Database;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static final fun runTransaction (Lio/github/kormium/database/Database;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun runTransaction$default (Lio/github/kormium/database/Database;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun transaction (Lio/github/kormium/database/Database;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun transaction$default (Lio/github/kormium/database/Database;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/ScopeOf {
 	public final fun all (Lio/github/kormium/Table;)Ljava/util/List;
 	public final fun count (Lio/github/kormium/Table;Lio/github/kormium/Query;)J
 	public final fun count (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;)J
-	public static synthetic fun count$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Query;ILjava/lang/Object;)J
+	public static synthetic fun count$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Query;ILjava/lang/Object;)J
 	public final fun deleteWhere (Lio/github/kormium/Table;Lio/github/kormium/Query;)J
 	public final fun deleteWhere (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;)J
 	public final fun execSql (Lio/github/kormium/Table;Ljava/lang/String;)V
@@ -799,9 +890,9 @@ public final class io/github/kormium/Scope {
 	public final fun findOne (Lio/github/kormium/Table;Lio/github/kormium/Query;)Lio/github/kormium/Entity;
 	public final fun findOne (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;)Lio/github/kormium/Entity;
 	public final fun insert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Z)Lio/github/kormium/Entity;
-	public static synthetic fun insert$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/Entity;
+	public static synthetic fun insert$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/Entity;
 	public final fun insertAll (Lio/github/kormium/Table;Ljava/util/List;ZLio/github/kormium/BatchInsertMode;)Ljava/util/List;
-	public static synthetic fun insertAll$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Ljava/util/List;ZLio/github/kormium/BatchInsertMode;ILjava/lang/Object;)Ljava/util/List;
+	public static synthetic fun insertAll$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Ljava/util/List;ZLio/github/kormium/BatchInsertMode;ILjava/lang/Object;)Ljava/util/List;
 	public final fun insertOrIgnore (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;)J
 	public final fun insertOrIgnore (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;)J
 	public final fun savepoint (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
@@ -818,16 +909,16 @@ public final class io/github/kormium/Scope {
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;)Lio/github/kormium/Entity;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;Z)Lio/github/kormium/Entity;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;)Lio/github/kormium/Entity;
-	public static synthetic fun upsert$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/Entity;
-	public static synthetic fun upsert$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/Entity;
-	public static synthetic fun upsert$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/Entity;
-	public static synthetic fun upsert$default (Lio/github/kormium/Scope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/Entity;
+	public static synthetic fun upsert$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/Entity;
+	public static synthetic fun upsert$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/Entity;
+	public static synthetic fun upsert$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZILjava/lang/Object;)Lio/github/kormium/Entity;
+	public static synthetic fun upsert$default (Lio/github/kormium/ScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/kormium/Entity;
 }
 
-public final class io/github/kormium/ScopeKt {
-	public static final fun autocommit (Lio/github/kormium/database/Database;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
-	public static final fun transaction (Lio/github/kormium/database/Database;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
-	public static synthetic fun transaction$default (Lio/github/kormium/database/Database;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+public final class io/github/kormium/SelectQueryBuilderOf : io/github/kormium/QueryBuilderOf {
+	public fun <init> ()V
+	public final fun getRowLock ()Lio/github/kormium/RowLock;
+	public final fun setRowLock (Lio/github/kormium/RowLock;)V
 }
 
 public abstract interface class io/github/kormium/Selectable : io/github/kormium/Expression {
@@ -897,6 +988,7 @@ public final class io/github/kormium/StandardDialect : io/github/kormium/Dialect
 	public fun renderLimit-WZ4Q5Ns (I)Ljava/lang/String;
 	public fun renderLimitOffset-feOb9K0 (II)Ljava/lang/String;
 	public fun renderOffset-WZ4Q5Ns (I)Ljava/lang/String;
+	public fun renderRowLock (Lio/github/kormium/RowLock;)Ljava/lang/String;
 	public fun renderUpsertSuffix (Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
 }
 
@@ -914,11 +1006,36 @@ public final class io/github/kormium/StringExpr$DefaultImpls {
 	public static fun read (Lio/github/kormium/StringExpr;Lio/github/kormium/resultset/ResultSet;ILio/github/kormium/TypeMapper;)Ljava/lang/String;
 }
 
-public final class io/github/kormium/SuspendScope {
+public abstract interface class io/github/kormium/SuspendBackendDatabase : io/github/kormium/database/SuspendDatabase {
+	public fun suspendAutocommit (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun suspendTransaction (Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun suspendTransaction$default (Lio/github/kormium/SuspendBackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/SuspendBackendDatabase$DefaultImpls {
+	public static fun getConfig (Lio/github/kormium/SuspendBackendDatabase;)Lio/github/kormium/KormiumConfig;
+	public static fun getDialect (Lio/github/kormium/SuspendBackendDatabase;)Lio/github/kormium/Dialect;
+	public static fun getWriteListeners (Lio/github/kormium/SuspendBackendDatabase;)Lio/github/kormium/WriteListeners;
+	public static fun isClosed (Lio/github/kormium/SuspendBackendDatabase;)Z
+	public static fun suspendAutocommit (Lio/github/kormium/SuspendBackendDatabase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun suspendTransaction (Lio/github/kormium/SuspendBackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun suspendTransaction$default (Lio/github/kormium/SuspendBackendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/SuspendScopeKt {
+	public static final fun runSuspendAutocommit (Lio/github/kormium/database/SuspendDatabase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun runSuspendTransaction (Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun runSuspendTransaction$default (Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun suspendAutocommit (Lio/github/kormium/database/SuspendDatabase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun suspendTransaction (Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun suspendTransaction$default (Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/github/kormium/SuspendScopeOf {
 	public final fun all (Lio/github/kormium/Table;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun count (Lio/github/kormium/Table;Lio/github/kormium/Query;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun count (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun count$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Query;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun count$default (Lio/github/kormium/SuspendScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Query;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun deleteWhere (Lio/github/kormium/Table;Lio/github/kormium/Query;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun deleteWhere (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun execSql (Lio/github/kormium/Table;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -931,9 +1048,9 @@ public final class io/github/kormium/SuspendScope {
 	public final fun findOne (Lio/github/kormium/Table;Lio/github/kormium/Query;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun findOne (Lio/github/kormium/Table;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun insert (Lio/github/kormium/Table;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun insert$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun insert$default (Lio/github/kormium/SuspendScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun insertAll (Lio/github/kormium/Table;Ljava/util/List;ZLio/github/kormium/BatchInsertMode;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun insertAll$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Ljava/util/List;ZLio/github/kormium/BatchInsertMode;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun insertAll$default (Lio/github/kormium/SuspendScopeOf;Lio/github/kormium/Table;Ljava/util/List;ZLio/github/kormium/BatchInsertMode;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public final fun insertOrIgnore (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun insertOrIgnore (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun savepoint (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -950,16 +1067,10 @@ public final class io/github/kormium/SuspendScope {
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun upsert (Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScope;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-}
-
-public final class io/github/kormium/SuspendScopeKt {
-	public static final fun suspendAutocommit (Lio/github/kormium/database/SuspendDatabase;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun suspendTransaction (Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun suspendTransaction$default (Lio/github/kormium/database/SuspendDatabase;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Lio/github/kormium/Column;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;Lio/github/kormium/Entity;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun upsert$default (Lio/github/kormium/SuspendScopeOf;Lio/github/kormium/Table;Lio/github/kormium/Entity;Ljava/util/List;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface class io/github/kormium/SuspendSqlExecutor {
@@ -1016,6 +1127,10 @@ public abstract interface class io/github/kormium/TypeMapper {
 public final class io/github/kormium/UniqueViolationException : io/github/kormium/QueryException {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/github/kormium/UnsupportedByDialectException : io/github/kormium/KormiumException {
+	public fun <init> (Ljava/lang/String;)V
 }
 
 public final class io/github/kormium/UpdateBuilder {

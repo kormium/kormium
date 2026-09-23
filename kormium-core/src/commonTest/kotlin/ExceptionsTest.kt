@@ -1,6 +1,7 @@
 import io.github.kormium.CheckViolationException
 import io.github.kormium.ConcurrencyConflictException
 import io.github.kormium.ForeignKeyViolationException
+import io.github.kormium.LockNotAvailableException
 import io.github.kormium.NotNullViolationException
 import io.github.kormium.QueryException
 import io.github.kormium.UniqueViolationException
@@ -20,6 +21,11 @@ class ExceptionsTest {
         // 40001 (serialization failure / MySQL deadlock) and 40P01 (PG deadlock) are retryable.
         assertTrue(sqlException("x", "40001") is ConcurrencyConflictException)
         assertTrue(sqlException("x", "40P01") is ConcurrencyConflictException)
+        // 55P03: a refused NOWAIT or an expired lock_timeout — the statement failed, not the
+        // transaction, so it is NOT a ConcurrencyConflictException.
+        val lock = sqlException("x", "55P03")
+        assertTrue(lock is LockNotAvailableException)
+        assertTrue(lock !is ConcurrencyConflictException)
     }
 
     @Test

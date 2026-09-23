@@ -6,7 +6,7 @@
 // - Show declarations: true
 
 // Library unique name: <io.github.kormium:kormium-mysql>
-abstract interface io.github.kormium/MySqlDriver : io.github.kormium.database/Database<kotlin/Nothing>, io.github.kormium.database/SuspendDatabase<kotlin/Nothing>, kotlin/AutoCloseable { // io.github.kormium/MySqlDriver|null[0]
+abstract interface io.github.kormium/MySqlDriver : io.github.kormium/BackendDatabase<kotlin/Nothing, io.github.kormium/MySqlBackend>, io.github.kormium/SuspendBackendDatabase<kotlin/Nothing, io.github.kormium/MySqlBackend>, kotlin/AutoCloseable { // io.github.kormium/MySqlDriver|null[0]
     abstract val config // io.github.kormium/MySqlDriver.config|{}config[0]
         abstract fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium/MySqlDriver.config.<get-config>|<get-config>(){}[0]
     abstract val dialect // io.github.kormium/MySqlDriver.dialect|{}dialect[0]

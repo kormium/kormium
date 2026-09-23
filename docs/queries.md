@@ -450,6 +450,110 @@ Use raw SQL only when the SQL text is fully controlled by your application:
 Users.find(Query(RawExpression("""lower("name") = 'ada'""")))
 ```
 
+## Row Locking (`FOR UPDATE` / `FOR SHARE`)
+
+A locking read takes a row-level lock that is held until the transaction ends, so another
+transaction cannot change those rows underneath you. It is the piece that makes read-then-write
+safe, and — with `SKIP LOCKED` — the piece that turns a table into a work queue.
+
+```kotlin
+val db: BackendDatabase<App, PostgresBackend> = createDatabase(...)   // note the handle type
+
+db.transaction {
+    val batch = Jobs.find {
+        where { Jobs.status eq JobStatus.ACTIVE }
+        orderBy ASC Jobs.nextRunAt
+        limit = 10
+        forUpdate(LockWait.SkipLocked)
+    }
+    // SELECT ... ORDER BY "next_run_at" LIMIT 10 FOR UPDATE SKIP LOCKED
+}
+```
+
+`forUpdate()` takes an exclusive lock, `forShare()` a shared one — and on Postgres,
+`forNoKeyUpdate()` / `forKeyShare()` take the two weaker strengths, which exclude less (the first
+still allows a concurrent foreign-key check against the row; the second is what such a check takes).
+Those two live in `kormium-postgres-dialect` and resolve only on a Postgres handle.
+
+The argument says what to do when a row is already locked by someone else:
+
+| | Behaviour | Use it when |
+|---|---|---|
+| `LockWait.Wait` (default) | block until the other transaction ends | you need **that** row — debiting a specific account |
+| `LockWait.SkipLocked` | ignore locked rows, take the next ones | **any** free row will do — a queue handing work to N workers |
+| `LockWait.NoWait` | fail immediately with `LockNotAvailableException` | an interactive edit, where "someone else is editing this" beats freezing |
+
+With `SKIP LOCKED`, `limit = 10` means *ten unlocked rows*, so each worker gets a full batch
+instead of fighting over the head of the queue.
+
+### Where it is available
+
+The DSL is gated by the **type of the database handle**, not checked at runtime. `forUpdate` and
+`forShare` only resolve inside a scope opened from a `BackendDatabase<G, PostgresBackend>` or
+`BackendDatabase<G, MySqlBackend>` handle — or the `SuspendBackendDatabase` twin, which is what the
+r2dbc and Node engines are. On the portable `Database<G>` — and therefore on SQLite — they do not
+compile:
+
+```kotlin
+val portable: Database<App> = db        // same driver, portable handle
+portable.transaction {
+    Jobs.find { forUpdate() }           // does not compile: unresolved reference
+}
+```
+
+So declare the handle as `BackendDatabase<App, PostgresBackend>` when you want the locking DSL, and
+as `Database<App>` when you want the compiler to keep the code portable. Widening a
+Postgres handle to `Database<App>` is what a portable helper should take — everything except the
+locking call keeps working through it.
+
+`NoWait` raises `LockNotAvailableException` (PostgreSQL SQLSTATE `55P03`; MySQL vendor codes 3572
+and 1205). A server-side lock timeout — `lock_timeout` / `innodb_lock_wait_timeout` — raises the
+same one. It is deliberately not `ConcurrencyConflictException`: that means the whole transaction
+was aborted and is safe to retry as a unit, whereas here only the statement failed and the
+transaction is still open, so reporting the contention is usually the right answer.
+
+Two things the type cannot promise, both on MySQL/MariaDB: `NOWAIT` and `SKIP LOCKED` need MySQL
+8.0.1+ / MariaDB 10.3+ and 10.6+, and MariaDB has no `FOR SHARE` at all. An older server answers
+with a syntax error rather than quietly running the read unlocked.
+
+### Rules the DSL enforces
+
+- **A lock needs a transaction.** In `autocommit { }` the lock would be released at the next
+  statement boundary and protect nothing, so the query fails fast with an explicit message. Use
+  `transaction { }` (or `suspendTransaction { }` — the suspend path is identical).
+- **Only reads can lock.** `forUpdate` exists on the `find` / `findOne` builder only. `count`,
+  `update` and `deleteWhere` render the `WHERE` clause alone, so a lock written there would be
+  dropped silently — it is a compile error instead.
+
+### Where the compile-time check ends
+
+The gate is on the **DSL**. Every operation also accepts a prebuilt
+[`Query`](#reusable-queries-with-query) value, and `Query(lock = RowLock(…))` is an ordinary
+constructor call: no backend tag, no opt-in. That form is checked when the statement renders
+instead, and it still cannot fail silently:
+
+- on a backend that cannot lock, rendering throws `UnsupportedByDialectException`;
+- on `count` / `update` / `deleteWhere`, which have nowhere to put a lock, it throws
+  `IllegalArgumentException` rather than dropping the clause.
+
+So the value form is safe, just later-checked. Build locks through `forUpdate` / `forShare` to get
+the compile-time half as well.
+
+One unrelated side effect of typing the handle: `transaction { }` / `autocommit { }` on a
+`BackendDatabase` are interface members, and Kotlin allows the `callsInPlace` contract only on a
+top-level function. So assigning a `val` declared outside the block from inside it — which the
+portable `Database<G>.transaction` permits — does not compile on a typed handle. Return the value
+out of the block instead:
+
+```kotlin
+val claimed = db.transaction { Jobs.find { forUpdate(LockWait.SkipLocked) } }   // not: val claimed; db.transaction { claimed = … }
+```
+
+One caveat that is the database's, not Kormium's: on PostgreSQL, `ORDER BY` + `LIMIT` +
+`FOR UPDATE` **without** `SKIP LOCKED` can return rows that no longer match the ordering once the
+lock is finally acquired, because `LIMIT` is not re-evaluated after the wait. For queue-shaped
+work, `SKIP LOCKED` avoids the question entirely.
+
 ## Vector Search (pgvector)
 
 A [vector column](tables-and-entities.md#vector-columns-pgvector) computes a pgvector distance to a
@@ -519,8 +623,12 @@ Not modeled by the typed DSL today:
 - **Grouping in the `find { }` block.** `groupBy` / `having` / `distinct` live on the join /
   `Table.query()` path, not the entity-returning `find { }` builder.
 - **Statement-level extras.** No `ORDER BY` / `LIMIT` on `UPDATE` / `DELETE`, no `RETURNING`
-  on `UPDATE` / `DELETE`, no `LOCK` / `FOR UPDATE` clauses, and no DDL through the query DSL.
-  (`INSERT ... ON CONFLICT` *is* available — see `upsert` and `insertOrIgnore`.)
+  on `UPDATE` / `DELETE`, no table-level `LOCK` statement, and no DDL through the query DSL.
+  (`INSERT ... ON CONFLICT` *is* available — see `upsert` and `insertOrIgnore`; row-level
+  `FOR UPDATE` / `FOR SHARE` on reads is available on Postgres and MySQL, and the Postgres-only
+  `FOR NO KEY UPDATE` / `FOR KEY SHARE` from `kormium-postgres-dialect` — see
+  [Row Locking](#row-locking-for-update--for-share). `OF table`, which restricts a join's lock to
+  one side, is not modeled.)
 
 The supported `WHERE` / `HAVING` predicates are exactly: `eq`, `neq`, `lt`, `ltEq`, `gt`,
 `gtEq`, `between` (an inclusive `lo..hi` range; an empty range matches nothing), `like`,

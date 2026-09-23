@@ -10,7 +10,14 @@ package io.github.kormium
  *
  * Codes (common to MySQL 8 and MariaDB): 1062/1586 duplicate entry, 1451/1452 foreign key,
  * 1048/1364 NOT NULL (column cannot be null / has no default), 3819 CHECK (MySQL 8.0.16+ /
- * MariaDB 10.2+). Unknown codes fall back to the standard SQLSTATE mapping.
+ * MariaDB 10.2+), 3572 NOWAIT refused and 1205 lock wait timeout. Unknown codes fall back to the
+ * standard SQLSTATE mapping.
+ *
+ * The two lock codes both come back under SQLSTATE `HY000`, so only the vendor code can tell them
+ * from anything else; PostgreSQL folds the same two situations into `55P03`, which is why both map
+ * to one [LockNotAvailableException]. A deadlock (1213) is deliberately absent: MySQL reports it
+ * under SQLSTATE `40001`, where the fallback already maps it to [ConcurrencyConflictException] —
+ * that one rolls back the whole transaction, these two only the statement.
  */
 public fun mysqlVendorException(
     message: String,
@@ -22,5 +29,6 @@ public fun mysqlVendorException(
     1451, 1452 -> ForeignKeyViolationException(message, sqlState, cause)
     1048, 1364 -> NotNullViolationException(message, sqlState, cause)
     3819 -> CheckViolationException(message, sqlState, cause)
+    3572, 1205 -> LockNotAvailableException(message, sqlState, cause)
     else -> sqlException(message, sqlState, cause)
 }

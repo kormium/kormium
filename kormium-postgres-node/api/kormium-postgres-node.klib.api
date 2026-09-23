@@ -6,7 +6,7 @@
 // - Show declarations: true
 
 // Library unique name: <io.github.kormium:kormium-postgres-node>
-final class io.github.kormium.postgres.node/PgDatabase : io.github.kormium.database/SuspendDatabase<kotlin/Nothing> { // io.github.kormium.postgres.node/PgDatabase|null[0]
+final class io.github.kormium.postgres.node/PgDatabase : io.github.kormium/SuspendBackendDatabase<kotlin/Nothing, io.github.kormium/PostgresBackend> { // io.github.kormium.postgres.node/PgDatabase|null[0]
     final val config // io.github.kormium.postgres.node/PgDatabase.config|{}config[0]
         final fun <get-config>(): io.github.kormium/KormiumConfig // io.github.kormium.postgres.node/PgDatabase.config.<get-config>|<get-config>(){}[0]
     final val dialect // io.github.kormium.postgres.node/PgDatabase.dialect|{}dialect[0]

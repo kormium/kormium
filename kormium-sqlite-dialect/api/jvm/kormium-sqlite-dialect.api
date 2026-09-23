@@ -13,6 +13,7 @@ public final class io/github/kormium/SqliteDialect : io/github/kormium/Dialect {
 	public fun renderLimit-WZ4Q5Ns (I)Ljava/lang/String;
 	public fun renderLimitOffset-feOb9K0 (II)Ljava/lang/String;
 	public fun renderOffset-WZ4Q5Ns (I)Ljava/lang/String;
+	public fun renderRowLock (Lio/github/kormium/RowLock;)Ljava/lang/String;
 	public fun renderUpsertSuffix (Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
 }
 

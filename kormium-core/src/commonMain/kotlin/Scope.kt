@@ -13,7 +13,7 @@ import kotlin.contracts.contract
  * [execute] / [executeUpdate] goes to the same pinned connection.
  */
 @KormiumDsl
-public class Scope<G : Catalog> internal constructor(
+public class ScopeOf<G : Catalog, out B : Backend> internal constructor(
     private val exec: SqlExecutor,
     /** The owning database's configuration (e.g. the default [BatchInsertMode]). */
     internal val config: KormiumConfig = KormiumConfig(),
@@ -124,20 +124,35 @@ public class Scope<G : Catalog> internal constructor(
     public fun <T : Entity> Table<G, T>.count(query: Query = Query()): Long = count(query, exec)
 
     /** Block form of [count]: `Users.count { where { Users.deletedAt eq null } }`. */
-    public fun <T : Entity> Table<G, T>.count(block: QueryBuilder.() -> Unit): Long =
-        count(QueryBuilder().apply(block).build(), exec)
+    public fun <T : Entity> Table<G, T>.count(block: QueryBuilderOf<B>.() -> Unit): Long =
+        count(QueryBuilderOf<B>().apply(block).build(), exec)
 
-    public fun <T : Entity> Table<G, T>.find(query: Query): List<T> = select(query, exec)
+    public fun <T : Entity> Table<G, T>.find(query: Query): List<T> {
+        requireLockableHere(query)
+        return select(query, exec)
+    }
+
+    // A row lock lives until the transaction ends, so in autocommit it is released by the next
+    // statement boundary — the query would look locked and protect nothing. Fail instead.
+    private fun requireLockableHere(query: Query) {
+        check(query.lock == null || transactional) {
+            "${query.lock} requires transaction { }: in autocommit the lock is released " +
+                "immediately, so it protects nothing"
+        }
+    }
 
     /** Block form of [find]: `Users.find { where { ... }; orderBy DESC col; limit = 50 }`. */
-    public fun <T : Entity> Table<G, T>.find(block: QueryBuilder.() -> Unit): List<T> =
-        select(QueryBuilder().apply(block).build(), exec)
+    public fun <T : Entity> Table<G, T>.find(block: SelectQueryBuilderOf<B>.() -> Unit): List<T> =
+        find(SelectQueryBuilderOf<B>().apply(block).build())
     /** The first row matching [query] (typically a unique predicate), or null. Applies `LIMIT 1`. */
-    public fun <T : Entity> Table<G, T>.findOne(query: Query): T? = select(query.copy(limit = 1u), exec).firstOrNull()
+    public fun <T : Entity> Table<G, T>.findOne(query: Query): T? {
+        requireLockableHere(query)
+        return select(query.copy(limit = 1u), exec).firstOrNull()
+    }
 
     /** Block form of [findOne]: `Users.findOne { where { Users.id eq id } }`. */
-    public fun <T : Entity> Table<G, T>.findOne(block: QueryBuilder.() -> Unit): T? =
-        findOne(QueryBuilder().apply(block).build())
+    public fun <T : Entity> Table<G, T>.findOne(block: SelectQueryBuilderOf<B>.() -> Unit): T? =
+        findOne(SelectQueryBuilderOf<B>().apply(block).build())
     public fun <T : Entity> Table<G, T>.all(): List<T> = selectAll(exec)
     /** Updates rows matching [query] with the present fields of [entity]; returns the affected row count. */
     public fun <T : Entity> Table<G, T>.update(entity: T, query: Query): Long {
@@ -150,9 +165,9 @@ public class Scope<G : Catalog> internal constructor(
      * `where { }` blocks AND together; an empty block updates every row. Returns the affected
      * row count (e.g. 0 means no row matched — useful for not-found / optimistic-locking checks).
      */
-    public fun <T : Entity> Table<G, T>.update(entity: T, block: QueryBuilder.() -> Unit): Long {
+    public fun <T : Entity> Table<G, T>.update(entity: T, block: QueryBuilderOf<B>.() -> Unit): Long {
         markWritten()
-        return updateRows(QueryBuilder().apply(block).build(), entity, exec)
+        return updateRows(QueryBuilderOf<B>().apply(block).build(), entity, exec)
     }
 
     /**
@@ -177,9 +192,9 @@ public class Scope<G : Catalog> internal constructor(
      * Block form of [deleteWhere]: `Users.deleteWhere { where { Users.deletedAt neq null } }`.
      * An empty block deletes every row. Returns the affected row count.
      */
-    public fun <T : Entity> Table<G, T>.deleteWhere(block: QueryBuilder.() -> Unit): Long {
+    public fun <T : Entity> Table<G, T>.deleteWhere(block: QueryBuilderOf<B>.() -> Unit): Long {
         markWritten()
-        return deleteRows(QueryBuilder().apply(block).build(), exec)
+        return deleteRows(QueryBuilderOf<B>().apply(block).build(), exec)
     }
 
     @DelicateKormiumApi
@@ -262,7 +277,7 @@ public class Scope<G : Catalog> internal constructor(
      * error on PostgreSQL and backend-dependent elsewhere).
      */
     @OptIn(ExperimentalContracts::class)
-    public fun <R> savepoint(block: Scope<G>.() -> R): R {
+    public fun <R> savepoint(block: ScopeOf<G, B>.() -> R): R {
         contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         check(transactional) { "savepoint { } requires a transaction; use transaction { }, not autocommit { }" }
         val name = "kormium_sp_${savepointCounter++}"
@@ -295,7 +310,7 @@ public fun <G : Catalog, R> Database<G>.transaction(
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     // The dirty-table set outlives the block so we can fire it after the commit returns.
     val dirty = mutableSetOf<String>()
-    val result = usePinned(transactional = true, isolation = isolation, readOnly = readOnly) { Scope<G>(it.observed(config), config, dirty, transactional = true).block() }
+    val result = usePinned(transactional = true, isolation = isolation, readOnly = readOnly) { ScopeOf<G, AnyBackend>(it.observed(config), config, dirty, transactional = true).block() }
     writeListeners.fire(dirty)
     writeListeners.publishCommit(dirty)
     return result
@@ -309,7 +324,46 @@ public fun <G : Catalog, R> Database<G>.transaction(
 public fun <G : Catalog, R> Database<G>.autocommit(block: Scope<G>.() -> R): R {
     contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
-    val result = usePinned(transactional = false) { Scope<G>(it.observed(config), config, dirty, transactional = false).block() }
+    val result = usePinned(transactional = false) { ScopeOf<G, AnyBackend>(it.observed(config), config, dirty, transactional = false).block() }
+    writeListeners.fire(dirty)
+    writeListeners.publishCommit(dirty)
+    return result
+}
+
+/**
+ * The portable scope — [ScopeOf] with the baseline [AnyBackend] tag, and what [transaction] /
+ * [autocommit] hand their block. Existing `Scope<G>` references keep working unchanged.
+ */
+public typealias Scope<G> = ScopeOf<G, AnyBackend>
+
+/**
+ * [transaction], but for a scope carrying a backend's own capability tag [B] — the seam a dialect
+ * module's `transaction` member is built on, so backend-specific DSL becomes reachable without any
+ * of the surrounding machinery (connection pinning, dirty-table collection, write notification)
+ * being duplicated per backend. [B] is phantom, so it is inferred from the expected block type.
+ */
+@KormiumDialectApi
+@OptIn(ExperimentalContracts::class)
+public fun <G : Catalog, B : Backend, R> Database<G>.runTransaction(
+    isolation: TransactionIsolation? = null,
+    readOnly: Boolean = false,
+    block: ScopeOf<G, B>.() -> R,
+): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+    val dirty = mutableSetOf<String>()
+    val result = usePinned(transactional = true, isolation = isolation, readOnly = readOnly) { ScopeOf<G, B>(it.observed(config), config, dirty, transactional = true).block() }
+    writeListeners.fire(dirty)
+    writeListeners.publishCommit(dirty)
+    return result
+}
+
+/** [autocommit] for a backend-tagged scope; see [runTransaction]. */
+@KormiumDialectApi
+@OptIn(ExperimentalContracts::class)
+public fun <G : Catalog, B : Backend, R> Database<G>.runAutocommit(block: ScopeOf<G, B>.() -> R): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+    val dirty = mutableSetOf<String>()
+    val result = usePinned(transactional = false) { ScopeOf<G, B>(it.observed(config), config, dirty, transactional = false).block() }
     writeListeners.fire(dirty)
     writeListeners.publishCommit(dirty)
     return result

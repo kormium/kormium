@@ -6,6 +6,8 @@
 // - Show declarations: true
 
 // Library unique name: <io.github.kormium:kormium-mysql-dialect>
+abstract interface io.github.kormium/MySqlBackend : io.github.kormium/AnyBackend, io.github.kormium/RowLockingBackend // io.github.kormium/MySqlBackend|null[0]
+
 final object io.github.kormium/MySqlDialect : io.github.kormium/Dialect { // io.github.kormium/MySqlDialect|null[0]
     final val maxBoundParameters // io.github.kormium/MySqlDialect.maxBoundParameters|{}maxBoundParameters[0]
         final fun <get-maxBoundParameters>(): kotlin/Int // io.github.kormium/MySqlDialect.maxBoundParameters.<get-maxBoundParameters>|<get-maxBoundParameters>(){}[0]
@@ -25,5 +27,8 @@ final object io.github.kormium/MySqlDialect : io.github.kormium/Dialect { // io.
     final fun renderLimit(kotlin/UInt): kotlin/String // io.github.kormium/MySqlDialect.renderLimit|renderLimit(kotlin.UInt){}[0]
     final fun renderLimitOffset(kotlin/UInt, kotlin/UInt): kotlin/String // io.github.kormium/MySqlDialect.renderLimitOffset|renderLimitOffset(kotlin.UInt;kotlin.UInt){}[0]
     final fun renderOffset(kotlin/UInt): kotlin/String // io.github.kormium/MySqlDialect.renderOffset|renderOffset(kotlin.UInt){}[0]
+    final fun renderRowLock(io.github.kormium/RowLock): kotlin/String // io.github.kormium/MySqlDialect.renderRowLock|renderRowLock(io.github.kormium.RowLock){}[0]
     final fun renderUpsertSuffix(kotlin.collections/List<kotlin/String>, kotlin/String): kotlin/String // io.github.kormium/MySqlDialect.renderUpsertSuffix|renderUpsertSuffix(kotlin.collections.List<kotlin.String>;kotlin.String){}[0]
 }
+
+final fun <#A: io.github.kormium/Catalog, #B: kotlin/Any?> io.github.kormium/renderMySqlSql(io.github.kormium/TypeMapper = ..., kotlin/Function1<io.github.kormium/RenderScopeOf<#A, io.github.kormium/MySqlBackend>, #B>): #B // io.github.kormium/renderMySqlSql|renderMySqlSql(io.github.kormium.TypeMapper;kotlin.Function1<io.github.kormium.RenderScopeOf<0:0,io.github.kormium.MySqlBackend>,0:1>){0§<io.github.kormium.Catalog>;1§<kotlin.Any?>}[0]

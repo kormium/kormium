@@ -17,3 +17,4 @@ rewrite.
 - [0011 — `Table` and `Entity` stay separate types](0011-table-and-entity-stay-separate.md)
 - [0012 — No DTO-first path; projections stay an escape hatch](0012-no-dto-first-path.md)
 - [0013 — SQLite extensions: a two-phase SPI, and Kormium owns no extensions](0013-sqlite-extensions.md)
+- [0014 — Backend capabilities are typed with a phantom tag on the scope](0014-typed-backend-capabilities.md)

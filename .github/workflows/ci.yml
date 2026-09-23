@@ -115,6 +115,14 @@ jobs:
       - name: r2dbc tests (Testcontainers, JVM)
         run: ./gradlew :kormium-r2dbc:jvmTest --console=plain
 
+      # Postgres JVM (JDBC + HikariCP) end-to-end tests spin up their own Postgres via
+      # Testcontainers. The native tests above run against the service container and cover the
+      # libpq path; this step is the only place the JDBC path's own suites run — edge cases, query
+      # coverage, pgvector, LISTEN/NOTIFY, transaction options and row locking. `StabilityTest` is
+      # tagged "stability" and excluded unless -Pstability, so it adds nothing here.
+      - name: Postgres JVM tests (Testcontainers, JVM)
+        run: ./gradlew :kormium-postgres:jvmTest --console=plain
+
       # MySQL JVM (JDBC) end-to-end tests spin up their own MySQL via Testcontainers.
       - name: MySQL JVM tests (Testcontainers, JVM)
         run: ./gradlew :kormium-mysql:jvmTest --console=plain

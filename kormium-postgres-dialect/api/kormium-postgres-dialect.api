@@ -1,3 +1,15 @@
+public abstract interface class io/github/kormium/PostgresBackend : io/github/kormium/AnyBackend, io/github/kormium/RowLockingBackend {
+}
+
+public final class io/github/kormium/PostgresBackendKt {
+	public static final fun forKeyShare (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;)V
+	public static synthetic fun forKeyShare$default (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;ILjava/lang/Object;)V
+	public static final fun forNoKeyUpdate (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;)V
+	public static synthetic fun forNoKeyUpdate$default (Lio/github/kormium/SelectQueryBuilderOf;Lio/github/kormium/LockWait;ILjava/lang/Object;)V
+	public static final fun renderPostgresSql (Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static synthetic fun renderPostgresSql$default (Lio/github/kormium/TypeMapper;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
 public final class io/github/kormium/PostgresDialect : io/github/kormium/Dialect {
 	public static final field INSTANCE Lio/github/kormium/PostgresDialect;
 	public fun advisoryLockSql (J)Ljava/lang/String;
@@ -13,6 +25,7 @@ public final class io/github/kormium/PostgresDialect : io/github/kormium/Dialect
 	public fun renderLimit-WZ4Q5Ns (I)Ljava/lang/String;
 	public fun renderLimitOffset-feOb9K0 (II)Ljava/lang/String;
 	public fun renderOffset-WZ4Q5Ns (I)Ljava/lang/String;
+	public fun renderRowLock (Lio/github/kormium/RowLock;)Ljava/lang/String;
 	public fun renderUpsertSuffix (Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
 }
 

@@ -2,8 +2,10 @@ package io.github.kormium.postgres.node
 
 import io.github.kormium.DatabaseLifecycle
 import io.github.kormium.KormiumConfig
+import io.github.kormium.PostgresBackend
 import io.github.kormium.PostgresDialect
 import io.github.kormium.StandardTypeMapper
+import io.github.kormium.SuspendBackendDatabase
 import io.github.kormium.SuspendSqlExecutor
 import io.github.kormium.TransactionIsolation
 import io.github.kormium.WriteListeners
@@ -21,7 +23,7 @@ import kotlinx.coroutines.withContext
 public class PgDatabase internal constructor(
     private val pool: Pool,
     override val config: KormiumConfig,
-) : SuspendDatabase<Nothing> {
+) : SuspendBackendDatabase<Nothing, PostgresBackend> {
 
     override val writeListeners: WriteListeners = WriteListeners()
     override val dialect: PostgresDialect = PostgresDialect

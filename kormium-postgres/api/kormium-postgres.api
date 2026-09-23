@@ -3,11 +3,19 @@ public final class io/github/kormium/PgNotificationTransportKt {
 	public static synthetic fun postgresListenNotifyTransport$default (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/kormium/NotificationTransport;
 }
 
-public abstract interface class io/github/kormium/PostgresDriver : io/github/kormium/database/Database, io/github/kormium/database/SuspendDatabase, java/lang/AutoCloseable {
+public abstract interface class io/github/kormium/PostgresDriver : io/github/kormium/BackendDatabase, io/github/kormium/SuspendBackendDatabase, java/lang/AutoCloseable {
 	public abstract fun getConfig ()Lio/github/kormium/KormiumConfig;
 	public abstract fun getDialect ()Lio/github/kormium/Dialect;
 	public abstract fun getWriteListeners ()Lio/github/kormium/WriteListeners;
 	public abstract fun isClosed ()Z
+}
+
+public final class io/github/kormium/PostgresDriver$DefaultImpls {
+	public static fun autocommit (Lio/github/kormium/PostgresDriver;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static fun renderSql (Lio/github/kormium/PostgresDriver;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+	public static fun suspendAutocommit (Lio/github/kormium/PostgresDriver;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun suspendTransaction (Lio/github/kormium/PostgresDriver;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun transaction (Lio/github/kormium/PostgresDriver;Lio/github/kormium/TransactionIsolation;ZLkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
 public final class io/github/kormium/PostgresJvmTypeMapper : io/github/kormium/TypeMapper {
