@@ -470,8 +470,12 @@ db.transaction {
 }
 ```
 
-`forUpdate()` takes an exclusive lock, `forShare()` a shared one. The argument says what to do
-when a row is already locked by someone else:
+`forUpdate()` takes an exclusive lock, `forShare()` a shared one — and on Postgres,
+`forNoKeyUpdate()` / `forKeyShare()` take the two weaker strengths, which exclude less (the first
+still allows a concurrent foreign-key check against the row; the second is what such a check takes).
+Those two live in `kormium-postgres-dialect` and resolve only on a Postgres handle.
+
+The argument says what to do when a row is already locked by someone else:
 
 | | Behaviour | Use it when |
 |---|---|---|
@@ -514,6 +518,20 @@ with a syntax error rather than quietly running the read unlocked.
 - **Only reads can lock.** `forUpdate` exists on the `find` / `findOne` builder only. `count`,
   `update` and `deleteWhere` render the `WHERE` clause alone, so a lock written there would be
   dropped silently — it is a compile error instead.
+
+### Where the compile-time check ends
+
+The gate is on the **DSL**. Every operation also accepts a prebuilt
+[`Query`](#reusable-queries-with-query) value, and `Query(lock = RowLock(…))` is an ordinary
+constructor call: no backend tag, no opt-in. That form is checked when the statement renders
+instead, and it still cannot fail silently:
+
+- on a backend that cannot lock, rendering throws `UnsupportedByDialectException`;
+- on `count` / `update` / `deleteWhere`, which have nowhere to put a lock, it throws
+  `IllegalArgumentException` rather than dropping the clause.
+
+So the value form is safe, just later-checked. Build locks through `forUpdate` / `forShare` to get
+the compile-time half as well.
 
 One caveat that is the database's, not Kormium's: on PostgreSQL, `ORDER BY` + `LIMIT` +
 `FOR UPDATE` **without** `SKIP LOCKED` can return rows that no longer match the ordering once the

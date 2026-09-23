@@ -143,6 +143,13 @@ members.
   means adding a tag and an extension on `QueryBuilderOf<ThatCapability>` — no core surgery, and no
   new decision to make.
 
+- **The gate covers the DSL, not the `Query` value API.** Every operation also takes a prebuilt
+  `Query`, and `Query(lock = …)` needs no tag and no opt-in — the phantom tag lives on the builder,
+  which that form bypasses. It is checked at render time instead: a dialect that cannot lock throws,
+  and `Query.toWhereSql` rejects a lock outright, since `COUNT` / `UPDATE` / `DELETE` would drop it
+  silently. Safe, but later — which is the honest boundary of what a type can do here, and it is
+  documented as such.
+
 ## Alternatives considered
 
 - **Capability markers on `Catalog`** (`object App : Catalog, RowLocking`). Rejected: the catalog

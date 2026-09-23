@@ -29,9 +29,21 @@ public data class Query(
      * pagination and ordering must not apply: aggregates like `COUNT(*)` (an `OFFSET` would
      * skip the single aggregate row and read as 0), and `UPDATE` / `DELETE` (plain mutation
      * statements don't take `ORDER BY` / `LIMIT` / `OFFSET` in Postgres).
+     *
+     * A [lock] is **rejected** here rather than dropped like the ordering and pagination are.
+     * Those are merely ignored on these statements, which is harmless; a lock that vanishes is
+     * not — a worker would believe its rows are held when nothing holds them. The typed DSL
+     * cannot even express it (only the `find` / `findOne` builder carries a lock), so this
+     * catches the [Query]-value form, which any code can build.
      */
-    public fun toWhereSql(builder: ParamBuilder): String =
-        whereExpression?.let { "WHERE ${it.toSql(builder)} " } ?: ""
+    public fun toWhereSql(builder: ParamBuilder): String {
+        require(lock == null) {
+            "$lock cannot be applied here: COUNT / UPDATE / DELETE render only the WHERE clause, " +
+                "so the lock would be silently dropped. Take the lock with a preceding " +
+                "find { } / findOne { } inside the same transaction instead."
+        }
+        return whereExpression?.let { "WHERE ${it.toSql(builder)} " } ?: ""
+    }
 
     // Debug-friendly rendering; placeholders are emitted in place of values.
     override fun toString(): String = toSql(ParamBuilder(StandardDialect, StandardTypeMapper))

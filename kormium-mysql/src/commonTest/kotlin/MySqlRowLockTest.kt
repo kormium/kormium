@@ -1,9 +1,11 @@
 import io.github.kormium.Catalog
 import io.github.kormium.Column
 import io.github.kormium.Entity
+import io.github.kormium.LockStrength
 import io.github.kormium.LockWait
 import io.github.kormium.MySqlDialect
 import io.github.kormium.RowLock
+import io.github.kormium.UnsupportedByDialectException
 import io.github.kormium.SelectQueryBuilderOf
 import io.github.kormium.MySqlBackend
 import io.github.kormium.Table
@@ -13,6 +15,7 @@ import io.github.kormium.forUpdate
 import io.github.kormium.renderMySqlSql
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 private object MyQueueCatalog : Catalog
 
@@ -71,6 +74,20 @@ class MySqlRowLockTest {
     @Test
     fun dialectRendersTheLockItself() {
         assertEquals("FOR UPDATE", MySqlDialect.renderRowLock(RowLock()))
-        assertEquals("FOR SHARE SKIP LOCKED", MySqlDialect.renderRowLock(RowLock(share = true, wait = LockWait.SkipLocked)))
+        assertEquals(
+            "FOR SHARE SKIP LOCKED",
+            MySqlDialect.renderRowLock(RowLock(LockStrength.Share, LockWait.SkipLocked)),
+        )
+    }
+
+    @Test
+    fun theWeakerPostgresStrengthsAreRefusedRatherThanDowngraded() {
+        // MySQL has no equivalent. Rendering FOR UPDATE instead would lock more than asked.
+        for (strength in listOf(LockStrength.NoKeyUpdate, LockStrength.KeyShare)) {
+            val e = assertFailsWith<UnsupportedByDialectException> {
+                MySqlDialect.renderRowLock(RowLock(strength))
+            }
+            assertEquals(true, e.message!!.contains("PostgreSQL-only"), "unexpected: ${e.message}")
+        }
     }
 }

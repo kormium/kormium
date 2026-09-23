@@ -12,23 +12,62 @@ package io.github.kormium
 public enum class LockWait { Wait, NoWait, SkipLocked }
 
 /**
+ * How strong a lock a locking read takes. The two portable strengths are [Update] and [Share];
+ * the other two are PostgreSQL-only refinements that take weaker locks, so they conflict with
+ * fewer concurrent statements.
+ *
+ * Kotlin enums are exhaustive in a `when`, so every value is declared up front even though two of
+ * them render on one backend: adding a value later would break every dialect that switches on it.
+ */
+public enum class LockStrength {
+    /** `FOR UPDATE` — exclusive; blocks anyone else reading it for update or writing it. */
+    Update,
+
+    /**
+     * `FOR NO KEY UPDATE` — like [Update] but does not block a concurrent `FOR KEY SHARE`, so a
+     * child row's foreign-key check can still pass. **PostgreSQL only.**
+     */
+    NoKeyUpdate,
+
+    /** `FOR SHARE` — others may still read it for share, but not write it. */
+    Share,
+
+    /**
+     * `FOR KEY SHARE` — the weakest: blocks only changes to the row's key columns (and a
+     * `FOR UPDATE`). What a foreign-key check takes. **PostgreSQL only.**
+     */
+    KeyShare,
+}
+
+/**
  * A row-level lock taken by a `SELECT`, held until the surrounding transaction ends.
  *
- * [share] picks the lock strength: `false` is an exclusive `FOR UPDATE` (nobody else may read it
- * for update or write it), `true` a shared `FOR SHARE` (others may still read it for share, but
- * not write it). [wait] picks what happens on contention — see [LockWait].
+ * [strength] picks how much the lock excludes (see [LockStrength]); [wait] picks what happens on
+ * contention (see [LockWait]).
  *
- * Build one through the DSL ([forUpdate] / [forShare]) rather than directly: the DSL only resolves
- * on a backend tagged [RowLockingBackend], which is the compile-time half of the guarantee.
+ * Build one through the DSL ([forUpdate] / [forShare], plus a dialect module's own entries for the
+ * PostgreSQL-only strengths) rather than directly: the DSL only resolves on a backend tagged
+ * [RowLockingBackend], which is the compile-time half of the guarantee. A [RowLock] put on a
+ * [Query] value by hand skips that half — it is then caught when the statement renders, either by
+ * a dialect that cannot lock ([UnsupportedByDialectException]) or, for a statement with no place
+ * to put a lock, by [Query.toWhereSql].
  */
-public data class RowLock(val share: Boolean = false, val wait: LockWait = LockWait.Wait) {
-    /** `FOR UPDATE SKIP LOCKED`, `FOR SHARE NOWAIT`, … — for error messages, not for SQL. */
+public data class RowLock(
+    val strength: LockStrength = LockStrength.Update,
+    val wait: LockWait = LockWait.Wait,
+) {
+    /** `FOR UPDATE SKIP LOCKED`, `FOR NO KEY UPDATE`, … — for error messages, not for SQL. */
     override fun toString(): String {
-        val strength = if (share) "FOR SHARE" else "FOR UPDATE"
+        val clause = when (strength) {
+            LockStrength.Update -> "FOR UPDATE"
+            LockStrength.NoKeyUpdate -> "FOR NO KEY UPDATE"
+            LockStrength.Share -> "FOR SHARE"
+            LockStrength.KeyShare -> "FOR KEY SHARE"
+        }
         return when (wait) {
-            LockWait.Wait -> strength
-            LockWait.NoWait -> "$strength NOWAIT"
-            LockWait.SkipLocked -> "$strength SKIP LOCKED"
+            LockWait.Wait -> clause
+            LockWait.NoWait -> "$clause NOWAIT"
+            LockWait.SkipLocked -> "$clause SKIP LOCKED"
         }
     }
 }
@@ -50,11 +89,11 @@ public data class RowLock(val share: Boolean = false, val wait: LockWait = LockW
  */
 @OptIn(KormiumDialectApi::class)
 public fun SelectQueryBuilderOf<RowLockingBackend>.forUpdate(wait: LockWait = LockWait.Wait) {
-    rowLock = RowLock(share = false, wait = wait)
+    rowLock = RowLock(strength = LockStrength.Update, wait = wait)
 }
 
 /** The shared counterpart of [forUpdate] — `SELECT ... FOR SHARE`. */
 @OptIn(KormiumDialectApi::class)
 public fun SelectQueryBuilderOf<RowLockingBackend>.forShare(wait: LockWait = LockWait.Wait) {
-    rowLock = RowLock(share = true, wait = wait)
+    rowLock = RowLock(strength = LockStrength.Share, wait = wait)
 }

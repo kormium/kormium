@@ -14,9 +14,12 @@ All notable changes to Kormium are documented here. The format is based on
   `BackendDatabase<G, PostgresBackend>` / `<G, MySqlBackend>` handle — every backend that can lock
   carries the tag, including r2dbc and the Node engines: on the portable `Database<G>`, and therefore
   on SQLite, the call does not compile rather than silently returning an unlocked read — which
-  would hand the same rows to two workers. Locking outside `transaction { }` fails fast (the lock
-  would be released immediately), and `count` / `update` / `deleteWhere` cannot take one at all,
-  since they render the `WHERE` clause alone. What a type cannot check stays a server-side error:
+  would hand the same rows to two workers. Postgres adds its two weaker strengths,
+  `forNoKeyUpdate()` / `forKeyShare()`, gated on the Postgres tag rather than the portable one.
+  Locking outside `transaction { }` fails fast (the lock would be released immediately), and
+  `count` / `update` / `deleteWhere` cannot take one at all, since they render the `WHERE` clause
+  alone — a compile error through the DSL, and an `IllegalArgumentException` for a prebuilt `Query`
+  value, which is the one form the type gate cannot see. What a type cannot check stays a server-side error:
   MySQL needs 8.0.1 for `NOWAIT` / `SKIP LOCKED`, and MariaDB has no `FOR SHARE`. See
   [ADR 0014](docs/adr/0014-typed-backend-capabilities.md) for why the capability is carried by a
   phantom type parameter.

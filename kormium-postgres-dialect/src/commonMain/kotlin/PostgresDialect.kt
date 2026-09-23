@@ -11,11 +11,19 @@ import kotlin.uuid.Uuid
  */
 public object PostgresDialect : Dialect by StandardDialect {
     /**
-     * `FOR UPDATE` / `FOR SHARE`, plus the contention modifier. Postgres has had all three since
-     * 9.5, so there is no version gate here (unlike MySQL, where SKIP LOCKED needs 8.0.1).
+     * All four lock strengths plus the contention modifier. Postgres has had `SKIP LOCKED` /
+     * `NOWAIT` since 9.5 and the weaker `FOR NO KEY UPDATE` / `FOR KEY SHARE` since 9.3, so there
+     * is no version gate here (unlike MySQL, where `SKIP LOCKED` needs 8.0.1).
      */
     override fun renderRowLock(lock: RowLock): String = buildString {
-        append(if (lock.share) "FOR SHARE" else "FOR UPDATE")
+        append(
+            when (lock.strength) {
+                LockStrength.Update -> "FOR UPDATE"
+                LockStrength.NoKeyUpdate -> "FOR NO KEY UPDATE"
+                LockStrength.Share -> "FOR SHARE"
+                LockStrength.KeyShare -> "FOR KEY SHARE"
+            },
+        )
         when (lock.wait) {
             LockWait.NoWait -> append(" NOWAIT")
             LockWait.SkipLocked -> append(" SKIP LOCKED")

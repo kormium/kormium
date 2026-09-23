@@ -41,6 +41,19 @@ final enum class io.github.kormium/BatchInsertMode : kotlin/Enum<io.github.kormi
     final fun values(): kotlin/Array<io.github.kormium/BatchInsertMode> // io.github.kormium/BatchInsertMode.values|values#static(){}[0]
 }
 
+final enum class io.github.kormium/LockStrength : kotlin/Enum<io.github.kormium/LockStrength> { // io.github.kormium/LockStrength|null[0]
+    enum entry KeyShare // io.github.kormium/LockStrength.KeyShare|null[0]
+    enum entry NoKeyUpdate // io.github.kormium/LockStrength.NoKeyUpdate|null[0]
+    enum entry Share // io.github.kormium/LockStrength.Share|null[0]
+    enum entry Update // io.github.kormium/LockStrength.Update|null[0]
+
+    final val entries // io.github.kormium/LockStrength.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.github.kormium/LockStrength> // io.github.kormium/LockStrength.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.github.kormium/LockStrength // io.github.kormium/LockStrength.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.github.kormium/LockStrength> // io.github.kormium/LockStrength.values|values#static(){}[0]
+}
+
 final enum class io.github.kormium/LockWait : kotlin/Enum<io.github.kormium/LockWait> { // io.github.kormium/LockWait|null[0]
     enum entry NoWait // io.github.kormium/LockWait.NoWait|null[0]
     enum entry SkipLocked // io.github.kormium/LockWait.SkipLocked|null[0]
@@ -654,16 +667,16 @@ final class io.github.kormium/ResultRow { // io.github.kormium/ResultRow|null[0]
 }
 
 final class io.github.kormium/RowLock { // io.github.kormium/RowLock|null[0]
-    constructor <init>(kotlin/Boolean = ..., io.github.kormium/LockWait = ...) // io.github.kormium/RowLock.<init>|<init>(kotlin.Boolean;io.github.kormium.LockWait){}[0]
+    constructor <init>(io.github.kormium/LockStrength = ..., io.github.kormium/LockWait = ...) // io.github.kormium/RowLock.<init>|<init>(io.github.kormium.LockStrength;io.github.kormium.LockWait){}[0]
 
-    final val share // io.github.kormium/RowLock.share|{}share[0]
-        final fun <get-share>(): kotlin/Boolean // io.github.kormium/RowLock.share.<get-share>|<get-share>(){}[0]
+    final val strength // io.github.kormium/RowLock.strength|{}strength[0]
+        final fun <get-strength>(): io.github.kormium/LockStrength // io.github.kormium/RowLock.strength.<get-strength>|<get-strength>(){}[0]
     final val wait // io.github.kormium/RowLock.wait|{}wait[0]
         final fun <get-wait>(): io.github.kormium/LockWait // io.github.kormium/RowLock.wait.<get-wait>|<get-wait>(){}[0]
 
-    final fun component1(): kotlin/Boolean // io.github.kormium/RowLock.component1|component1(){}[0]
+    final fun component1(): io.github.kormium/LockStrength // io.github.kormium/RowLock.component1|component1(){}[0]
     final fun component2(): io.github.kormium/LockWait // io.github.kormium/RowLock.component2|component2(){}[0]
-    final fun copy(kotlin/Boolean = ..., io.github.kormium/LockWait = ...): io.github.kormium/RowLock // io.github.kormium/RowLock.copy|copy(kotlin.Boolean;io.github.kormium.LockWait){}[0]
+    final fun copy(io.github.kormium/LockStrength = ..., io.github.kormium/LockWait = ...): io.github.kormium/RowLock // io.github.kormium/RowLock.copy|copy(io.github.kormium.LockStrength;io.github.kormium.LockWait){}[0]
     final fun equals(kotlin/Any?): kotlin/Boolean // io.github.kormium/RowLock.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // io.github.kormium/RowLock.hashCode|hashCode(){}[0]
     final fun toString(): kotlin/String // io.github.kormium/RowLock.toString|toString(){}[0]

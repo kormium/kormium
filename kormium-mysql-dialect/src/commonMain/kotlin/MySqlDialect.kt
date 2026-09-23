@@ -65,12 +65,26 @@ public object MySqlDialect : Dialect by StandardDialect {
      *  - `FOR SHARE` — MySQL 8.0+ only. MariaDB has never accepted it (its shared-lock spelling is
      *    the older `LOCK IN SHARE MODE`, which in turn takes no `NOWAIT` / `SKIP LOCKED`), so
      *    [forShare] against MariaDB fails on the server.
+     *  - `FOR NO KEY UPDATE` / `FOR KEY SHARE` — no equivalent at all; refused here rather than
+     *    downgraded to a stronger lock that excludes more than the caller asked for.
      *
      * On an older server the statement comes back as a syntax error rather than silently running
      * unlocked — which is the same trade the throwing [Dialect.renderRowLock] default makes.
      */
     override fun renderRowLock(lock: RowLock): String = buildString {
-        append(if (lock.share) "FOR SHARE" else "FOR UPDATE")
+        append(
+            when (lock.strength) {
+                LockStrength.Update -> "FOR UPDATE"
+                LockStrength.Share -> "FOR SHARE"
+                // No MySQL/MariaDB equivalent. Rendering the nearest stronger lock would change
+                // what the statement excludes, so refuse instead of guessing.
+                LockStrength.NoKeyUpdate, LockStrength.KeyShare ->
+                    throw UnsupportedByDialectException(
+                        "$this cannot render $lock: FOR NO KEY UPDATE / FOR KEY SHARE are " +
+                            "PostgreSQL-only (reachable through the Postgres DSL entries)",
+                    )
+            },
+        )
         when (lock.wait) {
             LockWait.NoWait -> append(" NOWAIT")
             LockWait.SkipLocked -> append(" SKIP LOCKED")
