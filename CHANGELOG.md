@@ -4,7 +4,13 @@ All notable changes to Kormium are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.15.0-beta01] — Typed backend capabilities
+
+*Prerelease.* `BackendDatabase<G, B>`, the `Backend` tags and the `ScopeOf` / `QueryBuilderOf`
+family are the type model every future backend-specific feature will hang off, and nobody has used
+them yet — so they go out as a beta while the names and variance can still change. A review pass
+already moved two of them (the backend parameter was invariant; the shadowing members cannot carry
+`callsInPlace`).
 
 ### Added
 - **`LockNotAvailableException`** for a lock that could not be acquired — a refused
