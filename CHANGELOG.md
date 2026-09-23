@@ -4,7 +4,7 @@ All notable changes to Kormium are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.14.0] — Browser extension loading
+## [Unreleased]
 
 ### Added
 - **`LockNotAvailableException`** for a lock that could not be acquired — a refused
@@ -29,16 +29,6 @@ All notable changes to Kormium are documented here. The format is based on
   MySQL needs 8.0.1 for `NOWAIT` / `SKIP LOCKED`, and MariaDB has no `FOR SHARE`. See
   [ADR 0014](docs/adr/0014-typed-backend-capabilities.md) for why the capability is carried by a
   phantom type parameter.
-- **Browser extensions actually load.** `loadLibrary` on the wa-sqlite engines (`kormium-sqlite-wasm`
-  and `kormium-sqlite-js`) fetches the extension as an Emscripten side module, writes it into the
-  virtual filesystem and has SQLite `dlopen` it — the mechanism proven in
-  [sqlite-wasm-engines](https://github.com/kormium/sqlite-wasm-engines), now reachable from
-  `sqlite { extension(...) }`. It needs an engine built with dynamic linking, so the capability is
-  probed and the failure names the build that can do it
-  (`@kormium/wa-sqlite-loadable`) rather than surfacing as a missing symbol. Extension loading is
-  armed only for the duration of the call: leaving `load_extension()` enabled would let any SQL in
-  the page load code. The Worker-hosted engines still refuse — they expose neither the module nor
-  the database handle.
 
 ### Changed
 - **`Scope`, `SuspendScope`, `QueryBuilder` and `RenderScope` are now typealiases.** Each gained a
@@ -55,6 +45,22 @@ All notable changes to Kormium are documented here. The format is based on
   is what the docs and samples already do. As interface members they also cannot carry the
   `callsInPlace` contract the top-level extensions declare, so assigning an outer `val` from inside
   such a block no longer compiles; return the value out of the block.
+
+## [0.14.0] — Browser extension loading
+
+### Added
+- **Browser extensions actually load.** `loadLibrary` on the wa-sqlite engines (`kormium-sqlite-wasm`
+  and `kormium-sqlite-js`) fetches the extension as an Emscripten side module, writes it into the
+  virtual filesystem and has SQLite `dlopen` it — the mechanism proven in
+  [sqlite-wasm-engines](https://github.com/kormium/sqlite-wasm-engines), now reachable from
+  `sqlite { extension(...) }`. It needs an engine built with dynamic linking, so the capability is
+  probed and the failure names the build that can do it
+  (`@kormium/wa-sqlite-loadable`) rather than surfacing as a missing symbol. Extension loading is
+  armed only for the duration of the call: leaving `load_extension()` enabled would let any SQL in
+  the page load code. The Worker-hosted engines still refuse — they expose neither the module nor
+  the database handle.
+
+### Changed
 - **The extension samples now consume published packages.** `samples/sqlite-vec` and
   `samples/sqlite-uuid` — which vendored and compiled C to show what a package looks like from the
   inside — are replaced by `samples/sqlite-extensions`, which declares four coordinates from
