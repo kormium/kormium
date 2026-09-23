@@ -91,7 +91,13 @@ public interface Dialect {
      * a version gap (MySQL renders `SKIP LOCKED` only from 8.0.1) or a [KormiumDialectApi] bypass.
      */
     public fun renderRowLock(lock: RowLock): String =
-        throw UnsupportedByDialectException("$this cannot render $lock")
+        // No dialect name here on purpose: every concrete dialect is `X : Dialect by
+        // StandardDialect`, so this default runs with `this` bound to the delegate — naming it
+        // would point at StandardDialect even when the caller used SqliteDialect. A dialect that
+        // can lock but not in the way asked (MySQL and FOR KEY SHARE) names itself in its override.
+        throw UnsupportedByDialectException(
+            "this backend does not support row locking, so $lock cannot be rendered",
+        )
 
     /**
      * The function that counts **characters** of a string. Standard `LENGTH(...)` counts characters

@@ -4,6 +4,7 @@ import io.github.kormium.Entity
 import io.github.kormium.LockWait
 import io.github.kormium.BackendDatabase
 import io.github.kormium.PostgresBackend
+import io.github.kormium.RowLockingBackend
 import io.github.kormium.Table
 import io.github.kormium.database.Database
 import io.github.kormium.eq
@@ -51,6 +52,18 @@ class RowLockingGatingTest {
     private fun lockOneRow(db: BackendDatabase<QueueCatalog, PostgresBackend>): JobRow? = db.transaction {
         JobsTable.findOne { where { JobsTable.id eq 1 }; forUpdate() }
     }
+
+    /**
+     * The point of tagging capabilities rather than engines: a helper can ask for "any backend that
+     * can lock" and still use the locking DSL. This compiles only because [BackendDatabase]'s
+     * backend parameter is covariant — and it accepts a MySQL driver just as well.
+     */
+    private fun claimOnAnyLockingBackend(db: BackendDatabase<QueueCatalog, RowLockingBackend>): List<JobRow> =
+        db.transaction { JobsTable.find { limit = 1; forUpdate(LockWait.SkipLocked) } }
+
+    /** The gated DSL must also be previewable through the handle's own renderSql. */
+    private fun previewTheLockingQuery(db: BackendDatabase<QueueCatalog, PostgresBackend>): String =
+        db.renderSql { JobsTable.find { forUpdate() } }.sql
 
     /** The same driver widened to the portable handle: everything but the locking call still works. */
     private fun portableHandleStaysPortable(db: Database<QueueCatalog>): List<JobRow> = db.transaction {

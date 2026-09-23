@@ -71,24 +71,23 @@ public object MySqlDialect : Dialect by StandardDialect {
      * On an older server the statement comes back as a syntax error rather than silently running
      * unlocked — which is the same trade the throwing [Dialect.renderRowLock] default makes.
      */
-    override fun renderRowLock(lock: RowLock): String = buildString {
-        append(
-            when (lock.strength) {
-                LockStrength.Update -> "FOR UPDATE"
-                LockStrength.Share -> "FOR SHARE"
-                // No MySQL/MariaDB equivalent. Rendering the nearest stronger lock would change
-                // what the statement excludes, so refuse instead of guessing.
-                LockStrength.NoKeyUpdate, LockStrength.KeyShare ->
-                    throw UnsupportedByDialectException(
-                        "$this cannot render $lock: FOR NO KEY UPDATE / FOR KEY SHARE are " +
-                            "PostgreSQL-only (reachable through the Postgres DSL entries)",
-                    )
-            },
-        )
-        when (lock.wait) {
-            LockWait.NoWait -> append(" NOWAIT")
-            LockWait.SkipLocked -> append(" SKIP LOCKED")
-            LockWait.Wait -> {}
+    override fun renderRowLock(lock: RowLock): String {
+        // Resolved before buildString: inside that lambda `this` is the StringBuilder, so an
+        // interpolated dialect name would come out empty.
+        val strength = when (lock.strength) {
+            LockStrength.Update -> "FOR UPDATE"
+            LockStrength.Share -> "FOR SHARE"
+            // No MySQL/MariaDB equivalent. Rendering the nearest stronger lock would change what
+            // the statement excludes, so refuse instead of guessing.
+            LockStrength.NoKeyUpdate, LockStrength.KeyShare -> throw UnsupportedByDialectException(
+                "MySqlDialect cannot render $lock: FOR NO KEY UPDATE / FOR KEY SHARE are " +
+                    "PostgreSQL-only (reachable through the Postgres DSL entries)",
+            )
+        }
+        return strength + when (lock.wait) {
+            LockWait.NoWait -> " NOWAIT"
+            LockWait.SkipLocked -> " SKIP LOCKED"
+            LockWait.Wait -> ""
         }
     }
 

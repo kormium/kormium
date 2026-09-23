@@ -50,9 +50,7 @@ object LockJobs : Table<LockCatalog, LockJob>("lock_jobs", ::LockJob) {
 class RowLockingIntegrationTest {
 
     @Test
-    fun skipLockedHandsConcurrentWorkersDisjointBatches() {
-        assumeDockerAvailable()
-        val db = database()
+    fun skipLockedHandsConcurrentWorkersDisjointBatches() = withDatabase { db ->
         seed(db, count = 6)
 
         val workerAClaimed = CountDownLatch(1)
@@ -93,9 +91,7 @@ class RowLockingIntegrationTest {
     }
 
     @Test
-    fun nowaitFailsInsteadOfWaitingForALockedRow() {
-        assumeDockerAvailable()
-        val db = database()
+    fun nowaitFailsInsteadOfWaitingForALockedRow() = withDatabase { db ->
         seed(db, count = 1)
         val id = db.autocommit { LockJobs.find { }.first().id }
 
@@ -124,9 +120,7 @@ class RowLockingIntegrationTest {
     }
 
     @Test
-    fun aLockOutsideATransactionIsRejectedBeforeItReachesTheServer() {
-        assumeDockerAvailable()
-        val db = database()
+    fun aLockOutsideATransactionIsRejectedBeforeItReachesTheServer() = withDatabase { db ->
         val e = assertFailsWith<IllegalStateException> {
             db.autocommit { LockJobs.find { forUpdate() } }
         }
@@ -149,7 +143,15 @@ class RowLockingIntegrationTest {
         return batch.map { it.id }
     }
 
-    private fun database(): BackendDatabase<LockCatalog, PostgresBackend> = ItDatabase.newDriver(poolSize = 4)
+    /**
+     * One pool per test, released when it ends. The container is shared across the whole module, so
+     * a leaked 4-connection pool per test would eventually exhaust `max_connections` in some later
+     * suite rather than here.
+     */
+    private fun <R> withDatabase(block: (BackendDatabase<LockCatalog, PostgresBackend>) -> R): R {
+        assumeDockerAvailable()
+        return ItDatabase.newDriver(poolSize = 4).use { block(it) }
+    }
 
     private fun seed(db: BackendDatabase<LockCatalog, PostgresBackend>, count: Int) {
         db.autocommit {

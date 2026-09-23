@@ -35,6 +35,20 @@ All notable changes to Kormium are documented here. The format is based on
   the database handle.
 
 ### Changed
+- **`Scope`, `SuspendScope`, `QueryBuilder` and `RenderScope` are now typealiases.** Each gained a
+  phantom backend parameter (`ScopeOf<G, B>`, …) so backend-specific syntax can be gated at compile
+  time, and the old names alias the portable instantiation — every existing source reference keeps
+  compiling. The JVM classes are renamed, though, so this is **binary-incompatible**: recompile
+  against the new version rather than dropping the jar in, or a stale consumer binary fails with
+  `NoClassDefFoundError`.
+- **A driver handle must be pinned to use a backend's own entry points.** The `transaction` /
+  `autocommit` / `renderSql` members on `BackendDatabase` fix the catalog to the handle's own type
+  parameter instead of inferring it per call, so `createDatabase(...).transaction { Users.find { … } }`
+  on an unpinned driver no longer resolves the table. Declare the handle as
+  `Database<App>` (portable) or `BackendDatabase<App, PostgresBackend>` (backend-specific) — pinning
+  is what the docs and samples already do. As interface members they also cannot carry the
+  `callsInPlace` contract the top-level extensions declare, so assigning an outer `val` from inside
+  such a block no longer compiles; return the value out of the block.
 - **The extension samples now consume published packages.** `samples/sqlite-vec` and
   `samples/sqlite-uuid` — which vendored and compiled C to show what a package looks like from the
   inside — are replaced by `samples/sqlite-extensions`, which declares four coordinates from

@@ -26,13 +26,24 @@ import io.github.kormium.database.SuspendDatabase
  * sites that use named arguments.
  *
  * [G] is phantom (it appears in no member of [Database]), so `@UnsafeVariance` adds no unsoundness
- * the covariant handle did not already have. One consequence: a member fixes the catalog to this
- * interface's own parameter instead of inferring it per call, so pin the handle
- * (`BackendDatabase<App, PostgresBackend>`), as the docs already recommend for `Database<App>`.
+ * the covariant handle did not already have. Two consequences of the members, both of which the
+ * portable extensions do not have:
+ *
+ *  - a member fixes the catalog to this interface's own parameter instead of inferring it per call,
+ *    so pin the handle (`BackendDatabase<App, PostgresBackend>`), as the docs already recommend
+ *    for `Database<App>`;
+ *  - Kotlin allows `contract { callsInPlace(block, EXACTLY_ONCE) }` only on a top-level function,
+ *    so these members cannot carry the contract the extensions declare. Assigning a `val` declared
+ *    outside the block from inside it therefore stops compiling on a handle of this type; return
+ *    the value out of the block instead (`val id = db.transaction { … }`).
+ *
+ * [B] is covariant, so a handle can be widened to the capability it is being used for:
+ * `BackendDatabase<App, RowLockingBackend>` accepts both a Postgres and a MySQL driver, and the
+ * row-locking DSL still resolves inside it.
  *
  * See [ADR 0014](https://github.com/kormium/kormium/blob/main/docs/adr/0014-typed-backend-capabilities.md).
  */
-public interface BackendDatabase<out G : Catalog, B : Backend> : Database<G> {
+public interface BackendDatabase<out G : Catalog, out B : Backend> : Database<G> {
     @OptIn(KormiumDialectApi::class)
     public fun <R> transaction(
         isolation: TransactionIsolation? = null,
@@ -42,10 +53,20 @@ public interface BackendDatabase<out G : Catalog, B : Backend> : Database<G> {
 
     @OptIn(KormiumDialectApi::class)
     public fun <R> autocommit(block: ScopeOf<@UnsafeVariance G, B>.() -> R): R = runAutocommit(block)
+
+    /**
+     * [io.github.kormium.renderSql] for this handle — the SQL a query *would* run, with no
+     * connection. Shadows the portable `Database<G>.renderSql` for the same reason the entry
+     * points above do: without it the one thing most worth previewing, a backend-specific query,
+     * could not be previewed at all.
+     */
+    @OptIn(KormiumDialectApi::class)
+    public fun <R> renderSql(block: RenderScopeOf<@UnsafeVariance G, @UnsafeVariance B>.() -> R): R =
+        renderSqlWith(dialect, StandardTypeMapper, block)
 }
 
 /** The suspend half of [BackendDatabase]. */
-public interface SuspendBackendDatabase<out G : Catalog, B : Backend> : SuspendDatabase<G> {
+public interface SuspendBackendDatabase<out G : Catalog, out B : Backend> : SuspendDatabase<G> {
     @OptIn(KormiumDialectApi::class)
     public suspend fun <R> suspendTransaction(
         isolation: TransactionIsolation? = null,

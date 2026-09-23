@@ -81,6 +81,16 @@ class MySqlRowLockTest {
     }
 
     @Test
+    fun theRefusalNamesTheDialectThatRefused() {
+        // The message is built outside buildString: inside it `this` is the StringBuilder, and an
+        // interpolated dialect name came out empty.
+        val e = assertFailsWith<UnsupportedByDialectException> {
+            MySqlDialect.renderRowLock(RowLock(LockStrength.KeyShare))
+        }
+        assertEquals(true, e.message!!.startsWith("MySqlDialect cannot render"), "unexpected: ${e.message}")
+    }
+
+    @Test
     fun theWeakerPostgresStrengthsAreRefusedRatherThanDowngraded() {
         // MySQL has no equivalent. Rendering FOR UPDATE instead would lock more than asked.
         for (strength in listOf(LockStrength.NoKeyUpdate, LockStrength.KeyShare)) {

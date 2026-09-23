@@ -133,12 +133,13 @@ abstract interface <#A: kotlin/Any?> io.github.kormium/Selectable : io.github.ko
     abstract fun resultKey(): kotlin/Any // io.github.kormium/Selectable.resultKey|resultKey(){}[0]
 }
 
-abstract interface <#A: out io.github.kormium/Catalog, #B: io.github.kormium/Backend> io.github.kormium/BackendDatabase : io.github.kormium.database/Database<#A> { // io.github.kormium/BackendDatabase|null[0]
+abstract interface <#A: out io.github.kormium/Catalog, #B: out io.github.kormium/Backend> io.github.kormium/BackendDatabase : io.github.kormium.database/Database<#A> { // io.github.kormium/BackendDatabase|null[0]
     open fun <#A1: kotlin/Any?> autocommit(kotlin/Function1<io.github.kormium/ScopeOf<#A, #B>, #A1>): #A1 // io.github.kormium/BackendDatabase.autocommit|autocommit(kotlin.Function1<io.github.kormium.ScopeOf<1:0,1:1>,0:0>){0§<kotlin.Any?>}[0]
+    open fun <#A1: kotlin/Any?> renderSql(kotlin/Function1<io.github.kormium/RenderScopeOf<#A, #B>, #A1>): #A1 // io.github.kormium/BackendDatabase.renderSql|renderSql(kotlin.Function1<io.github.kormium.RenderScopeOf<1:0,1:1>,0:0>){0§<kotlin.Any?>}[0]
     open fun <#A1: kotlin/Any?> transaction(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin/Function1<io.github.kormium/ScopeOf<#A, #B>, #A1>): #A1 // io.github.kormium/BackendDatabase.transaction|transaction(io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.Function1<io.github.kormium.ScopeOf<1:0,1:1>,0:0>){0§<kotlin.Any?>}[0]
 }
 
-abstract interface <#A: out io.github.kormium/Catalog, #B: io.github.kormium/Backend> io.github.kormium/SuspendBackendDatabase : io.github.kormium.database/SuspendDatabase<#A> { // io.github.kormium/SuspendBackendDatabase|null[0]
+abstract interface <#A: out io.github.kormium/Catalog, #B: out io.github.kormium/Backend> io.github.kormium/SuspendBackendDatabase : io.github.kormium.database/SuspendDatabase<#A> { // io.github.kormium/SuspendBackendDatabase|null[0]
     open suspend fun <#A1: kotlin/Any?> suspendAutocommit(kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScopeOf<#A, #B>, #A1>): #A1 // io.github.kormium/SuspendBackendDatabase.suspendAutocommit|suspendAutocommit(kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScopeOf<1:0,1:1>,0:0>){0§<kotlin.Any?>}[0]
     open suspend fun <#A1: kotlin/Any?> suspendTransaction(io.github.kormium/TransactionIsolation? = ..., kotlin/Boolean = ..., kotlin.coroutines/SuspendFunction1<io.github.kormium/SuspendScopeOf<#A, #B>, #A1>): #A1 // io.github.kormium/SuspendBackendDatabase.suspendTransaction|suspendTransaction(io.github.kormium.TransactionIsolation?;kotlin.Boolean;kotlin.coroutines.SuspendFunction1<io.github.kormium.SuspendScopeOf<1:0,1:1>,0:0>){0§<kotlin.Any?>}[0]
 }

@@ -54,9 +54,7 @@ object LockJobs : Table<LockCatalog, LockJob>("lock_jobs", ::LockJob) {
 class MySqlRowLockingIntegrationTest {
 
     @Test
-    fun skipLockedHandsConcurrentWorkersDisjointBatches() {
-        assumeDockerAvailable()
-        val db = database()
+    fun skipLockedHandsConcurrentWorkersDisjointBatches() = withDatabase { db ->
         seed(db, count = 6)
 
         val workerAClaimed = CountDownLatch(1)
@@ -97,9 +95,7 @@ class MySqlRowLockingIntegrationTest {
     }
 
     @Test
-    fun nowaitFailsInsteadOfWaitingForALockedRow() {
-        assumeDockerAvailable()
-        val db = database()
+    fun nowaitFailsInsteadOfWaitingForALockedRow() = withDatabase { db ->
         seed(db, count = 1)
         val id = db.autocommit { LockJobs.find { }.first().id }
 
@@ -130,10 +126,9 @@ class MySqlRowLockingIntegrationTest {
     }
 
     @Test
-    fun aLockOutsideATransactionIsRejectedBeforeItReachesTheServer() {
-        assumeDockerAvailable()
+    fun aLockOutsideATransactionIsRejectedBeforeItReachesTheServer() = withDatabase { db ->
         val e = assertFailsWith<IllegalStateException> {
-            database().autocommit { LockJobs.find { forUpdate() } }
+            db.autocommit { LockJobs.find { forUpdate() } }
         }
         assertTrue(e.message!!.contains("requires transaction"), "unexpected message: ${e.message}")
     }
@@ -154,7 +149,15 @@ class MySqlRowLockingIntegrationTest {
         return batch.map { it.id }
     }
 
-    private fun database(): BackendDatabase<LockCatalog, MySqlBackend> = ItDatabase.newDriver(poolSize = 4)
+    /**
+     * One pool per test, released when it ends. The container is shared across the whole module, so
+     * a leaked 4-connection pool per test would eventually exhaust `max_connections` in some later
+     * suite rather than here.
+     */
+    private fun <R> withDatabase(block: (BackendDatabase<LockCatalog, MySqlBackend>) -> R): R {
+        assumeDockerAvailable()
+        return ItDatabase.newDriver(poolSize = 4).use { block(it) }
+    }
 
     private fun seed(db: BackendDatabase<LockCatalog, MySqlBackend>, count: Int) {
         db.autocommit {

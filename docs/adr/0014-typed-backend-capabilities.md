@@ -143,6 +143,10 @@ members.
   means adding a tag and an extension on `QueryBuilderOf<ThatCapability>` — no core surgery, and no
   new decision to make.
 
+- **The members cannot carry `callsInPlace`.** Kotlin allows contracts only on top-level
+  functions, so the shadowing members lose the contract the extensions declare, and definite
+  assignment through the block (`val x; db.transaction { x = … }`) stops compiling on a typed
+  handle. Returning the value out of the block is the fix, and the better style anyway.
 - **The gate covers the DSL, not the `Query` value API.** Every operation also takes a prebuilt
   `Query`, and `Query(lock = …)` needs no tag and no opt-in — the phantom tag lives on the builder,
   which that form bypasses. It is checked at render time instead: a dialect that cannot lock throws,

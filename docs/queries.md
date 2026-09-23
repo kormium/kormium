@@ -533,6 +533,16 @@ instead, and it still cannot fail silently:
 So the value form is safe, just later-checked. Build locks through `forUpdate` / `forShare` to get
 the compile-time half as well.
 
+One unrelated side effect of typing the handle: `transaction { }` / `autocommit { }` on a
+`BackendDatabase` are interface members, and Kotlin allows the `callsInPlace` contract only on a
+top-level function. So assigning a `val` declared outside the block from inside it — which the
+portable `Database<G>.transaction` permits — does not compile on a typed handle. Return the value
+out of the block instead:
+
+```kotlin
+val claimed = db.transaction { Jobs.find { forUpdate(LockWait.SkipLocked) } }   // not: val claimed; db.transaction { claimed = … }
+```
+
 One caveat that is the database's, not Kormium's: on PostgreSQL, `ORDER BY` + `LIMIT` +
 `FOR UPDATE` **without** `SKIP LOCKED` can return rows that no longer match the ordering once the
 lock is finally acquired, because `LIMIT` is not re-evaluated after the wait. For queue-shaped
@@ -609,9 +619,10 @@ Not modeled by the typed DSL today:
 - **Statement-level extras.** No `ORDER BY` / `LIMIT` on `UPDATE` / `DELETE`, no `RETURNING`
   on `UPDATE` / `DELETE`, no table-level `LOCK` statement, and no DDL through the query DSL.
   (`INSERT ... ON CONFLICT` *is* available — see `upsert` and `insertOrIgnore`; row-level
-  `FOR UPDATE` / `FOR SHARE` on reads is available on Postgres and MySQL — see
-  [Row Locking](#row-locking-for-update--for-share). Postgres-only lock strengths
-  `FOR NO KEY UPDATE` / `FOR KEY SHARE`, and `OF table` on a join, are not modeled.)
+  `FOR UPDATE` / `FOR SHARE` on reads is available on Postgres and MySQL, and the Postgres-only
+  `FOR NO KEY UPDATE` / `FOR KEY SHARE` from `kormium-postgres-dialect` — see
+  [Row Locking](#row-locking-for-update--for-share). `OF table`, which restricts a join's lock to
+  one side, is not modeled.)
 
 The supported `WHERE` / `HAVING` predicates are exactly: `eq`, `neq`, `lt`, `ltEq`, `gt`,
 `gtEq`, `between` (an inclusive `lo..hi` range; an empty range matches nothing), `like`,

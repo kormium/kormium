@@ -287,11 +287,13 @@ public typealias SuspendScope<G> = SuspendScopeOf<G, AnyBackend>
 
 /** [suspendTransaction] for a backend-tagged scope — the dialect-module seam; see [runTransaction]. */
 @KormiumDialectApi
+@OptIn(ExperimentalContracts::class)
 public suspend fun <G : Catalog, B : Backend, R> SuspendDatabase<G>.runSuspendTransaction(
     isolation: TransactionIsolation? = null,
     readOnly: Boolean = false,
     block: suspend SuspendScopeOf<G, B>.() -> R,
 ): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
     val result = useConnection(transactional = true, isolation = isolation, readOnly = readOnly) { SuspendScopeOf<G, B>(it.observed(config), config, dirty, transactional = true).block() }
     writeListeners.fire(dirty)
@@ -301,7 +303,9 @@ public suspend fun <G : Catalog, B : Backend, R> SuspendDatabase<G>.runSuspendTr
 
 /** [suspendAutocommit] for a backend-tagged scope; see [runSuspendTransaction]. */
 @KormiumDialectApi
+@OptIn(ExperimentalContracts::class)
 public suspend fun <G : Catalog, B : Backend, R> SuspendDatabase<G>.runSuspendAutocommit(block: suspend SuspendScopeOf<G, B>.() -> R): R {
+    contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
     val dirty = mutableSetOf<String>()
     val result = useConnection(transactional = false) { SuspendScopeOf<G, B>(it.observed(config), config, dirty, transactional = false).block() }
     writeListeners.fire(dirty)

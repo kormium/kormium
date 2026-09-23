@@ -46,7 +46,14 @@ public data class Query(
     }
 
     // Debug-friendly rendering; placeholders are emitted in place of values.
-    override fun toString(): String = toSql(ParamBuilder(StandardDialect, StandardTypeMapper))
+    //
+    // A [lock] is appended from its own toString() rather than through [StandardDialect], which
+    // cannot render one and would throw: a toString() that raises breaks logging, assertion
+    // messages and debuggers, and can fire while another exception's message is being built.
+    override fun toString(): String {
+        val head = copy(lock = null).toSql(ParamBuilder(StandardDialect, StandardTypeMapper))
+        return if (lock == null) head else "$head$lock"
+    }
 
     private fun prepareOrderBy(orderBy: Map<Selectable<*>, AscDescOrder>, builder: ParamBuilder): String =
         orderBy.entries.joinToString(",") { (key, value) -> "${key.toSql(builder)} ${value.name}" }
