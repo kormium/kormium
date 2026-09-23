@@ -545,6 +545,10 @@ final class io.github.kormium/KormiumConfigBuilder { // io.github.kormium/Kormiu
         final fun <set-batchInsertMode>(io.github.kormium/BatchInsertMode) // io.github.kormium/KormiumConfigBuilder.batchInsertMode.<set-batchInsertMode>|<set-batchInsertMode>(io.github.kormium.BatchInsertMode){}[0]
 }
 
+final class io.github.kormium/LockNotAvailableException : io.github.kormium/QueryException { // io.github.kormium/LockNotAvailableException|null[0]
+    constructor <init>(kotlin/String, kotlin/String?, kotlin/Throwable? = ...) // io.github.kormium/LockNotAvailableException.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
+}
+
 final class io.github.kormium/NotNullViolationException : io.github.kormium/QueryException { // io.github.kormium/NotNullViolationException|null[0]
     constructor <init>(kotlin/String, kotlin/String?, kotlin/Throwable? = ...) // io.github.kormium/NotNullViolationException.<init>|<init>(kotlin.String;kotlin.String?;kotlin.Throwable?){}[0]
 }

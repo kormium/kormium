@@ -585,6 +585,11 @@ public final class io/github/kormium/LocalTimeColumnType : io/github/kormium/Col
 	public fun toParam (Lkotlinx/datetime/LocalTime;)Ljava/lang/Object;
 }
 
+public final class io/github/kormium/LockNotAvailableException : io/github/kormium/QueryException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
 public final class io/github/kormium/LockStrength : java/lang/Enum {
 	public static final field KeyShare Lio/github/kormium/LockStrength;
 	public static final field NoKeyUpdate Lio/github/kormium/LockStrength;

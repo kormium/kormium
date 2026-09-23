@@ -398,7 +398,9 @@ fun claimBatch(): List<Job> = db.transaction {
 ```
 
 `forUpdate` needs `transaction { }` (in autocommit the lock is released immediately — Kormium
-fails fast), and exists on `find` / `findOne` only. See
+fails fast), and exists on `find` / `findOne` only. `LockWait.NoWait` raises
+`LockNotAvailableException` (not `ConcurrencyConflictException`: only the statement failed, the
+transaction is still open). See
 [docs/queries.md](docs/queries.md#row-locking-for-update--for-share) for `NOWAIT`, `forShare`, and
 the MySQL/MariaDB version caveats.
 

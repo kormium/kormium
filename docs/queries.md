@@ -481,7 +481,7 @@ The argument says what to do when a row is already locked by someone else:
 |---|---|---|
 | `LockWait.Wait` (default) | block until the other transaction ends | you need **that** row — debiting a specific account |
 | `LockWait.SkipLocked` | ignore locked rows, take the next ones | **any** free row will do — a queue handing work to N workers |
-| `LockWait.NoWait` | fail immediately | an interactive edit, where "someone else is editing this" beats freezing |
+| `LockWait.NoWait` | fail immediately with `LockNotAvailableException` | an interactive edit, where "someone else is editing this" beats freezing |
 
 With `SKIP LOCKED`, `limit = 10` means *ten unlocked rows*, so each worker gets a full batch
 instead of fighting over the head of the queue.
@@ -505,6 +505,12 @@ So declare the handle as `BackendDatabase<App, PostgresBackend>` when you want t
 as `Database<App>` when you want the compiler to keep the code portable. Widening a
 Postgres handle to `Database<App>` is what a portable helper should take — everything except the
 locking call keeps working through it.
+
+`NoWait` raises `LockNotAvailableException` (PostgreSQL SQLSTATE `55P03`; MySQL vendor codes 3572
+and 1205). A server-side lock timeout — `lock_timeout` / `innodb_lock_wait_timeout` — raises the
+same one. It is deliberately not `ConcurrencyConflictException`: that means the whole transaction
+was aborted and is safe to retry as a unit, whereas here only the statement failed and the
+transaction is still open, so reporting the contention is usually the right answer.
 
 Two things the type cannot promise, both on MySQL/MariaDB: `NOWAIT` and `SKIP LOCKED` need MySQL
 8.0.1+ / MariaDB 10.3+ and 10.6+, and MariaDB has no `FOR SHARE` at all. An older server answers

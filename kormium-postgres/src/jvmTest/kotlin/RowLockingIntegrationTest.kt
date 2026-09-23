@@ -6,7 +6,7 @@ import io.github.kormium.Entity
 import io.github.kormium.LockWait
 import io.github.kormium.BackendDatabase
 import io.github.kormium.PostgresBackend
-import io.github.kormium.QueryException
+import io.github.kormium.LockNotAvailableException
 import io.github.kormium.Table
 import io.github.kormium.autocommit
 import io.github.kormium.eq
@@ -106,7 +106,7 @@ class RowLockingIntegrationTest {
         }
         assertTrue(locked.await(30, TimeUnit.SECONDS), "the row was never locked")
 
-        val e = assertFailsWith<QueryException> {
+        val e = assertFailsWith<LockNotAvailableException> {
             db.transaction {
                 LockJobs.findOne { where { LockJobs.id eq id }; forUpdate(LockWait.NoWait) }
             }
@@ -114,8 +114,7 @@ class RowLockingIntegrationTest {
         release.countDown()
         holder.join()
 
-        // 55P03 = lock_not_available. Kormium has no dedicated subtype for it yet, so this is the
-        // generic QueryException carrying the SQLSTATE.
+        // 55P03 = lock_not_available, mapped to the typed exception and still carrying the state.
         assertEquals("55P03", e.sqlState)
     }
 

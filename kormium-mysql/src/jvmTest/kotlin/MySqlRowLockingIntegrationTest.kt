@@ -6,7 +6,7 @@ import io.github.kormium.Column
 import io.github.kormium.Entity
 import io.github.kormium.LockWait
 import io.github.kormium.MySqlBackend
-import io.github.kormium.QueryException
+import io.github.kormium.LockNotAvailableException
 import io.github.kormium.ScopeOf
 import io.github.kormium.Table
 import io.github.kormium.autocommit
@@ -111,18 +111,14 @@ class MySqlRowLockingIntegrationTest {
         assertTrue(locked.await(30, TimeUnit.SECONDS), "the row was never locked")
 
         // MySQL reports a refused NOWAIT as vendor error 3572 (ER_LOCK_NOWAIT) under SQLSTATE
-        // HY000, so this is the generic QueryException rather than a dedicated subtype.
-        val e = assertFailsWith<QueryException> {
+        // HY000, so the vendor-code mapping is what produces the typed exception here.
+        assertFailsWith<LockNotAvailableException> {
             db.transaction {
                 LockJobs.findOne { where { LockJobs.id eq id }; forUpdate(LockWait.NoWait) }
             }
         }
         release.countDown()
         holder.join()
-        assertTrue(
-            e.message!!.contains("NOWAIT") || e.message!!.contains("lock"),
-            "unexpected NOWAIT failure: ${e.message}",
-        )
     }
 
     @Test

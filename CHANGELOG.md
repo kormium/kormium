@@ -7,6 +7,12 @@ All notable changes to Kormium are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- **`LockNotAvailableException`** for a lock that could not be acquired — a refused
+  `LockWait.NoWait`, or a server-side lock timeout. It is mapped from PostgreSQL's SQLSTATE `55P03`
+  and from MySQL's vendor codes 3572 / 1205, which hide under SQLSTATE `HY000` where only the
+  vendor code can identify them. Distinct from `ConcurrencyConflictException` on purpose: that one
+  means the transaction was aborted and can be retried as a unit, while here only the statement
+  failed and the transaction is still open.
 - **Row locking, gated by the backend's type.** `find { forUpdate(LockWait.SkipLocked) }` renders
   `SELECT ... FOR UPDATE SKIP LOCKED` — the piece that makes a table usable as a work queue, and
   the read-then-write half of a safe debit. `forUpdate` / `forShare` take `Wait` (block), `NoWait`

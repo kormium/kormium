@@ -304,7 +304,8 @@ hidden behind a generic failure. Each row is covered by edge-case tests
 
 All backends map integrity violations to the same typed exceptions
 (`UniqueViolationException`, `ForeignKeyViolationException`, `NotNullViolationException`,
-`CheckViolationException`, all extending `QueryException`). What differs is the **source code**
+`CheckViolationException`, all extending `QueryException`); a lock that could not be acquired maps
+to `LockNotAvailableException` (PostgreSQL `55P03`, MySQL vendor codes 3572 / 1205). What differs is the **source code**
 carried in `QueryException.sqlState`:
 
 | Violation | Exception | PostgreSQL / r2dbc (SQLSTATE) | SQLite (extended result code) | MySQL (vendor code) |

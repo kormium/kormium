@@ -58,6 +58,23 @@ public class ConcurrencyConflictException(message: String, sqlState: String?, ca
 public class PoolExhaustedException(message: String) : KormiumException(message)
 
 /**
+ * A lock could not be acquired, so the statement gave up instead of waiting (SQLSTATE `55P03`,
+ * `lock_not_available`). Two ways to get here, and both are the point of asking:
+ *
+ *  - [LockWait.NoWait] — the row was held by another transaction and you asked not to wait;
+ *  - a server-side lock timeout (PostgreSQL `lock_timeout`, MySQL `innodb_lock_wait_timeout`).
+ *
+ * This is **not** [ConcurrencyConflictException]: a deadlock or serialization failure aborts the
+ * whole transaction and is safe to retry as a unit, whereas here only the statement failed and the
+ * transaction is still alive — so the caller decides whether to report the contention (the usual
+ * answer for an interactive edit), retry the statement, or take the row a different way.
+ *
+ * [LockWait.SkipLocked] never produces this: skipping locked rows is not a failure.
+ */
+public class LockNotAvailableException(message: String, sqlState: String?, cause: Throwable? = null) :
+    QueryException(message, sqlState, cause)
+
+/**
  * A statement asked for something the backend's [Dialect] cannot render — e.g. a [RowLock] on
  * SQLite. The typed DSL prevents most of these at compile time (see [RowLockingBackend]); this
  * covers what a type cannot know, such as a MySQL server older than 8.0.1 for `SKIP LOCKED`, and
@@ -79,5 +96,7 @@ public fun sqlException(message: String, sqlState: String?, cause: Throwable? = 
     "23502" -> NotNullViolationException(message, sqlState, cause)
     "23514" -> CheckViolationException(message, sqlState, cause)
     "40001", "40P01" -> ConcurrencyConflictException(message, sqlState, cause)
+    // PostgreSQL reports both a refused NOWAIT and an expired `lock_timeout` as lock_not_available.
+    "55P03" -> LockNotAvailableException(message, sqlState, cause)
     else -> QueryException(message, sqlState, cause)
 }
