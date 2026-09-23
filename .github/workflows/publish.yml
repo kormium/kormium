@@ -71,8 +71,15 @@ jobs:
             printf '%s\n' "$notes" > /tmp/release-notes.md
             notes_args=(--notes-file /tmp/release-notes.md)
           fi
+          # A version with a hyphen is a prerelease (v0.15.0-beta01, v1.0.0-rc1): mark it as such
+          # so it is not offered as the release people are meant to take. A stable version passes
+          # nothing, leaving GitHub's own "latest" handling exactly as it was.
+          prerelease_args=()
+          case "$version" in
+            *-*) prerelease_args=(--prerelease) ;;
+          esac
           if gh release view "$REF" >/dev/null 2>&1; then
-            gh release edit "$REF" --title "$title" "${notes_args[@]}"
+            gh release edit "$REF" --title "$title" "${notes_args[@]}" "${prerelease_args[@]}"
           else
-            gh release create "$REF" --title "$title" --verify-tag "${notes_args[@]}"
+            gh release create "$REF" --title "$title" --verify-tag "${notes_args[@]}" "${prerelease_args[@]}"
           fi
